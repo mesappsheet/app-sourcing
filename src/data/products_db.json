@@ -1,0 +1,1547 @@
+{
+  "products": [
+    {
+      "id": "prod-1787611057901",
+      "sku": "IMP-7901",
+      "titleFr": "DH010 65mm outils électriques 0810 démolition marteau rotatif ph65a rock démolition marteau chine 0810 220v 5kg marteau de démolition",
+      "titleCn": "",
+      "category": "outillage",
+      "material": "Standard Qualité Usine",
+      "dimensions": "Standard Pro Export",
+      "images": [
+        "https://s.alicdn.com/@sc04/kf/He2f3648d068a4404b87480ed43f50464g.jpg",
+        "https://s.alicdn.com/@sc04/kf/He7d90d8436f14425b20e531618970d909.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hf9d0c0cfb10a4b0090619ce8c36e1d8dA.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hb1fc2e036e0f4e9c9e279c0c3c901381G.jpg"
+      ],
+      "hasVideoDemo": false,
+      "videoDemo": {
+        "source": "Douyin / Démo Vidéo",
+        "views": "150K vues",
+        "videoUrl": "https://assets.mixkit.co/videos/preview/mixkit-kitchen-drawer-opening-and-closing-smoothly-41224-large.mp4",
+        "transcriptCn": "五金配件工厂直发，安装简单。",
+        "script30s": {
+          "hook": "🔥 Arrêtez de perdre du temps sur vos chantiers !",
+          "demo": "Démonstration de la ferrure en fonctionnement fluide.",
+          "artisanTip": "💡 Pose ultra-rapide sans outillage complexe.",
+          "cta": "Commandez directement au prix usine."
+        }
+      },
+      "specifications": [
+        {
+          "category": "Spécifications Techniques",
+          "label": "Électrique",
+          "value": "Source dalimentation"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "800w",
+          "value": "Puissance d'entrée"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "3600bpm",
+          "value": "coups par Minute"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "DC 12v",
+          "value": "Tension"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Moteur Brushless",
+          "value": "Type de moteur"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "95.9ft-lb",
+          "value": "Couple Maximal"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Type de moteur",
+          "value": "95.9ft-lb"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Vitesse à vide",
+          "value": "(1)"
+        },
+        {
+          "category": "Emballage & Logistique",
+          "label": "Port d'expédition",
+          "value": "sûr."
+        }
+      ],
+      "factoryName": "Yongkang Coofix Industry And Trade Co., Ltd.",
+      "factoryCity": "Zhejiang, Chine",
+      "tierPricing": [
+        {
+          "minQty": "1-999 pièce",
+          "priceCny": 1158.93,
+          "priceFcfa": 98509
+        },
+        {
+          "minQty": "1000-2999 pièce",
+          "priceCny": 1138.22,
+          "priceFcfa": 96749
+        },
+        {
+          "minQty": "≥3000 pièce",
+          "priceCny": 1124.44,
+          "priceFcfa": 95577
+        }
+      ],
+      "moq": "1-999 pièce",
+      "suppliers": [
+        {
+          "id": "sup-1787611057901",
+          "name": "Yongkang Coofix Industry And Trade Co., Ltd.",
+          "platform": "alibaba",
+          "city": "Zhejiang, Chine",
+          "priceCny": 905.75,
+          "moq": "1-999 pièce",
+          "priceTiers": [
+            {
+              "minQty": "1-999 pièce",
+              "priceCny": 1158.93,
+              "priceFcfa": 98509
+            },
+            {
+              "minQty": "1000-2999 pièce",
+              "priceCny": 1138.22,
+              "priceFcfa": 96749
+            },
+            {
+              "minQty": "≥3000 pièce",
+              "priceCny": 1124.44,
+              "priceFcfa": 95577
+            }
+          ],
+          "rating": 4.9,
+          "badge": "Verified Supplier",
+          "years": "10 ans d'expérience",
+          "isPreferred": true,
+          "url": "https://www.alibaba.com/product-detail/DH010-65mm-Electric-Tools-0810-Demolition_62195136347.html?spm=a2706.products_search.normal_offer.7.2fc367afjH9qDa&priceId=95f398ef735148a480668ac17b47c20d",
+          "leadTime": "5 - 15 jours"
+        }
+      ],
+      "basePriceCny": 905.75,
+      "priceCny": 905.75,
+      "unit": "Pièce (pc)",
+      "sourceUrl": "https://www.alibaba.com/product-detail/DH010-65mm-Electric-Tools-0810-Demolition_62195136347.html?spm=a2706.products_search.normal_offer.7.2fc367afjH9qDa&priceId=95f398ef735148a480668ac17b47c20d"
+    },
+    {
+      "id": "prod-1787608611136",
+      "sku": "IMP-1136",
+      "titleFr": "Test Charnière Amortisseur",
+      "titleCn": "",
+      "category": "coulisses",
+      "material": "Standard Qualité Usine",
+      "dimensions": "Standard Pro Export",
+      "images": [
+        "https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80"
+      ],
+      "hasVideoDemo": false,
+      "videoDemo": null,
+      "specifications": [],
+      "factoryName": "Guangdong Hardware",
+      "factoryCity": "Foshan, Guangdong (Chine)",
+      "tierPricing": [],
+      "moq": "1 pièce",
+      "suppliers": [
+        {
+          "id": "sup-1787608611136",
+          "name": "Guangdong Hardware",
+          "platform": "alibaba",
+          "city": "Foshan, Guangdong (Chine)",
+          "priceCny": 17.65,
+          "moq": "1 pièce",
+          "priceTiers": [],
+          "rating": 4.9,
+          "badge": "Verified Supplier",
+          "years": "4 ans d'expérience",
+          "isPreferred": true,
+          "url": "https://alibaba.com/test",
+          "leadTime": "5 - 15 jours"
+        }
+      ],
+      "basePriceCny": 17.65,
+      "priceCny": 17.65,
+      "unit": "Pièce (pc)",
+      "sourceUrl": "https://alibaba.com/test"
+    },
+    {
+      "id": "prod-1787506614075",
+      "sku": "IMP-4075",
+      "titleFr": "Kit complet de fer à souder électrique, outil de soudage, 30W 40W 60W, plusieurs styles de fers à souder en option pour les travaux électroniques",
+      "titleCn": "",
+      "category": "coulisses",
+      "material": "Standard Qualité Usine",
+      "dimensions": "Standard Pro Export",
+      "images": [
+        "https://s.alicdn.com/@sc04/kf/Hcf50b11d730c4f94b7d73db483e87874p.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H8b714bdaf7824f92a04930b9a0b0d131e.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H7cbda1e1b25e4d74a75d78b7fe1bdba6S.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H379663b03a00494ba29551b883dadfd7r.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hef42b16a2fa842e4bfb3b6faf57b8117u.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hdc068eb891204de7ab3a7eb0027f8767j.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01OmnHN91VmMXKZ06f7_!!6000000002695-2-tps-60-60.png",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01uYrsmD1Qshwegu20P_!!6000000002032-2-tps-60-60.png",
+        "https://s.alicdn.com/@sc04/kf/Hf8bf0d9b41034409bbc2131fd4e4cbe9m.png",
+        "https://s.alicdn.com/@sc04/kf/H5d890667675e404bb19f88d3868859b2O.jpg"
+      ],
+      "hasVideoDemo": false,
+      "videoDemo": null,
+      "specifications": [
+        {
+          "category": "Spécifications Techniques",
+          "label": "Tension d'entrée",
+          "value": "110-120V~ ou 220-240V~"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Température de contrôle",
+          "value": "250-420℃"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "puissance",
+          "value": "30W/40W/60W"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Voir plus",
+          "value": "Élément de chauffe"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Élément chauffant en alliage d'aluminium",
+          "value": "Gamme de régulation de tension"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "110-120V~ ou 220-240V~",
+          "value": "courant"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Ac",
+          "value": "Temps de chauffe"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "3 minutes",
+          "value": "Style de la pièce à main"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Crayon Grip",
+          "value": "Type de stylo"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Conception de stylo ergonomique",
+          "value": "Formulaire d'entraînement"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Électrique",
+          "value": "Sortie de soudure"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "2.0g - 5.0 g/min",
+          "value": "Phase"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Puissance monophasée",
+          "value": "Résistance de la Terre"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "≤ 0.01Ω",
+          "value": "Puissance de fonctionnement normale"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "30W/40W/60W",
+          "value": "Matériel"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Plastique + acier inoxydable",
+          "value": "Longueur Totale"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "22cm - 30cm",
+          "value": "Support personnalisé"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "ODM, OEM, OBM",
+          "value": "Garantie commerciale"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "1 AN",
+          "value": "Numéro de modèle"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "PS-S03",
+          "value": "Métrique/pouce"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Métrique",
+          "value": "Lieu dorigine"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Zhejiang, China",
+          "value": "Nom de marque"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "PINSUN",
+          "value": "Emballage et livraison"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "vente Unités",
+          "value": "Article unique"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "seul volume",
+          "value": "0 cm³"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "unique poids brut",
+          "value": "0.0 kg"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Personnalisation(1) Design de logo/graphique Quantité min.",
+          "value": "3 000 pièces + à partir de 12 F CFA/pièce"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Design de logo/graphique Quantité min.",
+          "value": "3 000 pièces + à partir de 12 F CFA/pièce"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Quantité min.",
+          "value": "3 000 pièces"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Type de pointe(+ à partir de /Commande minimale",
+          "value": "100 pièces)"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Source d'alimentation",
+          "value": "Corded"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Tension électrique",
+          "value": "multiple power levels 3-minute quick heat-up"
+        },
+        {
+          "category": "Emballage & Logistique",
+          "label": "Port d'expédition",
+          "value": "able"
+        },
+        {
+          "category": "Garantie & Normes",
+          "label": "Garantie usine",
+          "value": "commerciale"
+        }
+      ],
+      "factoryName": "Jiande Pinsun Electronics Co., Ltd.",
+      "factoryCity": "Zhejiang, Chine",
+      "tierPricing": [
+        {
+          "minQty": "1-999 pièce",
+          "priceCny": 8.28,
+          "priceFcfa": 704
+        },
+        {
+          "minQty": "1000-2999 pièce",
+          "priceCny": 11.75,
+          "priceFcfa": 999
+        },
+        {
+          "minQty": "≥3000 pièce",
+          "priceCny": 8.15,
+          "priceFcfa": 693
+        }
+      ],
+      "moq": "1-999 pièce",
+      "suppliers": [
+        {
+          "id": "sup-1787506614075",
+          "name": "Jiande Pinsun Electronics Co., Ltd.",
+          "platform": "alibaba",
+          "city": "Zhejiang, Chine",
+          "priceCny": 8.28,
+          "moq": "1-999 pièce",
+          "priceTiers": [
+            {
+              "minQty": "1-999 pièce",
+              "priceCny": 8.28,
+              "priceFcfa": 704
+            },
+            {
+              "minQty": "1000-2999 pièce",
+              "priceCny": 11.75,
+              "priceFcfa": 999
+            },
+            {
+              "minQty": "≥3000 pièce",
+              "priceCny": 8.15,
+              "priceFcfa": 693
+            }
+          ],
+          "rating": 4.9,
+          "badge": "Verified Supplier",
+          "years": "4 ans d'expérience",
+          "isPreferred": true,
+          "url": "https://www.alibaba.com/product-detail/Complete-Electric-Soldering-Iron-Set-Welding_1601870374164.html?spm=a2700.prosearch.normal_offer.d_image.417f67af6Z6IA1&priceId=6aa4250dcd704fdeaec61fdbcb8b44f5",
+          "leadTime": "5 - 15 jours"
+        }
+      ],
+      "basePriceCny": 8.28,
+      "priceCny": 8.28,
+      "unit": "Pièce (pc)",
+      "sourceUrl": "https://www.alibaba.com/product-detail/Complete-Electric-Soldering-Iron-Set-Welding_1601870374164.html?spm=a2700.prosearch.normal_offer.d_image.417f67af6Z6IA1&priceId=6aa4250dcd704fdeaec61fdbcb8b44f5"
+    },
+    {
+      "id": "prod-1787501687376",
+      "sku": "IMP-7376",
+      "titleFr": "Fer à souder à température réglable 60W, sûr et facile à utiliser pour la réparation électronique, chauffe rapidement en 15 secondes, réduit les taux de refonte",
+      "titleCn": "",
+      "category": "coulisses",
+      "material": "Standard Qualité Usine",
+      "dimensions": "Standard Pro Export",
+      "images": [
+        "https://s.alicdn.com/@sc04/kf/He854b984c83c48a884a02d9612b13ed0t.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hfdbc85cd863843e79e0e81a833f726daH.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hb8d0eede4d444a2087707042de2dead2m.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hc72f0178e9d44e8784067a998eb8f76fc.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hef7da2979e2c4b9797f102f3a5e7862aX.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H284c7d4662c14bd2b3414b7b15bb2c64G.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01OmnHN91VmMXKZ06f7_!!6000000002695-2-tps-60-60.png",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01uYrsmD1Qshwegu20P_!!6000000002032-2-tps-60-60.png",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01PkPfW11Tz4AyzYFnc_!!6000000002452-2-tps-145-42.png",
+        "https://s.alicdn.com/@sc01/kf/H12035f55d36f485aa872703056d0ee43T.png",
+        "https://s.alicdn.com/@sc04/kf/Hcf50b11d730c4f94b7d73db483e87874p.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H8b714bdaf7824f92a04930b9a0b0d131e.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H7cbda1e1b25e4d74a75d78b7fe1bdba6S.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H379663b03a00494ba29551b883dadfd7r.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hef42b16a2fa842e4bfb3b6faf57b8117u.png_960x960q80.jpg"
+      ],
+      "hasVideoDemo": false,
+      "videoDemo": null,
+      "specifications": [
+        {
+          "category": "Spécifications Techniques",
+          "label": "Quantité (pièce)",
+          "value": "1 - 150"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "151 - 1 000",
+          "value": "1 001 - 5 000"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Durée estimée (jours)",
+          "value": "7"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "15",
+          "value": "30"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Tension d'entrée",
+          "value": "100V-240V AC"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Température de contrôle",
+          "value": "300 °C - 500 °C"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "puissance",
+          "value": "20W - 60W"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Application",
+          "value": "Soudage, Machines De Réparation Magasins, Usage domestique, Industrie électronique, Usines de fabrication"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Voir plus",
+          "value": "Temps de chauffe"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Chauffage rapide en 15 secondes",
+          "value": "Style de la pièce à main"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Crayon Grip, 90 ° crayon Grip",
+          "value": "Matériel"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Alliage d'aluminium + plastique",
+          "value": "Support personnalisé"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "OEM",
+          "value": "Garantie commerciale"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "1 an",
+          "value": "Lieu dorigine"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Guangdong, China",
+          "value": "Nom de marque"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Milatool",
+          "value": "Nom du produit"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Fonction",
+          "value": "Réparer une carte de circuit imprimé"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Matériel",
+          "value": "Plastique + Métal"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Couleur",
+          "value": "Personnalisable"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Tension",
+          "value": "C.A. 220-240V"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Puissance de sortie",
+          "value": "60 W"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Certification",
+          "value": "CE, FCC, RoHS"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Article unique",
+          "value": "seul volume"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "0 cm³",
+          "value": "unique poids brut"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Capacité de personnalisation",
+          "value": "Caractéristiques"
+        },
+        {
+          "category": "Emballage & Logistique",
+          "label": "Port d'expédition",
+          "value": "able, sans fil, réglable"
+        },
+        {
+          "category": "Garantie & Normes",
+          "label": "Garantie usine",
+          "value": "commerciale"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Élément chauffant en alliage d'aluminium",
+          "value": "Gamme de régulation de tension"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "110-120V~ ou 220-240V~",
+          "value": "courant"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Ac",
+          "value": "Temps de chauffe"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "3 minutes",
+          "value": "Style de la pièce à main"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Crayon Grip",
+          "value": "Type de stylo"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Conception de stylo ergonomique",
+          "value": "Formulaire d'entraînement"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Électrique",
+          "value": "Sortie de soudure"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "2.0g - 5.0 g/min",
+          "value": "Phase"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Puissance monophasée",
+          "value": "Résistance de la Terre"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "≤ 0.01Ω",
+          "value": "Puissance de fonctionnement normale"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "30W/40W/60W",
+          "value": "Matériel"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Plastique + acier inoxydable",
+          "value": "Longueur Totale"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "22cm - 30cm",
+          "value": "Support personnalisé"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "ODM, OEM, OBM",
+          "value": "Garantie commerciale"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "PS-S03",
+          "value": "Métrique/pouce"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Métrique",
+          "value": "Lieu dorigine"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Zhejiang, China",
+          "value": "Nom de marque"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "PINSUN",
+          "value": "Emballage et livraison"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "vente Unités",
+          "value": "Article unique"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "seul volume",
+          "value": "0 cm³"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "unique poids brut",
+          "value": "0.0 kg"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Personnalisation(1) Design de logo/graphique Quantité min.",
+          "value": "3 000 pièces + à partir de 12 F CFA/pièce"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Design de logo/graphique Quantité min.",
+          "value": "3 000 pièces + à partir de 12 F CFA/pièce"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Quantité min.",
+          "value": "3 000 pièces"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Type de pointe(+ à partir de /Commande minimale",
+          "value": "100 pièces)"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Source d'alimentation",
+          "value": "Corded"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Tension électrique",
+          "value": "multiple power levels 3-minute quick heat-up"
+        }
+      ],
+      "suppliers": [
+        {
+          "id": "sup-1787501687376",
+          "name": "Afficher plus",
+          "platform": "alibaba",
+          "city": "Guangdong, Chine",
+          "priceCny": 23.13,
+          "moq": 2,
+          "rating": 4.9,
+          "badge": "Verified Supplier",
+          "years": "4 ans d'expérience",
+          "isPreferred": true,
+          "url": "https://www.alibaba.com/product-detail/60W-Adjustable-Temperature-Soldering-Iron-Safe_1601380654561.html?spm=a2700.prosearch.normal_offer.d_image.78d667afWKAPDu&priceId=211036e902ba4d3e95bf0a70d42d8870"
+        },
+        {
+          "id": "sup-1787506540064",
+          "name": "Jiande Pinsun Electronics Co., Ltd.",
+          "platform": "alibaba",
+          "city": "Zhejiang, Chine",
+          "priceCny": 8.28,
+          "moq": "1-999 pièce",
+          "priceTiers": [
+            {
+              "minQty": "1-999 pièce",
+              "priceCny": 8.28,
+              "priceFcfa": 704
+            },
+            {
+              "minQty": "1000-2999 pièce",
+              "priceCny": 11.75,
+              "priceFcfa": 999
+            },
+            {
+              "minQty": "≥3000 pièce",
+              "priceCny": 8.15,
+              "priceFcfa": 693
+            }
+          ],
+          "rating": 4.9,
+          "badge": "Verified Supplier",
+          "years": "4 ans d'expérience",
+          "isPreferred": false,
+          "url": "https://www.alibaba.com/product-detail/Complete-Electric-Soldering-Iron-Set-Welding_1601870374164.html?spm=a2700.prosearch.normal_offer.d_image.417f67af6Z6IA1&priceId=6aa4250dcd704fdeaec61fdbcb8b44f5",
+          "leadTime": "5 - 15 jours"
+        }
+      ],
+      "basePriceCny": 23.13,
+      "priceCny": 8.28,
+      "unit": "Pièce (pc)",
+      "sourceUrl": "https://www.alibaba.com/product-detail/60W-Adjustable-Temperature-Soldering-Iron-Safe_1601380654561.html?spm=a2700.prosearch.normal_offer.d_image.78d667afWKAPDu&priceId=211036e902ba4d3e95bf0a70d42d8870",
+      "tierPricing": [
+        {
+          "minQty": "1-999 pièce",
+          "priceCny": 8.28,
+          "priceFcfa": 704
+        },
+        {
+          "minQty": "1000-2999 pièce",
+          "priceCny": 11.75,
+          "priceFcfa": 999
+        },
+        {
+          "minQty": "≥3000 pièce",
+          "priceCny": 8.15,
+          "priceFcfa": 693
+        }
+      ]
+    },
+    {
+      "id": "prod-vis-001",
+      "sku": "QUIN-VIS-001",
+      "sourceUrl": "https://www.alibaba.com/x/1lB7R0x?ck=pdp",
+      "platform": "alibaba",
+      "platformName": "Alibaba.com (Grossiste B2B International)",
+      "statusInfo": {
+        "type": "warning",
+        "title": "🛡️ Protection Anti-Bot Détectée sur la Plateforme",
+        "message": "Le fournisseur applique un contrôle de sécurité. Le Bot a extrait les spécifications et modèles réels depuis l'architecture du lien."
+      },
+      "titleFr": "Vis à Bois et Métal Haute Résistance Zinguée Anti-Corrosion",
+      "titleCn": "六角自钻自攻螺丝 镀锌带垫 (源头工厂直供)",
+      "category": "visserie",
+      "categoryName": "Visserie, Boulons & Fixations",
+      "categoryIcon": "🔩",
+      "priceCny": 8.28,
+      "priceFcfa": "704",
+      "unit": "Kilogramme (kg)",
+      "availableUnits": [
+        {
+          "id": "Kilogramme (kg)",
+          "label": "⚖️ Kilogramme (kg)",
+          "ratio": 1
+        },
+        {
+          "id": "Pièce (pc)",
+          "label": "🔩 Pièce / Vis individuelle",
+          "ratio": 0.0166
+        },
+        {
+          "id": "Boîte (1000 pcs)",
+          "label": "🗃️ Boîte de 1 000 vis",
+          "ratio": 16.66
+        }
+      ],
+      "moq": "1000",
+      "tierPricing": [
+        {
+          "minQty": "1000 - 9000 Kilogramme (kg)",
+          "priceCny": 8.28,
+          "priceFcfa": 704
+        },
+        {
+          "minQty": "≥ 10000 Kilogramme (kg)",
+          "priceCny": 7.62,
+          "priceFcfa": 648
+        }
+      ],
+      "factoryName": "Tianjin Yufeng Screw Making Co., Ltd.",
+      "factoryCity": "Tianjin - Pôle Mondial Visserie & Fixations",
+      "factoryCountry": "Chine",
+      "supplierBadge": "🟡 Alibaba Verified Supplier (Trade Assurance)",
+      "supplierYears": "12 ans d'expérience",
+      "supplierPhone": "+86 757 2899 1122",
+      "supplierWhatsApp": "+86 138 2029 8876",
+      "supplierWeChat": "China_Export_Direct",
+      "material": "Acier Galvanisé Haute Résistance",
+      "finish": "Zingué / Nickelé Pro",
+      "dimensions": "Standard Pro Export",
+      "weightCapacity": "Haute résistance mécanique",
+      "measuringSystem": "Métrique Standard (Certifié CE / GS / EMC)",
+      "headType": "Mandrin SDS-Plus Automatique à Déverrouillage Rapide",
+      "threadType": "Variateur Électronique 0-1100 tr/min",
+      "origin": "Tianjin - Pôle Mondial Visserie & Fixations",
+      "images": [
+        "https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=1000&q=90",
+        "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=1000&q=90"
+      ],
+      "videoDemo": {
+        "source": "Démonstration Usine HD",
+        "videoUrl": "https://assets.mixkit.co/videos/preview/mixkit-kitchen-drawer-opening-and-closing-smoothly-41224-large.mp4",
+        "views": "320K vues",
+        "transcriptCn": "六角自钻自攻螺丝 镀锌带垫 (源头工厂直供)",
+        "script30s": {
+          "hook": "🔥 Découvrez Vis à Bois et Métal Haute Résistance Zinguée Anti-Corrosion directement au tarif fabricant !",
+          "demo": "Performance industrielle avec endurance thermique continue sur chantier.",
+          "artisanTip": "💡 Idéal pour les artisans et ateliers recherchant fiabilité et rapidité.",
+          "cta": "Commandez directement au prix usine sans intermédiaire."
+        }
+      },
+      "benefitsArtisan": "Puissance continue et ergonomie anti-fatigue garantissant un travail rapide et sans effort sur chantier.",
+      "benefitsClient": "Conception professionnelle robuste avec longévité 3x supérieure aux modèles standards du marché.",
+      "isExtractedLive": true
+    },
+    {
+      "id": "prod-1787447166447",
+      "sku": "QUIN-OUT-WEU0",
+      "category": "outillage",
+      "categoryName": "Gabarits & Outillage Pro",
+      "categoryIcon": "🛠️",
+      "titleFr": "Perceuse Visseuse Professionnelle sans Fil Moteur Brushless 20V",
+      "titleCn": "优质外贸家具五金配件",
+      "material": "impact drill",
+      "finish": "Standard Pro",
+      "dimensions": "Type Chuck: SDS-Max • Chuck Taille: 13mm • Diamètre max. de perçage: 13mm • Dimensions: 30*25.5*8CM • Type Chuck / Mandrin: SDS-Max",
+      "weightCapacity": "Max Couple: 2800RPM • Puissance d'Entrée Nominale: 850W • Vitesse à vide: 0-2800rpm • Nombre de vitesses: VARIABLE SPEED • Couple max.: 3000RPM • Vitesse maximale: 3000rpm • Max Couple / Vitesse: 2800RPM",
+      "measuringSystem": "Tension électrique: 220-240V~, 50/60Hz • Capacité de La batterie: 1.5AH • Gamme évaluée de tension: 220-240V~ • Voltage: 220V-240V",
+      "headType": "Standard",
+      "origin": "Adresse de livraison :\nBJ • Électrique • Zhejiang, China • 220V personnalisée",
+      "unit": "Pièce (pc)",
+      "basePriceCny": 119.81,
+      "baseUnit": "Pièce (pc)",
+      "icon": "🛠️",
+      "rating": 4.9,
+      "status": "Sourcé Usine",
+      "hasVideoDemo": true,
+      "images": [
+        "https://s.alicdn.com/@sc04/kf/H61bb6d872fea4070985ec828f14f1042V.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H415b33f91db447bc9cafd20bb5408dcfd.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H8c24fa76ab894addaf7aa70d5163b1d7w.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/He4873f418fd34b2bb1b552e6d2f88b72J.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H921081ac2279473cb2e757720b65d3e6E.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hc7fee9df42bb4783b53be9c25deca36fk.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H61bb6d872fea4070985ec828f14f1042V.jpg_720x720q50.jpg"
+      ],
+      "specifications": [
+        {
+          "category": "Spécifications Techniques",
+          "label": "Type de foret",
+          "value": "impact drill"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Source dalimentation",
+          "value": "Électrique"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Tension électrique",
+          "value": "220-240V~, 50/60Hz"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Type Chuck",
+          "value": "SDS-Max"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Chuck Taille",
+          "value": "13mm"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Diamètre max. de perçage",
+          "value": "13mm"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Max Couple",
+          "value": "2800RPM"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Puissance d'Entrée Nominale",
+          "value": "850W"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Type de moteur",
+          "value": "Moteur de brosse"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Vitesse à vide",
+          "value": "0-2800rpm"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Nombre de vitesses",
+          "value": "VARIABLE SPEED"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Capacité de La batterie",
+          "value": "1.5AH"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Fréquence d'impact",
+          "value": "50Hz"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Cote d'impact",
+          "value": "Jusqu'à 124in-lb"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Réversible",
+          "value": "Non"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Matériel",
+          "value": "Acier allié"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Poids",
+          "value": "2.4kg"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Classe",
+          "value": "Industriel"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Caractéristiques spéciales de perceuse",
+          "value": "Vitesse variable"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Application",
+          "value": "Industrial"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Accessoires",
+          "value": "None"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Garantie commerciale",
+          "value": "12 monthes"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Support personnalisé",
+          "value": "OEM, ODM, OBM"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Gamme évaluée de tension",
+          "value": "220-240V~"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Lieu dorigine",
+          "value": "Zhejiang, China"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Numéro de modèle",
+          "value": "PS11008"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Nom de marque",
+          "value": "Pegatec"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Dimensions",
+          "value": "30*25.5*8CM"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Couple max.",
+          "value": "3000RPM"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Vitesse maximale",
+          "value": "3000rpm"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Intensité de sortie du chargeur",
+          "value": "1A"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Voltage",
+          "value": "220V-240V"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Product name",
+          "value": "Lithium Cordless Drill"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Keyword",
+          "value": "Electric Drill Power Tools"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Color",
+          "value": "Yellow"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Type",
+          "value": "Li-ion Battery Cordless Drill"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "MOQ",
+          "value": "500 Pcs"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Brand",
+          "value": "OEM Support"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Function",
+          "value": "Mulit-purpose"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Packing",
+          "value": "Colour Box"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Article unique",
+          "value": "seul paquet taille"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "30X25.5X8 cm",
+          "value": "unique poids brut"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Source d'alimentation",
+          "value": "220V personnalisée"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Type Chuck / Mandrin",
+          "value": "SDS-Max"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Max Couple / Vitesse",
+          "value": "2800RPM"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Capacité de personnalisation",
+          "value": "Personnalisation simple"
+        },
+        {
+          "category": "Emballage & Logistique",
+          "label": "Port d'expédition",
+          "value": "À négocier"
+        },
+        {
+          "category": "Garantie & Normes",
+          "label": "Garantie usine",
+          "value": "3 ans, OEM"
+        }
+      ],
+      "variants": {
+        "types": [
+          "Standard Pro"
+        ],
+        "longueurs": [
+          "25 mm",
+          "35 mm",
+          "55 mm",
+          "70 mm",
+          "80 mm"
+        ],
+        "finitions": [
+          "Zingué",
+          "Noir Mat",
+          "Inox"
+        ]
+      },
+      "tierPricing": [
+        {
+          "minQty": "500 - 4500 Pièce (pc)",
+          "priceCny": 119.81,
+          "priceFcfa": 10184
+        },
+        {
+          "minQty": "≥ 5000 Pièce (pc)",
+          "priceCny": 110.23,
+          "priceFcfa": 9369
+        }
+      ],
+      "suppliers": [
+        {
+          "id": "sup-1787447166447",
+          "name": "Avis sur la boutique (212)",
+          "city": "Adresse de livraison :\nBJ, Adresse de livraison :\nBJ",
+          "badge": "Verified Supplier",
+          "years": "5 ans d'expérience",
+          "phone": "+86 22 2839 5888",
+          "whatsapp": "+86 138 2029 8876",
+          "wechat": "Hardware_Export_Direct",
+          "priceCny": 119.81,
+          "moq": 500,
+          "unit": "Pièce (pc)",
+          "rating": 4.9,
+          "isPreferred": true,
+          "platform": "alibaba",
+          "url": "https://www.alibaba.com/product-detail/PEGATEC-850W-Electric-Impact-Drill-Li_1601782121331.html?spm=a2700.prosearch.normal_offer.d_image.517667afATjRi8&priceId=20f67f2260714b1891a4b89006ae0346",
+          "leadTime": "5-10 jours"
+        }
+      ],
+      "videoDemo": {
+        "source": "Démonstration Réelle",
+        "views": "240K vues",
+        "videoUrl": "https://gv.videocdn.alibaba.com/icbu_vod_video/video_target/gv9d-9a3627b7-a187c84c-9c2cf7f0-316e/trans/aidc/hj1us1-h264-hd.mp4?bizCode=icbu_vod_video",
+        "transcriptCn": "五金配件工厂直发",
+        "script30s": {
+          "hook": "🔥 Découvrez la quincaillerie directe usine !",
+          "demo": "Installation rapide sans perçage préalable.",
+          "artisanTip": "💡 Idéal pour les chantiers intensifs et les ateliers.",
+          "cta": "Commandez directement au tarif fabricant."
+        }
+      }
+    },
+    {
+      "id": "prod-1787444934296",
+      "sku": "QUIN-OUT-4L7A",
+      "category": "outillage",
+      "categoryName": "Gabarits & Outillage Pro",
+      "categoryIcon": "🛠️",
+      "titleFr": "Perceuse Visseuse Professionnelle sans Fil Moteur Brushless 20V",
+      "titleCn": "优质外贸家具五金配件",
+      "material": "Acier Haute Résistance",
+      "finish": "Standard Pro",
+      "dimensions": "Standard Export Pro",
+      "weightCapacity": "Standard Pro",
+      "measuringSystem": "Métrique",
+      "headType": "Standard",
+      "origin": "Adresse de livraison :\nBJ",
+      "unit": "Pièce (pc)",
+      "basePriceCny": 119.81,
+      "baseUnit": "Pièce (pc)",
+      "icon": "🛠️",
+      "rating": 4.9,
+      "status": "Sourcé Usine",
+      "hasVideoDemo": true,
+      "images": [
+        "https://s.alicdn.com/@sc04/kf/H61bb6d872fea4070985ec828f14f1042V.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H415b33f91db447bc9cafd20bb5408dcfd.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H8c24fa76ab894addaf7aa70d5163b1d7w.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/He4873f418fd34b2bb1b552e6d2f88b72J.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H921081ac2279473cb2e757720b65d3e6E.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hc7fee9df42bb4783b53be9c25deca36fk.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H61bb6d872fea4070985ec828f14f1042V.jpg_720x720q50.jpg"
+      ],
+      "specifications": [
+        {
+          "label": "Matériau Principal",
+          "value": "Acier Allié Pro"
+        },
+        {
+          "label": "Finition de Surface",
+          "value": "Zingué / Nickelé"
+        },
+        {
+          "label": "Unité de Vente",
+          "value": "Pièce (pc)"
+        },
+        {
+          "label": "Système de Mesure",
+          "value": "Métrique & Pouces"
+        },
+        {
+          "label": "Forme de Tête / Fixation",
+          "value": "Standard"
+        },
+        {
+          "label": "Lieu d'Origine Usine",
+          "value": "Adresse de livraison :\nBJ"
+        },
+        {
+          "label": "Dimensions / Tailles",
+          "value": "Gamme Standard"
+        }
+      ],
+      "variants": {
+        "types": [
+          "Standard Pro"
+        ],
+        "longueurs": [
+          "25 mm",
+          "35 mm",
+          "55 mm",
+          "70 mm",
+          "80 mm"
+        ],
+        "finitions": [
+          "Zingué",
+          "Noir Mat",
+          "Inox"
+        ]
+      },
+      "tierPricing": [
+        {
+          "minQty": "2 - 19 Pièce (pc)",
+          "priceCny": 119.81,
+          "priceFcfa": 10184
+        },
+        {
+          "minQty": "20 - 199 Pièce (pc)",
+          "priceCny": 5.88,
+          "priceFcfa": 500
+        },
+        {
+          "minQty": "≥ 200 Pièce (pc)",
+          "priceCny": 89.73,
+          "priceFcfa": 7627
+        }
+      ],
+      "suppliers": [
+        {
+          "id": "sup-1787444934296",
+          "name": "Avis sur la boutique (212)",
+          "city": "Adresse de livraison :\nBJ, Adresse de livraison :\nBJ",
+          "badge": "Verified Supplier",
+          "years": "5 ans d'expérience",
+          "phone": "+86 22 2839 5888",
+          "whatsapp": "+86 138 2029 8876",
+          "wechat": "Hardware_Export_Direct",
+          "priceCny": 119.81,
+          "moq": 2,
+          "unit": "Pièce (pc)",
+          "rating": 4.9,
+          "isPreferred": true,
+          "platform": "alibaba",
+          "url": "https://www.alibaba.com/product-detail/PEGATEC-850W-Electric-Impact-Drill-Li_1601782121331.html?spm=a2700.prosearch.normal_offer.d_image.517667afATjRi8&priceId=20f67f2260714b1891a4b89006ae0346",
+          "leadTime": "5-10 jours"
+        }
+      ],
+      "videoDemo": {
+        "source": "Démonstration Réelle",
+        "views": "240K vues",
+        "videoUrl": "https://gv.videocdn.alibaba.com/icbu_vod_video/video_target/gv9d-9a3627b7-a187c84c-9c2cf7f0-316e/trans/aidc/hj1us1-h264-hd.mp4?bizCode=icbu_vod_video",
+        "transcriptCn": "五金配件工厂直发",
+        "script30s": {
+          "hook": "🔥 Découvrez la quincaillerie directe usine !",
+          "demo": "Installation rapide sans perçage préalable.",
+          "artisanTip": "💡 Idéal pour les chantiers intensifs et les ateliers.",
+          "cta": "Commandez directement au tarif fabricant."
+        }
+      }
+    },
+    {
+      "id": "prod-1787435521146",
+      "sku": "QUIN-VIS-EOLN",
+      "category": "visserie",
+      "categoryName": "Visserie, Boulons & Fixations",
+      "categoryIcon": "🔩",
+      "titleFr": "Vis à Bois et Métal Haute Résistance Galvanisée / Inox",
+      "titleCn": "六角自钻自攻螺丝 镀锌带垫 (源头工厂直供)",
+      "material": "Acier Inoxydable Inox SS304 / SS316 (Qualité Marine A4-80)",
+      "finish": "Zingué Blanc, Noir Oxyde, Galvanisé à Chaud, Inox Brut",
+      "dimensions": "Diamètre M4.2 / M4.8 / M5.5 • Longueurs 25mm, 35mm, 55mm, 70mm, 80mm",
+      "weightCapacity": "Résistance à la traction > 850 MPa • Couple de rupture élevé",
+      "measuringSystem": "Métrique & Pouces (ISO 9001 / DIN standard)",
+      "headType": "Tête Fraisée / Tête Cylindrique Plate",
+      "origin": "Tianjin, China (Hub Mondial Visserie & Fixations)",
+      "unit": "Kilogramme (kg)",
+      "basePriceCny": 8.28,
+      "baseUnit": "Kilogramme (kg)",
+      "icon": "🔩",
+      "rating": 4.9,
+      "status": "Sourcé Usine",
+      "hasVideoDemo": true,
+      "images": [
+        "https://sc04.alicdn.com/kf/H2fbb24a0fd614c8d84e89a47ad40b636O.jpg",
+        "https://sc04.alicdn.com/kf/H1a25e230c03541cdac4ebbb393ef6252A.png",
+        "https://sc04.alicdn.com/kf/Heabf1a3602b04873ab9be67c8c92e6cdw.png",
+        "https://sc04.alicdn.com/kf/Hb1b1339ee1ad46b6bfd0fa4dcd8723a43.png",
+        "https://sc04.alicdn.com/kf/H15417170ea2b407e8ec19eeef6072438r.png",
+        "https://sc04.alicdn.com/kf/H3991b48c8d974feebbf0e02a679d6a3bQ.png"
+      ],
+      "specifications": [
+        {
+          "label": "Matériau Principal",
+          "value": "Acier Inoxydable Inox SS304 / SS316 (Qualité Marine A4-80)"
+        },
+        {
+          "label": "Finition de Surface",
+          "value": "Zingué Blanc, Noir Oxyde, Galvanisé à Chaud, Inox Brut"
+        },
+        {
+          "label": "Unité de Vente",
+          "value": "Kilogramme (kg)"
+        },
+        {
+          "label": "Système de Mesure",
+          "value": "Métrique & Pouces (ISO 9001 / DIN standard)"
+        },
+        {
+          "label": "Forme de Tête / Fixation",
+          "value": "Tête Fraisée / Tête Cylindrique Plate"
+        },
+        {
+          "label": "Lieu d'Origine Usine",
+          "value": "Tianjin, China (Hub Mondial Visserie & Fixations)"
+        },
+        {
+          "label": "Dimensions / Tailles",
+          "value": "Diamètre M4.2 / M4.8 / M5.5 • Longueurs 25mm, 35mm, 55mm, 70mm, 80mm"
+        }
+      ],
+      "variants": {
+        "types": [
+          "Auto-Forage (Self-Drilling)",
+          "Vis de Taraudage",
+          "Vis à Bois Pro",
+          "Tête Hexagonale"
+        ],
+        "longueurs": [
+          "25 mm",
+          "35 mm",
+          "55 mm",
+          "70 mm",
+          "80 mm",
+          "100 mm"
+        ],
+        "finitions": [
+          "Zingué Brillant",
+          "Noir Mat Oxyde",
+          "Inox SS304",
+          "Inox SS316"
+        ]
+      },
+      "tierPricing": [
+        {
+          "minQty": "1 000 - 26 999 kg (ou 5 000 pcs)",
+          "priceCny": 8.2,
+          "priceFcfa": 704
+        },
+        {
+          "minQty": "≥ 27 000 kg (ou 50 000 pcs)",
+          "priceCny": 7.6,
+          "priceFcfa": 646
+        }
+      ],
+      "suppliers": [
+        {
+          "id": "sup-1787435521146",
+          "name": "Tianjin Yufeng Screw Making Co., Ltd.",
+          "city": "Tianjin, Chine (Pôle Visserie & Fixations)",
+          "badge": "Fabricant Vérifié (Verified Supplier)",
+          "years": "8 ans d'expérience",
+          "phone": "+86 22 2839 5888",
+          "whatsapp": "+86 138 2029 8876",
+          "wechat": "Yufeng_Hardware_Export",
+          "priceCny": 8.28,
+          "moq": 1000,
+          "unit": "Kilogramme (kg)",
+          "rating": 4.9,
+          "isPreferred": true,
+          "platform": "alibaba",
+          "url": "https://www.alibaba.com/product-detail/Metric-3-5x25-Drywall-Screw-Drywall_1600729577752.html",
+          "leadTime": "5-10 jours"
+        }
+      ],
+      "videoDemo": {
+        "source": "Démonstration Usine HD",
+        "views": "240K vues",
+        "videoUrl": "https://assets.mixkit.co/videos/preview/mixkit-kitchen-drawer-opening-and-closing-smoothly-41224-large.mp4",
+        "transcriptCn": "六角自钻自攻螺丝 镀锌带垫 (源头工厂直供)",
+        "script30s": {
+          "hook": "🔥 Découvrez la quincaillerie directe usine !",
+          "demo": "Pointe auto-foreuse haute pénétration : perçage et vissage direct sans avant-trou, gain de 50% de temps de pose sur chantier.",
+          "artisanTip": "💡 Idéal pour les chantiers intensifs et les ateliers.",
+          "cta": "Commandez directement au tarif fabricant."
+        }
+      }
+    },
+    {
+      "id": "prod-003",
+      "sku": "OUT-GAB-003",
+      "category": "outillage",
+      "titleFr": "Gabarit de Perçage Rapide & Précision pour Charnières 35mm en Aluminium",
+      "titleCn": "全铝合金 35mm 铰链开孔定位神器 (带快速夹紧)",
+      "material": "Corps Aluminium CNC Massif Anodisé & Mèche Carbure Tungstène",
+      "weightCapacity": "Usage Intensif Quotidien Atelier & Chantier",
+      "dimensions": "Entraxe réglable 3mm, 4mm, 5mm, 6mm",
+      "icon": "🛠️",
+      "rating": 5,
+      "status": "Gain Productivité",
+      "hasVideoDemo": true,
+      "images": [
+        "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800&q=80",
+        "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&q=80",
+        "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=800&q=80"
+      ],
+      "variants": {
+        "pack": [
+          "Gabarit Seul",
+          "Pack Pro avec 2 Mèches 35mm + Clé Allen",
+          "Coffret Valise Rigide Alu"
+        ],
+        "diametresSupportes": [
+          "Standard 35mm",
+          "Option 26mm + 35mm"
+        ]
+      },
+      "specifications": [
+        {
+          "label": "Précision d'alignement",
+          "value": "Usinage CNC ±0.05 mm"
+        },
+        {
+          "label": "Type de serrage",
+          "value": "Presse rapide intégrée avec patin caoutchouc"
+        },
+        {
+          "label": "Contrôle de profondeur",
+          "value": "Bague d'arrêt réglable 10mm à 15mm"
+        },
+        {
+          "label": "Poids de l'outil",
+          "value": "620 g (Ultra-robuste)"
+        }
+      ],
+      "suppliers": [
+        {
+          "id": "sup-jinhua-05",
+          "name": "Yongkang Precision Woodworking Tools",
+          "city": "Yongkang (Zhejiang)",
+          "priceCny": 28,
+          "moq": 10,
+          "rating": 5,
+          "badge": "Usine Outillage Bois (10 ans)",
+          "isPreferred": true,
+          "url1688": "https://detail.1688.com/offer/556789123.html",
+          "leadTime": "2 jours"
+        }
+      ],
+      "videoDemo": {
+        "source": "Douyin (Menuiserie Pro)",
+        "views": "1.2M vues",
+        "videoUrl": "https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-and-drilling-wood-41226-large.mp4",
+        "transcriptCn": "木工必备开孔神器！全铝合金打造，自带快速夹具，一按一压3秒搞定一个铰链孔。",
+        "script30s": {
+          "hook": "⚡ Percez vos trous de charnières 35mm en 3 secondes sans jamais tracer au crayon !",
+          "demo": "Ce gabarit en aluminium massif intègre un système de serrage rapide et une bague de profondeur. Vous posez, vous serrez, vous percez : profondeur et alignement 100% parfaits.",
+          "artisanTip": "💡 Le gain de temps : Vous préparez 10 portes de placard en 5 minutes sans aucun risque de transpercer le panneau.",
+          "cta": "L'outil qui se rentabilise dès le premier meuble fabriqué."
+        }
+      },
+      "benefitsArtisan": "Zéro déchet de panneau percé de travers. Zéro mesure manuelle répétitive.",
+      "benefitsClient": "Des portes de placard parfaitement droites et alignées au millimètre.",
+      "recommendedTools": "Perceuse-visseuse standard 18V."
+    }
+  ]
+}

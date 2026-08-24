@@ -1,0 +1,31 @@
+﻿# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Node dependencies & dist
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment & local secrets
+.env
+.env.*
+!.env.example
+cookies.txt
+www.alibaba.com_cookies.txt
+test_ping.txt
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.class
+
+# Editors
+.vscode/*
+.idea
+.DS_Store
+Thumbs.db

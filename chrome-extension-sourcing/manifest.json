@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "App Sourcing - Importateur 1-Clic",
+  "version": "1.0.2",
+  "description": "Importez instantanément vos produits Alibaba, 1688, Taobao en 1 clic vers votre application Sourcing sans Captcha.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Importer ce produit dans App Sourcing"
+  }
+}
