@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import { execFile } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { scrapeProductInfo } from './src/server/productExtractor.js';
 
 function scraperApiPlugin() {
   return {
@@ -43,6 +42,7 @@ function scraperApiPlugin() {
 
                 // 2. Repli vers le moteur Node.js si Python rencontre un souci
                 try {
+                  const { scrapeProductInfo } = await import('./src/server/productExtractor.js');
                   const data = await scrapeProductInfo(url);
                   res.statusCode = 200;
                   res.setHeader('Content-Type', 'application/json; charset=utf-8');
