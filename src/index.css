@@ -870,3 +870,46 @@ body {
   border-color: #38BDF8 !important;
   box-shadow: 0 8px 24px rgba(2, 132, 199, 0.25) !important;
 }
+
+/* 📜 BARRES DE DÉFILEMENT TOUJOURS VISIBLES & ÉLÉGANTES */
+.custom-menu-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: #3B82F6 rgba(255, 255, 255, 0.08) !important;
+  scrollbar-gutter: stable;
+}
+
+.custom-menu-scroll::-webkit-scrollbar {
+  width: 7px !important;
+  height: 7px !important;
+  display: block !important;
+}
+
+.custom-menu-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-radius: 6px !important;
+}
+
+.custom-menu-scroll::-webkit-scrollbar-thumb {
+  background: #3B82F6 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.7) !important;
+}
+
+.custom-menu-scroll::-webkit-scrollbar-thumb:hover {
+  background: #60A5FA !important;
+}
+
+/* ⚠️ BADGE DOUBLON FLOTTANT */
+.duplicate-badge {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #EF4444;
+  color: #FCA5A5;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  animation: pulse 2s infinite ease-in-out;
+}

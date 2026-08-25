@@ -21,7 +21,8 @@ import {
   Scale,
   Copy,
   Layers,
-  Award
+  Award,
+  AlertTriangle
 } from 'lucide-react';
 import { MultiSupplierComparator } from './MultiSupplierComparator';
 import { ProductGallery } from './ProductGallery';
@@ -36,7 +37,8 @@ export function ArticleDetailDrawer({
   onOpenImageViewer, 
   settings, 
   formatPrice,
-  onImportFromClipboard 
+  onImportFromClipboard,
+  isDuplicate = false 
 }) {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('tech'); // 'tech' | 'suppliers' | 'dossier' | 'script' | 'pricing'
@@ -349,6 +351,12 @@ export function ArticleDetailDrawer({
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                   SKU: {product.sku}
                 </span>
+                {isDuplicate && (
+                  <span className="duplicate-badge">
+                    <AlertTriangle size={12} color="#EF4444" />
+                    <span>⚠️ Doublon Détecté (Plusieurs exemplaires)</span>
+                  </span>
+                )}
               </div>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 800, lineHeight: 1.3, color: 'var(--text-primary)', margin: '0.2rem 0' }}>
                 {product.titleFr}

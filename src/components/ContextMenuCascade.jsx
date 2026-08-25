@@ -279,14 +279,17 @@ export function ContextMenuCascade({
         </div>
 
         {/* 🗂️ 2. LISTE DÉFILANTE DES CATÉGORIES PRINCIPALES */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '2px',
-          maxHeight: '240px',
-          overflowY: 'auto',
-          paddingRight: '2px'
-        }}>
+        <div 
+          className="custom-menu-scroll"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            maxHeight: '240px',
+            overflowY: 'auto',
+            paddingRight: '4px'
+          }}
+        >
           {validMainCategories.map((mainCat) => {
             const isSelected = activeHoverCategory === mainCat.id;
             const hasChildren = Array.isArray(mainCat.subCategories) && mainCat.subCategories.length > 0;
@@ -406,14 +409,17 @@ export function ContextMenuCascade({
           </div>
 
           {/* 📜 LISTE DÉFILANTE DES SOUS-CATÉGORIES */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-            maxHeight: '270px',
-            overflowY: 'auto',
-            paddingRight: '2px'
-          }}>
+          <div 
+            className="custom-menu-scroll"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px',
+              maxHeight: '260px',
+              overflowY: 'auto',
+              paddingRight: '4px'
+            }}
+          >
             {subCats.map((sub) => {
               const isSelected = currentCatId === sub.id;
               return (

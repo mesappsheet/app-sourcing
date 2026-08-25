@@ -771,6 +771,42 @@ export function App() {
     return counts;
   }, [products, categoriesTree, inboxCount]);
 
+  // 🔍 DÉTECTION AUTOMATIQUE DES DOUBLONS DANS LE CATALOGUE
+  const duplicateProductIds = useMemo(() => {
+    const dups = new Set();
+    if (!Array.isArray(products) || products.length <= 1) return dups;
+
+    const urlMap = {};
+    const titleMap = {};
+
+    products.forEach(p => {
+      if (!p) return;
+      // 1. Même URL source
+      if (p.sourceUrl && p.sourceUrl.length > 10) {
+        const cleanUrl = p.sourceUrl.split('?')[0].trim().toLowerCase();
+        if (urlMap[cleanUrl]) {
+          dups.add(p.id);
+          dups.add(urlMap[cleanUrl]);
+        } else {
+          urlMap[cleanUrl] = p.id;
+        }
+      }
+
+      // 2. Même Titre FR significatif
+      if (p.titleFr && p.titleFr.length > 8) {
+        const cleanTitle = p.titleFr.trim().toLowerCase().slice(0, 50);
+        if (titleMap[cleanTitle]) {
+          dups.add(p.id);
+          dups.add(titleMap[cleanTitle]);
+        } else {
+          titleMap[cleanTitle] = p.id;
+        }
+      }
+    });
+
+    return dups;
+  }, [products]);
+
   // Produits filtrés selon la catégorie / sous-catégorie sélectionnée
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
@@ -857,6 +893,9 @@ export function App() {
 
     // ⚡ Mise à jour directe Supabase Cloud
     updateProductCategoryInDb(productId, finalCatId, activeWorkspaceId);
+
+    // Mettre à jour l'article sélectionné si ouvert
+    setSelectedProduct(prev => (prev && prev.id === productId ? { ...prev, category: finalCatId } : prev));
 
     // Nom convivial pour le Toast
     let catDisplayName = finalCatId === 'inbox' ? 'Magasin d\'Arrivage (Transit)' : finalCatId;
@@ -1333,6 +1372,7 @@ export function App() {
                       categories={categoriesTree}
                       onMoveProductToCategory={handleMoveProductToCategory}
                       onOpenContextMenu={handleOpenContextMenu}
+                      isDuplicate={duplicateProductIds.has(product.id)}
                     />
                   ))}
                 </div>
@@ -1432,6 +1472,7 @@ export function App() {
           onOpenImageViewer={handleOpenImageViewer}
           settings={settings}
           formatPrice={formatPrice}
+          isDuplicate={duplicateProductIds.has(selectedProduct.id)}
           onImportFromClipboard={(data, targetId) => {
             let pData = data;
             if (typeof data === 'string') {

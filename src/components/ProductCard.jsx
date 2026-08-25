@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Camera, Video, Maximize2, Sparkles, Play, Pause, Factory, GripVertical, Tag, Layers, CornerDownRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Camera, Video, Maximize2, Sparkles, Play, Pause, Factory, GripVertical, Tag, Layers, CornerDownRight, AlertTriangle } from 'lucide-react';
 
 export function ProductCard({ 
   product, 
@@ -9,7 +9,8 @@ export function ProductCard({
   formatPrice,
   categories = [],
   onMoveProductToCategory,
-  onOpenContextMenu
+  onOpenContextMenu,
+  isDuplicate = false
 }) {
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -131,22 +132,39 @@ export function ProductCard({
             position: 'absolute',
             top: 10,
             left: 10,
-            background: isPinduoduo 
-              ? 'linear-gradient(135deg, rgba(225, 29, 72, 0.9), rgba(190, 18, 60, 0.9))'
-              : 'linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.9))',
-            backdropFilter: 'blur(6px)',
-            padding: '0.2rem 0.55rem',
-            borderRadius: '6px',
-            fontSize: '0.68rem',
-            fontWeight: 800,
-            color: 'white',
             display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+            flexDirection: 'column',
+            gap: '4px',
             zIndex: 5
           }}>
-            <span>{isPinduoduo ? '🔴 Pinduoduo Usine' : '🟡 Alibaba Verified'}</span>
+            <div style={{
+              background: isPinduoduo 
+                ? 'linear-gradient(135deg, rgba(225, 29, 72, 0.9), rgba(190, 18, 60, 0.9))'
+                : 'linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.9))',
+              backdropFilter: 'blur(6px)',
+              padding: '0.2rem 0.55rem',
+              borderRadius: '6px',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+            }}>
+              <span>{isPinduoduo ? '🔴 Pinduoduo Usine' : '🟡 Alibaba Verified'}</span>
+            </div>
+
+            {/* ⚠️ SIGNALEMENT DE DOUBLON */}
+            {isDuplicate && (
+              <div 
+                className="duplicate-badge"
+                title="⚠️ Cet article a été importé en plusieurs exemplaires dans votre espace."
+              >
+                <AlertTriangle size={11} color="#EF4444" />
+                <span>Doublon Détecté</span>
+              </div>
+            )}
           </div>
 
           {/* Poignée de Glissement (Drag Handle) Top Right */}
