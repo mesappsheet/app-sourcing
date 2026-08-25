@@ -1,6 +1,212 @@
 {
   "products": [
     {
+      "id": "prod-1787617034590",
+      "sku": "IMP-4590",
+      "titleFr": "Coupe-pommes frites en acier inoxydable de haute qualité avec presse-purée antidérapante pour usage en cuisine",
+      "titleCn": "",
+      "category": "coulisses",
+      "material": "Standard Qualité Usine",
+      "dimensions": "Standard Pro Export",
+      "images": [
+        "https://s.alicdn.com/@sc04/kf/Hc4077d04416445398f22ae4ccd796e395.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H3ddacd4001ed4f7fb615c127b33985e82.png_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H4a60141daf8c43adb5567ba089b0f7565.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/H675cb15543684ad981ec0a1cc45e1386s.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hb2fa9f37557d4d14adb8c1abca806af5f.jpg_960x960q80.jpg",
+        "https://s.alicdn.com/@sc04/kf/Hc4077d04416445398f22ae4ccd796e395.png_720x720q50.jpg",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01OmnHN91VmMXKZ06f7_!!6000000002695-2-tps-60-60.png",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01uYrsmD1Qshwegu20P_!!6000000002032-2-tps-60-60.png",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01PkPfW11Tz4AyzYFnc_!!6000000002452-2-tps-145-42.png",
+        "https://s.alicdn.com/@sc04/kf/HTB1WsqjLXXXXXbgXXXXq6xXFXXXW.jpg"
+      ],
+      "hasVideoDemo": true,
+      "videoDemo": {
+        "source": "Démonstration Usine Réelle",
+        "videoUrl": "https://gv.videocdn.alibaba.com/icbu_vod_video/video_target/gv9f-eab3a4eb-8bd1e1ce-9e1511c6-3f5f/trans/aidc/esmxnp-h264-hd.mp4?bizCode=icbu_vod_video",
+        "views": "100K vues"
+      },
+      "specifications": [
+        {
+          "category": "Spécifications Techniques",
+          "label": "Quantité (pièce)",
+          "value": "1 - 1 200"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "1 201 - 2 400",
+          "value": "> 2 400"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Durée estimée (jours)",
+          "value": "40"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "45",
+          "value": "À négocier"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Type dustensiles pour fruits et légumes",
+          "value": "Broyeurs et Ricers de pomme de terre"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Matériau",
+          "value": "Métal"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Caractéristique",
+          "value": "En stock"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Nombre de pièces",
+          "value": "1"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Numéro de modèle",
+          "value": "RH-6058"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Type",
+          "value": "Outils & Fruit et Légumes"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Lieu dorigine",
+          "value": "Guangdong, China"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Nom de marque",
+          "value": "OEM"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Logo",
+          "value": "Logo personnalisé"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Nom du produit",
+          "value": "Presse-purée"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Utilisation",
+          "value": "Cuisine Maison"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Mot-clé",
+          "value": "ricer"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Quantité minimale de commande",
+          "value": "3600"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Conditions de paiement",
+          "value": "T/T Acompte de 30 % + Solde de 70 %"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Échantillon",
+          "value": "Disponible"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "PORT",
+          "value": "Shenzhen, Chine"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Qualité",
+          "value": "de haute qualité"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "Article unique",
+          "value": "seul paquet taille"
+        },
+        {
+          "category": "Spécifications Techniques",
+          "label": "33X15X11 cm",
+          "value": "unique poids brut"
+        },
+        {
+          "category": "Emballage & Logistique",
+          "label": "Expédition Changer Express Frais de port",
+          "value": "Estimation 12 888 560 F CFA pour 1,200 pièces Livraison estimée entre 6-25 jours ouvrables * Les frais de transport indiqués sont des prévisions à titre indicatif. Veuillez contacter le fournisseur pour obtenir un devis définitif."
+        },
+        {
+          "category": "Emballage & Logistique",
+          "label": "Express Frais de port",
+          "value": "Estimation 12 888 560 F CFA pour 1,200 pièces Livraison estimée entre 6-25 jours ouvrables"
+        },
+        {
+          "category": "Emballage & Logistique",
+          "label": "Frais de port",
+          "value": "Estimation 12 888 560 F CFA pour 1,200 pièces"
+        },
+        {
+          "category": "Personnalisation & OEM",
+          "label": "Capacité de personnalisation",
+          "value": "Personnalisation simple"
+        },
+        {
+          "category": "Emballage & Logistique",
+          "label": "Port d'expédition",
+          "value": "Estimation 12 888 560 F CFA pour 1,200 pièces"
+        }
+      ],
+      "factoryName": "Yangjiang Ronghong Houseware Co., Ltd.",
+      "factoryCity": "Guangdong, Chine",
+      "tierPricing": [
+        {
+          "minQty": "1-999 pièce",
+          "priceCny": 151630.12,
+          "priceFcfa": 12888560
+        }
+      ],
+      "moq": "1-999 pièce",
+      "suppliers": [
+        {
+          "id": "sup-1787617034590",
+          "name": "Yangjiang Ronghong Houseware Co., Ltd.",
+          "platform": "alibaba",
+          "city": "Guangdong, Chine",
+          "priceCny": 38.29,
+          "moq": "1-999 pièce",
+          "priceTiers": [
+            {
+              "minQty": "1-999 pièce",
+              "priceCny": 151630.12,
+              "priceFcfa": 12888560
+            }
+          ],
+          "rating": 4.9,
+          "badge": "Verified Supplier",
+          "years": "14 ans d'expérience",
+          "isPreferred": true,
+          "url": "https://www.alibaba.com/product-detail/Stainless-Steel-High-Grade-Potato-Cutter_1601621113863.html?spm=a2700.prosearch.normal_offer.d_image.488967af317Skb&priceId=4e2c584f302c4c09a2f9179ef947f4be",
+          "leadTime": "5 - 15 jours"
+        }
+      ],
+      "basePriceCny": 38.29,
+      "priceCny": 38.29,
+      "unit": "Pièce (pc)",
+      "sourceUrl": "https://www.alibaba.com/product-detail/Stainless-Steel-High-Grade-Potato-Cutter_1601621113863.html?spm=a2700.prosearch.normal_offer.d_image.488967af317Skb&priceId=4e2c584f302c4c09a2f9179ef947f4be"
+    },
+    {
       "id": "prod-1787611057901",
       "sku": "IMP-7901",
       "titleFr": "DH010 65mm outils électriques 0810 démolition marteau rotatif ph65a rock démolition marteau chine 0810 220v 5kg marteau de démolition",

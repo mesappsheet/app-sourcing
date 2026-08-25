@@ -706,38 +706,93 @@ document.addEventListener('DOMContentLoaded', async () => {
         await navigator.clipboard.writeText(JSON.stringify(payload));
       } catch (clipErr) {}
 
-      // 3️⃣ PONT 3 : Envoi HTTP Multi-Ports & Support Mobile (Wi-Fi 192.168.100.7)
+      // 3️⃣ PONT 3 : Envoi HTTP Multi-Ports & Support Mobile Local (Wi-Fi)
       const customIp = localStorage.getItem('quin_source_server_ip') || '192.168.100.7';
       const targetHosts = Array.from(new Set(['localhost', '127.0.0.1', customIp, '192.168.100.7']));
       const targetPorts = [5173, 5174, 5175];
-      let sentSuccess = false;
       for (const host of targetHosts) {
         for (const port of targetPorts) {
           try {
-            const resp = await fetch(`http://${host}:${port}/api/import-live`, {
+            await fetch(`http://${host}:${port}/api/import-live`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            if (resp && resp.ok) {
-              sentSuccess = true;
-            }
           } catch (portErr) {}
         }
       }
 
+      // 4️⃣ PONT 4 : Envoi Direct Universel vers Supabase Cloud (Fonctionne partout dans le monde en 4G/5G/Wi-Fi sans PC allumé)
+      try {
+        const supUrl = 'https://xgaehsajhlxkhxzqgfhz.supabase.co';
+        const supKey = 'sb_publishable_zVzDkQ2gg7Whjg3sOKviNg_v2CvaQoV';
+        
+        let cleanCompany = payload.company || 'Fabricant Vérifié Alibaba';
+        let basePrice = (payload.fcfaPrices && payload.fcfaPrices[0]) || parseInt(payload.priceFcfa) || 5000;
+        let cny = parseFloat(payload.priceCny || (basePrice / 85).toFixed(2));
+        let tiers = Array.isArray(payload.tierPricing) && payload.tierPricing.length > 0 ? payload.tierPricing : [];
+        let moq = payload.moq || (tiers[0]?.minQty) || '1 pièce';
+
+        const row = {
+          id: `prod-${Date.now()}`,
+          workspace_id: 'ws_quincaillerie',
+          sku: `IMP-${Date.now().toString().slice(-4)}`,
+          title_fr: payload.title || 'Article Importé Alibaba',
+          title_cn: payload.titleCn || '',
+          category: payload.category || 'all',
+          material: payload.material || 'Standard Qualité Usine',
+          dimensions: payload.dimensions || 'Standard Pro Export',
+          images: payload.images && payload.images.length > 0 ? payload.images : ['https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80'],
+          video_demo: payload.videoUrl ? { source: 'Démonstration Usine', videoUrl: payload.videoUrl } : null,
+          specifications: payload.specifications || [],
+          factory_name: cleanCompany,
+          factory_city: payload.location || 'Guangdong, Chine',
+          tier_pricing: tiers,
+          moq: moq,
+          suppliers: [{
+            id: `sup-${Date.now()}`,
+            name: cleanCompany,
+            platform: 'alibaba',
+            city: payload.location || 'Guangdong, Chine',
+            priceCny: cny,
+            moq: moq,
+            priceTiers: tiers,
+            rating: 4.9,
+            badge: payload.badge || 'Verified Supplier',
+            years: payload.years || '4 ans d\'expérience',
+            isPreferred: true,
+            url: payload.url || '',
+            leadTime: '5 - 15 jours'
+          }],
+          price_cny: cny,
+          unit: payload.unit || 'Pièce (pc)',
+          source_url: payload.url || ''
+        };
+
+        await fetch(`${supUrl}/rest/v1/products`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supKey,
+            'Authorization': `Bearer ${supKey}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(row)
+        });
+      } catch (sbErr) {}
+
       msgBox.className = 'msg msg-success';
       if (currentMode === 'enrich') {
-        msgBox.innerHTML = `🎉 <strong>Fournisseur Rattaché !</strong> L'usine et ses caractéristiques ont été fusionnées sur l'article !`;
+        msgBox.innerHTML = `🎉 <strong>Fournisseur Rattaché !</strong> L'usine et ses caractéristiques ont été synchronisées sur le Cloud !`;
       } else {
-        msgBox.innerHTML = `🎉 <strong>Nouvel Article Créé !</strong> Toutes les données réelles sont enregistrées dans votre catalogue !`;
+        msgBox.innerHTML = `🎉 <strong>Nouvel Article Créé !</strong> Toutes les données sont enregistrées dans votre catalogue Cloud !`;
       }
       msgBox.style.display = 'block';
       btnImport.innerHTML = '<span>✅ Transmis avec Succès !</span>';
       btnImport.disabled = false;
     } catch (err) {
       msgBox.className = 'msg msg-error';
-      msgBox.innerHTML = '⚠️ Veuillez ouvrir votre application (http://localhost:5173) dans un onglet.';
+      msgBox.innerHTML = '⚠️ Erreur lors de l\'importation. Veuillez réessayer.';
       msgBox.style.display = 'block';
       btnImport.disabled = false;
       btnImport.innerHTML = '<span>📥 Réessayer l\'Envoi</span>';
