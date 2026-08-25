@@ -1,15 +1,28 @@
 import React, { useState } from 'react';
-import { Settings, Plus, FolderCog, CornerDownLeft, Sparkles } from 'lucide-react';
+import { Settings, Plus, FolderCog, ChevronDown, ChevronRight, Inbox, Layers } from 'lucide-react';
 
 export function CategoryFilter({ 
-  categories, 
+  categoriesTree = [], 
   selectedCategory, 
   onSelectCategory, 
-  counts, 
+  counts = {}, 
+  inboxCount = 0,
+  totalCount = 0,
   onOpenManageCategories,
   onMoveProductToCategory 
 }) {
   const [draggedOverCatId, setDraggedOverCatId] = useState(null);
+  const [expandedCats, setExpandedCats] = useState(() => {
+    // Par défaut, développer toutes les catégories principales
+    const initial = {};
+    categoriesTree.forEach(c => { initial[c.id] = true; });
+    return initial;
+  });
+
+  const toggleExpand = (catId, e) => {
+    e.stopPropagation();
+    setExpandedCats(prev => ({ ...prev, [catId]: !prev[catId] }));
+  };
 
   const handleDragOver = (e, catId) => {
     if (catId === 'all') return;
@@ -37,26 +50,29 @@ export function CategoryFilter({
     }
   };
 
+  const validMainCategories = categoriesTree.filter(c => c.id !== 'inbox' && c.id !== 'all');
+
   return (
-    <div className="card">
+    <div className="card" style={{ padding: '0.85rem' }}>
+      {/* En-tête de la barre latérale */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: '0.85rem',
-        paddingLeft: '0.35rem'
+        paddingLeft: '0.2rem'
       }}>
         <span style={{
-          fontSize: '0.75rem',
+          fontSize: '0.72rem',
           textTransform: 'uppercase',
           letterSpacing: '0.05em',
           color: 'var(--text-tertiary)',
           fontWeight: 800
         }}>
-          Rayons Quincaillerie
+          Rayons & Magasin
         </span>
 
-        {/* Manage Categories Button */}
+        {/* Bouton Gérer les Catégories */}
         <button
           onClick={onOpenManageCategories}
           style={{
@@ -72,70 +88,183 @@ export function CategoryFilter({
             gap: '0.3rem',
             cursor: 'pointer'
           }}
-          title="Ajouter, modifier ou supprimer des catégories"
+          title="Ajouter, modifier ou supprimer des catégories et sous-catégories"
         >
           <FolderCog size={13} />
           <span>Gérer</span>
         </button>
       </div>
 
-      <div className="category-menu">
-        {categories.map(cat => {
-          const isOver = draggedOverCatId === cat.id;
+      <div className="category-menu" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        
+        {/* 🗂️ 1. TOUS LES ARTICLES */}
+        <button
+          className={category-btn }
+          onClick={() => onSelectCategory('all')}
+          style={{ marginBottom: '2px' }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1.1rem' }}>🗂️</span>
+            <span style={{ fontWeight: 700 }}>Tous les Articles</span>
+          </span>
+          <span className="count-badge">{totalCount}</span>
+        </button>
+
+        {/* 📥 2. MAGASIN D'ARRIVAGE (SAS DE TRANSIT) */}
+        <button
+          className={category-btn  }
+          onClick={() => onSelectCategory('inbox')}
+          onDragOver={(e) => handleDragOver(e, 'inbox')}
+          onDragLeave={(e) => handleDragLeave(e, 'inbox')}
+          onDrop={(e) => handleDrop(e, 'inbox')}
+          style={{
+            background: selectedCategory === 'inbox' 
+              ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.25))' 
+              : inboxCount > 0 
+                ? 'rgba(245, 158, 11, 0.12)' 
+                : 'var(--bg-card)',
+            border: selectedCategory === 'inbox' 
+              ? '1.5px solid #F59E0B' 
+              : inboxCount > 0 
+                ? '1px solid rgba(245, 158, 11, 0.35)' 
+                : '1px solid var(--border-subtle)',
+            marginBottom: '6px'
+          }}
+          title="Articles nouvellement importés en attente de tri"
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1.15rem' }}>📥</span>
+            <span style={{ fontWeight: 800, color: inboxCount > 0 ? '#FCD34D' : 'inherit' }}>
+              Magasin d'Arrivage
+            </span>
+          </span>
+
+          {draggedOverCatId === 'inbox' ? (
+            <span style={{ color: '#FCD34D', fontSize: '0.72rem', fontWeight: 800 }}>📥 Déposer</span>
+          ) : (
+            <span style={{
+              background: inboxCount > 0 ? '#F59E0B' : 'rgba(255,255,255,0.1)',
+              color: inboxCount > 0 ? '#000000' : 'var(--text-secondary)',
+              fontSize: '0.72rem',
+              fontWeight: 900,
+              padding: '0.15rem 0.5rem',
+              borderRadius: '999px'
+            }}>
+              {inboxCount}
+            </span>
+          )}
+        </button>
+
+        <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '4px 0 6px 0' }} />
+
+        {/* 🗂️ 3. CATÉGORIES PRINCIPALES & LEURS SOUS-CATÉGORIES */}
+        {validMainCategories.map(mainCat => {
+          const isExpanded = expandedCats[mainCat.id] !== false;
+          const subCats = Array.isArray(mainCat.subCategories) ? mainCat.subCategories : [];
+          
+          // Calcul du total d'articles pour la catégorie principale (somme de ses sous-catégories)
+          const mainTotal = subCats.reduce((acc, s) => acc + (counts[s.id] || 0), (counts[mainCat.id] || 0));
+          const isMainActive = selectedCategory === mainCat.id;
+          const isOverMain = draggedOverCatId === mainCat.id;
+
           return (
-            <button
-              key={cat.id}
-              className={`category-btn ${selectedCategory === cat.id ? 'active' : ''} ${isOver ? 'drag-over' : ''}`}
-              onClick={() => onSelectCategory(cat.id)}
-              onDragOver={(e) => handleDragOver(e, cat.id)}
-              onDragLeave={(e) => handleDragLeave(e, cat.id)}
-              onDrop={(e) => handleDrop(e, cat.id)}
-              title={cat.id !== 'all' ? `Glissez un article ici pour le classer dans « ${cat.name} »` : 'Afficher tous les articles'}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.1rem' }}>{cat.icon}</span>
-                <span>{cat.name}</span>
-              </span>
+            <div key={mainCat.id} style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '4px' }}>
               
-              {isOver && cat.id !== 'all' ? (
-                <span style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  color: '#38BDF8',
-                  background: 'rgba(56, 189, 248, 0.2)',
-                  padding: '0.15rem 0.45rem',
-                  borderRadius: '6px',
+              {/* Ligne Catégorie Principale */}
+              <div
+                className={category-btn  }
+                onClick={() => onSelectCategory(mainCat.id)}
+                onDragOver={(e) => handleDragOver(e, mainCat.id)}
+                onDragLeave={(e) => handleDragLeave(e, mainCat.id)}
+                onDrop={(e) => handleDrop(e, mainCat.id)}
+                style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.2rem'
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  fontWeight: 700
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
+                  <button
+                    onClick={(e) => toggleExpand(mainCat.id, e)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-tertiary)',
+                      padding: 0,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </button>
+                  <span style={{ fontSize: '1.1rem' }}>{mainCat.icon}</span>
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.82rem' }}>
+                    {mainCat.name}
+                  </span>
+                </div>
+
+                {isOverMain ? (
+                  <span style={{ color: '#34D399', fontSize: '0.72rem', fontWeight: 800 }}>📥 Déposer</span>
+                ) : (
+                  <span className="count-badge">{mainTotal}</span>
+                )}
+              </div>
+
+              {/* ↳ Sous-Catégories Indentées */}
+              {isExpanded && subCats.length > 0 && (
+                <div style={{
+                  marginLeft: '1.4rem',
+                  paddingLeft: '0.5rem',
+                  borderLeft: '2px solid rgba(59, 130, 246, 0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px'
                 }}>
-                  📥 Déposer
-                </span>
-              ) : (
-                <span className="category-count">
-                  {counts[cat.id] || 0}
-                </span>
+                  {subCats.map(sub => {
+                    const isSubActive = selectedCategory === sub.id;
+                    const isOverSub = draggedOverCatId === sub.id;
+                    const subCount = counts[sub.id] || 0;
+
+                    return (
+                      <button
+                        key={sub.id}
+                        className={category-btn  }
+                        onClick={() => onSelectCategory(sub.id)}
+                        onDragOver={(e) => handleDragOver(e, sub.id)}
+                        onDragLeave={(e) => handleDragLeave(e, sub.id)}
+                        onDrop={(e) => handleDrop(e, sub.id)}
+                        style={{
+                          padding: '0.38rem 0.6rem',
+                          fontSize: '0.78rem',
+                          borderRadius: '6px'
+                        }}
+                        title={`Filtrer par « ${sub.name} » ou glissez un article ici`}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden' }}>
+                          <span style={{ fontSize: '0.95rem' }}>{sub.icon || '▫️'}</span>
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {sub.name}
+                          </span>
+                        </span>
+
+                        {isOverSub ? (
+                          <span style={{ color: '#34D399', fontSize: '0.7rem', fontWeight: 800 }}>📥 Déposer</span>
+                        ) : (
+                          <span className="count-badge" style={{ fontSize: '0.68rem', padding: '0.1rem 0.4rem' }}>
+                            {subCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
-      </div>
-
-      <div style={{
-        marginTop: '0.9rem',
-        padding: '0.5rem 0.65rem',
-        background: 'rgba(59, 130, 246, 0.06)',
-        border: '1px dashed rgba(59, 130, 246, 0.25)',
-        borderRadius: '8px',
-        fontSize: '0.7rem',
-        color: '#94A3B8',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.4rem',
-        lineHeight: 1.3
-      }}>
-        <Sparkles size={13} color="#60A5FA" style={{ flexShrink: 0 }} />
-        <span><strong>Glisser-Déposer actif :</strong> Glissez une carte produit sur un rayon pour la reclasser.</span>
       </div>
     </div>
   );

@@ -149,6 +149,90 @@ export async function loadAllProductsFromDb(workspaceId = 'ws_quincaillerie') {
   }
 }
 
+// 🌐 GESTION DES CATÉGORIES & SOUS-CATÉGORIES DANS SUPABASE CLOUD & INDEXEDDB
+export async function saveCategoriesToDb(categories, workspaceId = 'ws_quincaillerie') {
+  if (!categories || !Array.isArray(categories)) return;
+
+  // 1. Sauvegarde locale
+  try {
+    localStorage.setItem(`ws_categories_${workspaceId}`, JSON.stringify(categories));
+    if (workspaceId === 'ws_quincaillerie') {
+      localStorage.setItem('quin_source_categories', JSON.stringify(categories));
+    }
+  } catch (e) {}
+
+  // 2. Sauvegarde Cloud Supabase (Aplatissement pour table SQL)
+  if (supabase && isSupabaseConfigured) {
+    try {
+      const flatRows = [];
+      categories.forEach((mainCat, index) => {
+        flatRows.push({
+          id: mainCat.id,
+          workspace_id: workspaceId,
+          name: mainCat.name,
+          icon: mainCat.icon || '📁',
+          count: mainCat.count || 0
+        });
+
+        if (Array.isArray(mainCat.subCategories)) {
+          mainCat.subCategories.forEach((sub, subIdx) => {
+            flatRows.push({
+              id: sub.id,
+              workspace_id: workspaceId,
+              name: sub.name,
+              icon: sub.icon || '▫️',
+              count: sub.count || 0
+            });
+          });
+        }
+      });
+
+      if (flatRows.length > 0) {
+        await supabase.from('categories').upsert(flatRows);
+      }
+    } catch (sbErr) {
+      console.warn('Erreur sauvegarde catégories Supabase:', sbErr);
+    }
+  }
+}
+
+export async function loadCategoriesFromDb(workspaceId = 'ws_quincaillerie') {
+  // 1. Chargement local prioritaire (conserve l'arborescence complète)
+  try {
+    const saved = localStorage.getItem(`ws_categories_${workspaceId}`);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return null;
+}
+
+// 🗑️ Suppression d'un produit dans Supabase Cloud & IndexedDB
+export async function deleteProductFromDb(productId) {
+  if (supabase && isSupabaseConfigured && productId) {
+    try {
+      await supabase.from('products').delete().eq('id', productId);
+    } catch (e) {
+      console.warn('Erreur suppression Supabase:', e);
+    }
+  }
+}
+
+// 📦 Déplacement atomique d'un produit vers une catégorie / sous-catégorie
+export async function updateProductCategoryInDb(productId, newCategory, workspaceId = 'ws_quincaillerie') {
+  if (supabase && isSupabaseConfigured && productId) {
+    try {
+      await supabase
+        .from('products')
+        .update({ category: newCategory, updated_at: new Date().toISOString() })
+        .eq('id', productId);
+    } catch (e) {
+      console.warn('Erreur mise à jour catégorie Supabase:', e);
+    }
+  }
+}
+
 // 🌐 SYNC DISQUE SERVEUR (/api/products-db)
 export async function syncProductsToServerDisk(products) {
   try {

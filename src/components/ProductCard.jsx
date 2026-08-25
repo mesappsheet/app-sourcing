@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Camera, Video, Maximize2, Sparkles, Play, Pause, Factory, GripVertical, Tag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Camera, Video, Maximize2, Sparkles, Play, Pause, Factory, GripVertical, Tag, Layers, CornerDownRight } from 'lucide-react';
 
 export function ProductCard({ 
   product, 
@@ -8,7 +8,8 @@ export function ProductCard({
   onOpenImageViewer,
   formatPrice,
   categories = [],
-  onMoveProductToCategory
+  onMoveProductToCategory,
+  onOpenContextMenu
 }) {
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -70,6 +71,11 @@ export function ProductCard({
     <div 
       className={`product-item-card ${isSelected ? 'selected' : ''} ${isDragging ? 'is-dragging' : ''}`}
       onClick={() => onSelect(product)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onOpenContextMenu) onOpenContextMenu(e, product);
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       draggable={true}
@@ -292,42 +298,55 @@ export function ProductCard({
           <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
             {product?.sku || 'SKU-001'}
           </span>
-          <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
-            {categories && categories.length > 0 && onMoveProductToCategory ? (
-              <select
-                value={product?.category || ''}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
+          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+            {/* Badge Catégorie / Magasin d'Arrivage */}
+            {product?.category === 'inbox' ? (
+              <span style={{
+                background: 'rgba(245, 158, 11, 0.2)',
+                border: '1px solid #F59E0B',
+                color: '#FCD34D',
+                borderRadius: '6px',
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                padding: '0.12rem 0.45rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                <span>📥</span>
+                <span>Magasin d'Arrivage</span>
+              </span>
+            ) : (
+              <span className="badge badge-blue" style={{ fontSize: '0.68rem', fontWeight: 700 }}>
+                {product?.category || 'Non Classé'}
+              </span>
+            )}
+
+            {/* Bouton Clic Droit / Reclassement Rapide */}
+            {onOpenContextMenu && (
+              <button
+                onClick={(e) => {
                   e.stopPropagation();
-                  const targetCatId = e.target.value;
-                  if (targetCatId && targetCatId !== product.category) {
-                    onMoveProductToCategory(product.id, targetCatId);
-                  }
+                  onOpenContextMenu(e, product);
                 }}
                 style={{
-                  background: 'rgba(37, 99, 235, 0.18)',
+                  background: 'rgba(59, 130, 246, 0.15)',
                   border: '1px solid rgba(59, 130, 246, 0.35)',
                   color: '#93C5FD',
                   borderRadius: '6px',
                   fontSize: '0.68rem',
-                  fontWeight: 700,
-                  padding: '0.12rem 0.35rem',
+                  fontWeight: 800,
+                  padding: '0.12rem 0.45rem',
                   cursor: 'pointer',
-                  outline: 'none',
-                  fontFamily: 'inherit'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
                 }}
-                title="Changer rapidement de rayon"
+                title="Faites un clic droit ou cliquez ici pour classer dans une sous-catégorie"
               >
-                {categories.filter(c => c.id !== 'all').map(c => (
-                  <option key={c.id} value={c.id} style={{ background: '#0F172A', color: 'white' }}>
-                    {c.icon} {c.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span className="badge badge-blue" style={{ fontSize: '0.68rem' }}>
-                {product?.category || 'Général'}
-              </span>
+                <span>⚡ Reclasser</span>
+                <CornerDownRight size={11} />
+              </button>
             )}
             <span style={{
               background: 'rgba(245, 158, 11, 0.15)',

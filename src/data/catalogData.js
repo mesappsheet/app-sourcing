@@ -1,14 +1,47 @@
-export const CATEGORIES = [
-  { id: 'all', name: 'Tous les Articles', icon: '🗂️', count: 18 },
-  { id: 'visserie', name: 'Visserie & Fixations', icon: '🔩', count: 4 },
-  { id: 'coulisses', name: 'Coulisses & Tiroirs', icon: '🗄️', count: 4 },
-  { id: 'charnieres', name: 'Charnières & Push', icon: '🚪', count: 4 },
-  { id: 'angle', name: 'Meubles d\'Angle Cuisine', icon: '🔄', count: 3 },
-  { id: 'dressing', name: 'Dressings & Penderies', icon: '🪜', count: 3 },
-  { id: 'alu', name: 'Profilés Alu & Gola', icon: '📐', count: 2 },
-  { id: 'outillage', name: 'Gabarits & Productivité', icon: '🛠️', count: 2 },
-  { id: 'serrures', name: 'Serrures & Sécurité', icon: '🔒', count: 2 }
+export const DEFAULT_CATEGORIES_TREE = [
+  { 
+    id: 'inbox', 
+    name: 'Magasin d\'Arrivage', 
+    icon: '📥', 
+    isInbox: true, 
+    subCategories: [] 
+  },
+  {
+    id: 'cat_quincaillerie',
+    name: 'Quincaillerie & Fixations',
+    icon: '🔩',
+    subCategories: [
+      { id: 'visserie', name: 'Visserie & Fixations', icon: '🔩' },
+      { id: 'coulisses', name: 'Coulisses & Tiroirs', icon: '🗄️' },
+      { id: 'charnieres', name: 'Charnières & Push', icon: '🚪' },
+      { id: 'poignees', name: 'Poignées & Boutons', icon: '🔘' },
+      { id: 'serrures', name: 'Serrures & Sécurité', icon: '🔒' }
+    ]
+  },
+  {
+    id: 'cat_cuisine_meubles',
+    name: 'Meubles & Rangement Cuisine',
+    icon: '🍽️',
+    subCategories: [
+      { id: 'angle', name: 'Meubles d\'Angle Cuisine', icon: '🔄' },
+      { id: 'dressing', name: 'Dressings & Penderies', icon: '🪜' },
+      { id: 'alu', name: 'Profilés Alu & Gola', icon: '📐' },
+      { id: 'led', name: 'Éclairage LED Meuble', icon: '💡' }
+    ]
+  },
+  {
+    id: 'cat_outillage_pro',
+    name: 'Gabarits & Outillage Pro',
+    icon: '🛠️',
+    subCategories: [
+      { id: 'outillage', name: 'Gabarits & Productivité', icon: '🛠️' },
+      { id: 'machines', name: 'Électroportatif Usine', icon: '⚡' },
+      { id: 'mesure', name: 'Mesure & Niveaux Lasers', icon: '📏' }
+    ]
+  }
 ];
+
+export const CATEGORIES = DEFAULT_CATEGORIES_TREE;
 
 export const INITIAL_PRODUCTS = [
   {

@@ -4,12 +4,13 @@ import {
   Plus, 
   Download, 
   Sparkles, 
-  FolderCog,
-  Layers,
-  Zap
+  FolderCog, 
+  Layers, 
+  Zap,
+  Inbox
 } from 'lucide-react';
 
-import { CATEGORIES, INITIAL_PRODUCTS, DEFAULT_SETTINGS } from './data/catalogData';
+import { CATEGORIES, DEFAULT_CATEGORIES_TREE, INITIAL_PRODUCTS, DEFAULT_SETTINGS } from './data/catalogData';
 import { INITIAL_WORKSPACES, WORKSPACE_TEMPLATES } from './data/workspacesData';
 
 import { Navbar } from './components/Navbar';
@@ -23,10 +24,15 @@ import { ManageCategoriesModal } from './components/ManageCategoriesModal';
 import { ManageWorkspacesModal } from './components/ManageWorkspacesModal';
 import { FullScreenImageViewer } from './components/FullScreenImageViewer';
 import { LoginPage } from './components/LoginPage';
+import { ContextMenuCascade } from './components/ContextMenuCascade';
 
 import { 
   saveAllProductsToDb, 
   loadAllProductsFromDb, 
+  deleteProductFromDb,
+  updateProductCategoryInDb,
+  saveCategoriesToDb,
+  loadCategoriesFromDb,
   syncProductsToServerDisk, 
   loadProductsFromServerDisk 
 } from './utils/dbStorage';
@@ -109,7 +115,7 @@ export function App() {
     return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
   });
 
-  // Modals
+  // Modals & Menu Contextuel Clic Droit
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
@@ -118,6 +124,13 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   
+  // 🖱️ Menu Contextuel Clic Droit en Cascade
+  const [contextMenuState, setContextMenuState] = useState({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    product: null
+  });
+
   // FullScreen High-Resolution Image Viewer
   const [imageViewerState, setImageViewerState] = useState({
     isOpen: false,
@@ -706,25 +719,84 @@ export function App() {
     return `${(num * rate).toFixed(2)} €`;
   };
 
-  // Category counts in active workspace
-  const categoryCounts = useMemo(() => {
-    const counts = { all: (products || []).length };
-    if (Array.isArray(categories)) {
-      categories.forEach(c => {
-        if (c && c.id && c.id !== 'all') {
-          counts[c.id] = (products || []).filter(p => p && p.category === c.id).length;
-        }
-      });
+  // 🗂️ Arborescence des catégories normalisée pour l'espace actif (avec Magasin d'Arrivage)
+  const categoriesTree = useMemo(() => {
+    const raw = allCategoriesByWs[activeWorkspaceId];
+    if (!raw || !Array.isArray(raw) || raw.length === 0) {
+      return DEFAULT_CATEGORIES_TREE;
     }
-    return counts;
-  }, [products, categories]);
+    const hasTree = raw.some(c => Array.isArray(c.subCategories));
+    if (hasTree) {
+      const hasInbox = raw.some(c => c.id === 'inbox');
+      if (!hasInbox) {
+        return [
+          { id: 'inbox', name: 'Magasin d\'Arrivage', icon: '📥', isInbox: true, subCategories: [] },
+          ...raw
+        ];
+      }
+      return raw;
+    }
 
-  // Filtered Products
+    // Convertir ancienne liste plate en arbre
+    return [
+      { id: 'inbox', name: 'Magasin d\'Arrivage', icon: '📥', isInbox: true, subCategories: [] },
+      {
+        id: 'cat_quincaillerie',
+        name: 'Quincaillerie & Fixations',
+        icon: '🔩',
+        subCategories: raw.filter(c => c.id !== 'all' && c.id !== 'inbox').map(c => ({ id: c.id, name: c.name, icon: c.icon }))
+      }
+    ];
+  }, [allCategoriesByWs, activeWorkspaceId]);
+
+  // Total & Inbox Counts
+  const totalCount = products.length;
+  const inboxCount = products.filter(p => p.category === 'inbox' || !p.category).length;
+
+  // Calcul des compteurs par catégorie et sous-catégorie
+  const categoryCounts = useMemo(() => {
+    const counts = {
+      all: products.length,
+      inbox: inboxCount
+    };
+
+    categoriesTree.forEach(main => {
+      let mainSum = 0;
+      if (Array.isArray(main.subCategories)) {
+        main.subCategories.forEach(sub => {
+          const subCount = products.filter(p => p && p.category === sub.id).length;
+          counts[sub.id] = subCount;
+          mainSum += subCount;
+        });
+      }
+      const directMainCount = products.filter(p => p && p.category === main.id).length;
+      counts[main.id] = mainSum + directMainCount;
+    });
+
+    return counts;
+  }, [products, categoriesTree, inboxCount]);
+
+  // Produits filtrés selon la catégorie / sous-catégorie sélectionnée
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
     return products.filter(prod => {
       if (!prod) return false;
-      const matchCat = selectedCategory === 'all' || prod.category === selectedCategory;
+      
+      let matchCat = true;
+      if (selectedCategory === 'all') {
+        matchCat = true;
+      } else if (selectedCategory === 'inbox') {
+        matchCat = (prod.category === 'inbox' || !prod.category);
+      } else {
+        const mainCatMatch = categoriesTree.find(m => m.id === selectedCategory);
+        if (mainCatMatch && Array.isArray(mainCatMatch.subCategories) && mainCatMatch.subCategories.length > 0) {
+          const subIds = [mainCatMatch.id, ...mainCatMatch.subCategories.map(s => s.id)];
+          matchCat = subIds.includes(prod.category);
+        } else {
+          matchCat = prod.category === selectedCategory;
+        }
+      }
+
       if (!searchQuery.trim()) return matchCat;
 
       const q = searchQuery.toLowerCase().trim();
@@ -744,48 +816,97 @@ export function App() {
       const matchText = matchTitle || matchSku || matchMaterial || matchBenefArtisan || matchBenefClient || matchDimensions || matchSpecs || matchSuppliers;
       return matchCat && matchText;
     });
-  }, [products, selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery, categoriesTree]);
+
+  // 🖱️ GESTION DU MENU CONTEXTUEL CLIC DROIT EN CASCADE
+  const handleOpenContextMenu = (e, prod) => {
+    if (e && e.clientX !== undefined) {
+      setContextMenuState({
+        isOpen: true,
+        position: { x: e.clientX, y: e.clientY },
+        product: prod
+      });
+    } else {
+      const rect = e?.currentTarget?.getBoundingClientRect?.();
+      setContextMenuState({
+        isOpen: true,
+        position: rect ? { x: rect.left, y: rect.bottom + 5 } : { x: 50, y: 150 },
+        product: prod
+      });
+    }
+  };
+
+  // 📦 RECLASSEMENT D'UN ARTICLE DANS UNE SOUS-CATÉGORIE (Atomique Supabase + Local)
+  const handleMoveProductToCategory = (productOrId, mainCatId, subCatId = null) => {
+    const productId = typeof productOrId === 'object' ? productOrId.id : productOrId;
+    const finalCatId = subCatId || mainCatId;
+    if (!productId || !finalCatId || finalCatId === 'all') return;
+
+    let movedTitle = '';
+    setAllProductsByWs(prev => {
+      const currentList = prev[activeWorkspaceId] || [];
+      const updatedList = currentList.map(p => {
+        if (p.id === productId) {
+          movedTitle = p.titleFr;
+          return { ...p, category: finalCatId, updatedAt: new Date().toISOString() };
+        }
+        return p;
+      });
+
+      saveAllProductsToDb(updatedList, activeWorkspaceId);
+      return {
+        ...prev,
+        [activeWorkspaceId]: updatedList
+      };
+    });
+
+    // ⚡ Mise à jour directe Supabase Cloud
+    updateProductCategoryInDb(productId, finalCatId, activeWorkspaceId);
+
+    // Nom convivial pour le Toast
+    let catDisplayName = finalCatId === 'inbox' ? 'Magasin d\'Arrivage (Transit)' : finalCatId;
+    categoriesTree.forEach(main => {
+      if (main.id === finalCatId) catDisplayName = main.name;
+      main.subCategories?.forEach(sub => {
+        if (sub.id === finalCatId) catDisplayName = `${main.name} ➔ ${sub.name}`;
+      });
+    });
+
+    showToast(`📦 « ${movedTitle ? movedTitle.slice(0, 26) + '...' : 'Article'} » classé dans « ${catDisplayName} » !`);
+  };
 
   // --- CRUD HANDLERS: PRODUCTS (Active Workspace) ---
   const handleSaveProduct = (updatedProduct) => {
-    // Vérifier si la catégorie existe, sinon la créer
-    if (updatedProduct.category) {
-      setAllCategoriesByWs(prev => {
-        const currentCats = prev[activeWorkspaceId] || [];
-        const catExists = currentCats.some(c => c.id === updatedProduct.category || c.name?.toLowerCase() === updatedProduct.category?.toLowerCase());
-        if (!catExists) {
-          const newCat = {
-            id: updatedProduct.category,
-            name: updatedProduct.categoryName || (updatedProduct.category.charAt(0).toUpperCase() + updatedProduct.category.slice(1)),
-            icon: updatedProduct.categoryIcon || '📦',
-            count: 1
-          };
-          return {
-            ...prev,
-            [activeWorkspaceId]: [...currentCats, newCat]
-          };
-        }
-        return prev;
-      });
-    }
-
-    setAllProductsByWs(prev => ({
-      ...prev,
-      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map(p => p.id === updatedProduct.id ? updatedProduct : p)
-    }));
+    setAllProductsByWs(prev => {
+      const updatedList = (prev[activeWorkspaceId] || []).map(p => p.id === updatedProduct.id ? updatedProduct : p);
+      saveAllProductsToDb(updatedList, activeWorkspaceId);
+      return {
+        ...prev,
+        [activeWorkspaceId]: updatedList
+      };
+    });
 
     if (selectedProduct?.id === updatedProduct.id) {
       setSelectedProduct(updatedProduct);
     }
-    showToast(`✅ « ${updatedProduct.titleFr} » mis à jour avec succès !`);
+    showToast(`✅ « ${updatedProduct.titleFr} » mis à jour et synchronisé sur Supabase !`);
   };
 
-  const handleDeleteProduct = (productId) => {
+  const handleDeleteProduct = (productOrId) => {
+    const productId = typeof productOrId === 'object' ? productOrId.id : productOrId;
     const prod = products.find(p => p.id === productId);
-    setAllProductsByWs(prev => ({
-      ...prev,
-      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).filter(p => p.id !== productId)
-    }));
+
+    setAllProductsByWs(prev => {
+      const remaining = (prev[activeWorkspaceId] || []).filter(p => p.id !== productId);
+      saveAllProductsToDb(remaining, activeWorkspaceId);
+      return {
+        ...prev,
+        [activeWorkspaceId]: remaining
+      };
+    });
+
+    // ⚡ Suppression directe Supabase Cloud
+    deleteProductFromDb(productId);
 
     if (selectedProduct?.id === productId) {
       setSelectedProduct(null);
@@ -794,7 +915,7 @@ export function App() {
       setIsEditModalOpen(false);
       setEditingProduct(null);
     }
-    showToast(`🗑️ « ${prod?.titleFr || 'L\'article'} » a été supprimé.`);
+    showToast(`🗑️ « ${prod?.titleFr || 'L\'article'} » a été supprimé de la base.`);
   };
 
   const handleOpenEditModal = (prod) => {
@@ -802,62 +923,97 @@ export function App() {
     setIsEditModalOpen(true);
   };
 
-  // --- CRUD HANDLERS: CATEGORIES (Active Workspace) ---
-  const handleAddCategory = (newCat) => {
-    setAllCategoriesByWs(prev => ({
-      ...prev,
-      [activeWorkspaceId]: [...(prev[activeWorkspaceId] || []), newCat]
-    }));
+  // --- CRUD HANDLERS: CATEGORIES & SOUS-CATÉGORIES DANS SUPABASE (Active Workspace) ---
+  const handleAddMainCategory = (newMain) => {
+    setAllCategoriesByWs(prev => {
+      const current = prev[activeWorkspaceId] || categoriesTree;
+      const updated = [...current, newMain];
+      saveCategoriesToDb(updated, activeWorkspaceId);
+      return { ...prev, [activeWorkspaceId]: updated };
+    });
+    showToast(`📁 Rayon principal « ${newMain.name} » créé sur Supabase Cloud !`);
   };
 
-  const handleUpdateCategory = (catId, updatedFields) => {
-    setAllCategoriesByWs(prev => ({
-      ...prev,
-      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map(c => c.id === catId ? { ...c, ...updatedFields } : c)
-    }));
+  const handleAddSubCategory = (parentCatId, newSub) => {
+    setAllCategoriesByWs(prev => {
+      const current = prev[activeWorkspaceId] || categoriesTree;
+      const updated = current.map(main => {
+        if (main.id === parentCatId) {
+          return {
+            ...main,
+            subCategories: [...(main.subCategories || []), newSub]
+          };
+        }
+        return main;
+      });
+      saveCategoriesToDb(updated, activeWorkspaceId);
+      return { ...prev, [activeWorkspaceId]: updated };
+    });
+    showToast(`▫️ Sous-catégorie « ${newSub.name} » créée sur Supabase Cloud !`);
   };
 
-  const handleDeleteCategory = (catId) => {
-    setAllCategoriesByWs(prev => ({
-      ...prev,
-      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).filter(c => c.id !== catId)
-    }));
-    if (selectedCategory === catId) {
-      setSelectedCategory('all');
-    }
+  const handleUpdateCategory = (itemId, updates, parentId = null) => {
+    setAllCategoriesByWs(prev => {
+      const current = prev[activeWorkspaceId] || categoriesTree;
+      let updated;
+      if (!parentId) {
+        updated = current.map(main => main.id === itemId ? { ...main, ...updates } : main);
+      } else {
+        updated = current.map(main => {
+          if (main.id === parentId) {
+            return {
+              ...main,
+              subCategories: (main.subCategories || []).map(s => s.id === itemId ? { ...s, ...updates } : s)
+            };
+          }
+          return main;
+        });
+      }
+      saveCategoriesToDb(updated, activeWorkspaceId);
+      return { ...prev, [activeWorkspaceId]: updated };
+    });
+    showToast(`✏️ Rayon « ${updates.name} » mis à jour sur Supabase Cloud !`);
   };
 
-  // 📦 DÉPLACEMENT & RECLASSEMENT D'UN ARTICLE VERS UN RAYON (Drag & Drop ou Sélecteur 1-Clic)
-  const handleMoveProductToCategory = (productId, targetCategoryId) => {
-    if (!productId || !targetCategoryId || targetCategoryId === 'all') return;
+  const handleDeleteCategory = (itemId, parentId = null) => {
+    setAllCategoriesByWs(prev => {
+      const current = prev[activeWorkspaceId] || categoriesTree;
+      let updated;
+      if (!parentId) {
+        updated = current.filter(main => main.id !== itemId);
+      } else {
+        updated = current.map(main => {
+          if (main.id === parentId) {
+            return {
+              ...main,
+              subCategories: (main.subCategories || []).filter(s => s.id !== itemId)
+            };
+          }
+          return main;
+        });
+      }
+      saveCategoriesToDb(updated, activeWorkspaceId);
+      return { ...prev, [activeWorkspaceId]: updated };
+    });
 
-    let movedTitle = '';
-    const currentCats = allCategoriesByWs[activeWorkspaceId] || categories;
-    const targetCat = currentCats.find(c => c.id === targetCategoryId);
-
+    // Redirection automatique des articles orphelins vers le Magasin d'Arrivage (Inbox)
     setAllProductsByWs(prev => {
       const currentList = prev[activeWorkspaceId] || [];
       const updatedList = currentList.map(p => {
-        if (p.id === productId) {
-          movedTitle = p.titleFr;
-          return { ...p, category: targetCategoryId };
+        if (p.category === itemId) {
+          return { ...p, category: 'inbox' };
         }
         return p;
       });
-
-      // Synchronisation persistante sur disque serveur & IndexedDB
-      syncProductsToServerDisk(updatedList);
-      saveAllProductsToDb(updatedList);
-
-      return {
-        ...prev,
-        [activeWorkspaceId]: updatedList
-      };
+      saveAllProductsToDb(updatedList, activeWorkspaceId);
+      return { ...prev, [activeWorkspaceId]: updatedList };
     });
 
-    if (movedTitle) {
-      showToast(`📦 « ${movedTitle.slice(0, 32)}... » reclassé dans « ${targetCat ? targetCat.name : targetCategoryId} » !`);
+    if (selectedCategory === itemId) {
+      setSelectedCategory('all');
     }
+
+    showToast(`🗑️ Rayon supprimé. Les articles associés ont été transférés dans le « Magasin d'Arrivage ».`);
   };
 
   // Handle new product import into active workspace
@@ -1079,10 +1235,12 @@ export function App() {
             {/* Left Column: Categories Menu with Manage Button */}
             <div>
               <CategoryFilter 
-                categories={categories}
+                categoriesTree={categoriesTree}
                 selectedCategory={selectedCategory}
                 onSelectCategory={setSelectedCategory}
                 counts={categoryCounts}
+                inboxCount={inboxCount}
+                totalCount={totalCount}
                 onOpenManageCategories={() => setIsManageCategoriesOpen(true)}
                 onMoveProductToCategory={handleMoveProductToCategory}
               />
@@ -1095,11 +1253,15 @@ export function App() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
                   <span>Total Références :</span>
-                  <strong style={{ color: 'white' }}>{products.length}</strong>
+                  <strong style={{ color: 'white' }}>{totalCount}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
+                  <span>Magasin d'Arrivage :</span>
+                  <strong style={{ color: inboxCount > 0 ? '#FCD34D' : 'var(--text-secondary)' }}>{inboxCount} non triés</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-                  <span>Rayons Actifs :</span>
-                  <strong style={{ color: 'var(--amber-light)' }}>{categories.length - 1}</strong>
+                  <span>Rayons Principaux :</span>
+                  <strong style={{ color: 'var(--blue-light)' }}>{categoriesTree.filter(c => c.id !== 'inbox' && c.id !== 'all').length}</strong>
                 </div>
               </div>
             </div>
@@ -1131,12 +1293,16 @@ export function App() {
                 }}>
                   <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{activeWsObj?.icon || '📦'}</div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.35rem' }}>
-                    {searchQuery ? 'Aucun article ne correspond à votre recherche' : `Votre catalogue « ${activeWsObj?.name} » est prêt !`}
+                    {selectedCategory === 'inbox' 
+                      ? "Le Magasin d'Arrivage est vide !"
+                      : searchQuery ? 'Aucun article ne correspond à votre recherche' : `Votre catalogue « ${activeWsObj?.name} » est prêt !`}
                   </h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1.25rem' }}>
-                    {searchQuery 
-                      ? 'Essayez avec un autre mot-clé ou réinitialisez le filtre.' 
-                      : 'Importez des produits avec votre extension ou ajoutez votre premier article manuellement.'}
+                    {selectedCategory === 'inbox'
+                      ? 'Tous vos produits importés ont été classés avec succès dans leurs sous-catégories respectives.'
+                      : searchQuery 
+                        ? 'Essayez avec un autre mot-clé ou réinitialisez le filtre.' 
+                        : 'Importez des produits avec votre extension ou ajoutez votre premier article manuellement.'}
                   </p>
 
                   <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
@@ -1169,8 +1335,9 @@ export function App() {
                       onSelect={setSelectedProduct}
                       onOpenImageViewer={handleOpenImageViewer}
                       formatPrice={formatPrice}
-                      categories={categories}
+                      categories={categoriesTree}
                       onMoveProductToCategory={handleMoveProductToCategory}
+                      onOpenContextMenu={handleOpenContextMenu}
                     />
                   ))}
                 </div>
@@ -1201,7 +1368,7 @@ export function App() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAddProduct={handleImportProduct}
-        categories={categories}
+        categories={categoriesTree}
         currency={settings.currency}
         formatPrice={formatPrice}
       />
@@ -1215,16 +1382,29 @@ export function App() {
         product={editingProduct}
         onSaveProduct={handleSaveProduct}
         onDeleteProduct={handleDeleteProduct}
-        categories={categories}
+        categories={categoriesTree}
       />
 
       <ManageCategoriesModal
         isOpen={isManageCategoriesOpen}
         onClose={() => setIsManageCategoriesOpen(false)}
-        categories={categories}
-        onAddCategory={handleAddCategory}
+        categoriesTree={categoriesTree}
+        activeWorkspaceName={activeWsObj?.name || 'Sourcing'}
+        onAddCategory={handleAddMainCategory}
+        onAddSubCategory={handleAddSubCategory}
         onUpdateCategory={handleUpdateCategory}
         onDeleteCategory={handleDeleteCategory}
+      />
+
+      {/* 🖱️ MENU CONTEXTUEL CLIC DROIT EN CASCADE */}
+      <ContextMenuCascade
+        isOpen={contextMenuState.isOpen}
+        position={contextMenuState.position}
+        product={contextMenuState.product}
+        categoriesTree={categoriesTree}
+        onSelectCategory={(prod, mainId, subId) => handleMoveProductToCategory(prod.id, mainId, subId)}
+        onDeleteProduct={(prod) => handleDeleteProduct(prod.id)}
+        onClose={() => setContextMenuState({ isOpen: false, position: { x: 0, y: 0 }, product: null })}
       />
 
       <ManageWorkspacesModal
