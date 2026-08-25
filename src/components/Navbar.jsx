@@ -10,7 +10,10 @@ import {
   Coins,
   Palette,
   Eye,
-  EyeOff
+  EyeOff,
+  LogOut,
+  Smartphone,
+  ShieldCheck
 } from 'lucide-react';
 import { WorkspaceSelector } from './WorkspaceSelector';
 
@@ -28,7 +31,11 @@ export function Navbar({
   activeWorkspaceId,
   onSelectWorkspace,
   onOpenManageWorkspaces,
-  getWorkspaceProductCount
+  getWorkspaceProductCount,
+  user,
+  onLogout,
+  installPrompt,
+  onInstallPwa
 }) {
   const [navMode, setNavMode] = useState('full'); // 'full' | 'compact' | 'hidden'
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -116,6 +123,31 @@ export function Navbar({
           {/* 3️⃣ DROITE : Actions Claires + MENU DÉROULANT TOUT-EN-UN */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
             
+            {/* 📲 Bouton d'Installation PWA */}
+            {installPrompt && (
+              <button
+                onClick={onInstallPwa}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35))',
+                  border: '1.5px solid #10B981',
+                  color: '#34D399',
+                  padding: '0.42rem 0.75rem',
+                  borderRadius: '8px',
+                  fontSize: '0.74rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 0 12px rgba(16, 185, 129, 0.35)'
+                }}
+                title="Installer l'application sur votre écran d'accueil (PWA)"
+              >
+                <span>📲</span>
+                <span>Installer l'App</span>
+              </button>
+            )}
+
             {/* Bouton Ajouter Article */}
             <button 
               onClick={onOpenAddModal}
@@ -139,6 +171,30 @@ export function Navbar({
               <Plus size={15} />
               <span>+ Ajouter un Article</span>
             </button>
+
+            {/* 👤 Profil & Déconnexion */}
+            {user && (
+              <button
+                onClick={onLogout}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#F87171',
+                  padding: '0.42rem 0.65rem',
+                  borderRadius: '8px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+                title={`Connecté : ${user.email || 'Propriétaire'} - Cliquer pour se déconnecter`}
+              >
+                <LogOut size={13} />
+                <span>Déconnexion</span>
+              </button>
+            )}
 
             {/* 🌟 BOUTON MAÎTRE DU MENU DÉROULANT : THÈMES, DEVISES & RÉGLAGES */}
             <div style={{ position: 'relative' }}>

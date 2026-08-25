@@ -22,6 +22,7 @@ import { EditArticleModal } from './components/EditArticleModal';
 import { ManageCategoriesModal } from './components/ManageCategoriesModal';
 import { ManageWorkspacesModal } from './components/ManageWorkspacesModal';
 import { FullScreenImageViewer } from './components/FullScreenImageViewer';
+import { LoginPage } from './components/LoginPage';
 
 import { 
   saveAllProductsToDb, 
@@ -29,8 +30,16 @@ import {
   syncProductsToServerDisk, 
   loadProductsFromServerDisk 
 } from './utils/dbStorage';
+import { supabase, isSupabaseConfigured } from './utils/supabaseClient';
 
 export function App() {
+  // 🔐 0. AUTHENTIFICATION & PWA (Mode Propriétaire / Google / Email)
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('quin_source_auth_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [installPrompt, setInstallPrompt] = useState(null);
+
   // 🏢 1. ESPACES DE SOURCING MULTI-PROJETS (Workspaces)
   const [workspaces, setWorkspaces] = useState(() => {
     const saved = localStorage.getItem('quin_source_workspaces_list');
@@ -527,6 +536,66 @@ export function App() {
     document.documentElement.setAttribute('data-theme', activeTheme);
   }, [settings.theme]);
 
+  // 🔐 SYNCHRONISATION AUTHENTIFICATION SUPABASE & PWA
+  useEffect(() => {
+    // 1. Interception de l'invite PWA pour installer l'application
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    // 2. Gestion de session Supabase Auth
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setUser(session.user);
+          localStorage.setItem('quin_source_auth_user', JSON.stringify(session.user));
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          localStorage.setItem('quin_source_auth_user', JSON.stringify(session.user));
+        } else if (_event === 'SIGNED_OUT') {
+          setUser(null);
+          localStorage.removeItem('quin_source_auth_user');
+        }
+      });
+
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+        subscription?.unsubscribe();
+      };
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      showToast("🎉 Application installée avec succès sur votre appareil !");
+      setInstallPrompt(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {}
+    }
+    localStorage.removeItem('quin_source_auth_user');
+    setUser(null);
+    showToast("Déconnexion réussie");
+  };
+
   // --- WORKSPACES MANAGEMENT HANDLERS ---
   const handleSelectWorkspace = (wsId) => {
     setActiveWorkspaceId(wsId);
@@ -817,11 +886,23 @@ export function App() {
     setIsSettingsOpen(false);
   };
 
+  // 🔐 ÉCRAN DE CONNEXION GOOGLE & PERSONNEL SI NON CONNECTÉ
+  if (!user) {
+    return (
+      <LoginPage 
+        onLoginSuccess={(loggedUser) => {
+          setUser(loggedUser);
+          showToast(`👋 Bienvenue, ${loggedUser?.user_metadata?.full_name || loggedUser?.email || 'Propriétaire'} !`);
+        }} 
+      />
+    );
+  }
+
   const activeWsObj = workspaces.find(w => w.id === activeWorkspaceId) || workspaces[0];
 
   return (
     <div className="app-container">
-      {/* Top Navigation with Workspace Switcher */}
+      {/* Top Navigation with Workspace Switcher & User/PWA Actions */}
       <Navbar 
         currentTab={currentTab}
         setCurrentTab={handleSelectTab}
@@ -840,6 +921,10 @@ export function App() {
           setIsManageWorkspacesOpen(true);
         }}
         getWorkspaceProductCount={getWorkspaceProductCount}
+        user={user}
+        onLogout={handleLogout}
+        installPrompt={installPrompt}
+        onInstallPwa={handleInstallPwa}
       />
 
       {/* Main Content Area */}
