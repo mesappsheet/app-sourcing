@@ -7,7 +7,10 @@ import {
   Trash2, 
   Sparkles,
   ExternalLink,
-  Tag
+  Tag,
+  GripHorizontal,
+  X,
+  Layers
 } from 'lucide-react';
 
 export function ContextMenuCascade({
@@ -20,13 +23,102 @@ export function ContextMenuCascade({
   onClose
 }) {
   const [activeHoverCategory, setActiveHoverCategory] = useState(null);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
   const menuRef = useRef(null);
+
+  // Initialisation et repositionnement automatique
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const menuWidth = 250;
+    const menuHeight = 380;
+
+    let posX = position.x || 100;
+    let posY = position.y || 100;
+
+    if (posX + menuWidth + 240 > screenWidth) {
+      posX = Math.max(10, posX - menuWidth);
+    }
+    if (posY + menuHeight > screenHeight) {
+      posY = Math.max(10, screenHeight - menuHeight - 20);
+    }
+
+    setDragPos({ x: posX, y: posY });
+    setActiveHoverCategory(null);
+  }, [isOpen, position]);
+
+  // Gestion du Déplacement (Drag & Drop de la fenêtre)
+  const handleMouseDownHeader = (e) => {
+    if (e.button !== 0) return; // Clic gauche uniquement
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      posX: dragPos.x,
+      posY: dragPos.y
+    };
+  };
+
+  const handleTouchStartHeader = (e) => {
+    if (!e.touches[0]) return;
+    setIsDragging(true);
+    dragStartRef.current = {
+      mouseX: e.touches[0].clientX,
+      mouseY: e.touches[0].clientY,
+      posX: dragPos.x,
+      posY: dragPos.y
+    };
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e) => {
+      const deltaX = e.clientX - dragStartRef.current.mouseX;
+      const deltaY = e.clientY - dragStartRef.current.mouseY;
+      const newX = Math.max(10, Math.min(window.innerWidth - 270, dragStartRef.current.posX + deltaX));
+      const newY = Math.max(10, Math.min(window.innerHeight - 100, dragStartRef.current.posY + deltaY));
+      setDragPos({ x: newX, y: newY });
+    };
+
+    const handleTouchMove = (e) => {
+      if (!e.touches[0]) return;
+      const deltaX = e.touches[0].clientX - dragStartRef.current.mouseX;
+      const deltaY = e.touches[0].clientY - dragStartRef.current.mouseY;
+      const newX = Math.max(10, Math.min(window.innerWidth - 270, dragStartRef.current.posX + deltaX));
+      const newY = Math.max(10, Math.min(window.innerHeight - 100, dragStartRef.current.posY + deltaY));
+      setDragPos({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDragging]);
 
   // Fermer sur clic à l'extérieur ou touche Echap
   useEffect(() => {
     if (!isOpen) return;
 
     const handleClickOutside = (e) => {
+      if (isDragging) return;
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         onClose();
       }
@@ -42,73 +134,92 @@ export function ContextMenuCascade({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isDragging]);
 
   if (!isOpen || !product) return null;
 
-  // Calcul intelligent des coordonnées pour éviter de sortir de l'écran
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-  const menuWidth = 240;
-  const menuHeight = 360;
-
-  let posX = position.x;
-  let posY = position.y;
-
-  if (posX + menuWidth + 220 > screenWidth) {
-    posX = Math.max(10, posX - menuWidth);
-  }
-  if (posY + menuHeight > screenHeight) {
-    posY = Math.max(10, screenHeight - menuHeight - 20);
-  }
-
-  const isFlyoutLeft = posX + menuWidth + 220 > screenWidth;
-
+  const isFlyoutLeft = dragPos.x + 250 + 240 > window.innerWidth;
   const currentCatId = product.category || 'inbox';
+  const validMainCategories = categoriesTree.filter(cat => cat.id !== 'inbox' && cat.id !== 'all');
 
   return (
     <div
       ref={menuRef}
       style={{
         position: 'fixed',
-        top: `${posY}px`,
-        left: `${posX}px`,
-        width: `${menuWidth}px`,
-        background: 'rgba(15, 23, 42, 0.96)',
-        backdropFilter: 'blur(20px)',
-        border: '1.5px solid rgba(59, 130, 246, 0.4)',
-        borderRadius: '14px',
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(37, 99, 235, 0.3)',
+        top: `${dragPos.y}px`,
+        left: `${dragPos.x}px`,
+        width: '250px',
+        background: 'rgba(15, 23, 42, 0.97)',
+        backdropFilter: 'blur(25px)',
+        border: '1.5px solid rgba(59, 130, 246, 0.5)',
+        borderRadius: '16px',
+        boxShadow: isDragging 
+          ? '0 25px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(59, 130, 246, 0.6)' 
+          : '0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(37, 99, 235, 0.35)',
         zIndex: 999999,
         padding: '0.45rem',
         fontSize: '0.8rem',
         color: '#FFFFFF',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
-        animation: 'modalFade 0.12s ease'
+        animation: isDragging ? 'none' : 'modalFade 0.12s ease',
+        userSelect: isDragging ? 'none' : 'auto'
       }}
       onClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* 🏷️ En-tête de l'article ciblé */}
-      <div style={{
-        padding: '0.45rem 0.6rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        marginBottom: '0.35rem'
-      }}>
-        <div style={{ fontSize: '0.68rem', color: '#60A5FA', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          {product.sku || 'ARTICLE'}
+      {/* ⠿ BARRE DE DÉPLACEMENT D'EN-TÊTE (DRAGGABLE HEADER) */}
+      <div 
+        onMouseDown={handleMouseDownHeader}
+        onTouchStart={handleTouchStartHeader}
+        style={{
+          padding: '0.4rem 0.6rem',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          marginBottom: '0.35rem',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          background: 'rgba(255, 255, 255, 0.04)',
+          borderRadius: '10px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}
+        title="Maintenez le clic pour déplacer cette fenêtre sur votre écran"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden' }}>
+          <GripHorizontal size={14} color="#60A5FA" />
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontSize: '0.66rem', color: '#60A5FA', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {product.sku || 'ARTICLE'} • DÉPLAÇABLE
+            </div>
+            <div style={{
+              fontSize: '0.76rem',
+              fontWeight: 700,
+              color: '#F8FAFC',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '170px'
+            }}>
+              {product.titleFr || 'Article'}
+            </div>
+          </div>
         </div>
-        <div style={{
-          fontSize: '0.78rem',
-          fontWeight: 700,
-          color: '#F8FAFC',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          maxWidth: '210px'
-        }}>
-          {product.titleFr || 'Article sans nom'}
-        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#94A3B8',
+            cursor: 'pointer',
+            padding: '2px',
+            display: 'flex',
+            alignItems: 'center'
+          }}
+          title="Fermer"
+        >
+          <X size={14} />
+        </button>
       </div>
 
       {/* 📥 1. Option Rapide : Déplacer vers Magasin d'Arrivage (Inbox) */}
@@ -122,10 +233,10 @@ export function ContextMenuCascade({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0.5rem 0.65rem',
+          padding: '0.45rem 0.65rem',
           borderRadius: '8px',
           border: 'none',
-          background: currentCatId === 'inbox' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+          background: currentCatId === 'inbox' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
           color: currentCatId === 'inbox' ? '#FCD34D' : '#E2E8F0',
           cursor: 'pointer',
           fontSize: '0.78rem',
@@ -145,8 +256,8 @@ export function ContextMenuCascade({
       <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '0.35rem 0' }} />
 
       <div style={{
-        padding: '0.2rem 0.6rem',
-        fontSize: '0.65rem',
+        padding: '0.15rem 0.6rem',
+        fontSize: '0.64rem',
         color: '#94A3B8',
         fontWeight: 800,
         textTransform: 'uppercase',
@@ -155,94 +266,111 @@ export function ContextMenuCascade({
         Classer dans un Rayon ➔
       </div>
 
-      {/* 🗂️ 2. Liste des Catégories Principales avec Cascade de Sous-Catégories */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        {categoriesTree
-          .filter(cat => cat.id !== 'inbox' && cat.id !== 'all')
-          .map((mainCat) => {
-            const isHovered = activeHoverCategory === mainCat.id;
-            const subCats = Array.isArray(mainCat.subCategories) ? mainCat.subCategories : [];
-            const hasSubs = subCats.length > 0;
+      {/* 🗂️ 2. LISTE DÉFILANTE DES CATÉGORIES PRINCIPALES (SCROLLBAR DÉDIÉE) */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+        maxHeight: '250px',
+        overflowY: 'auto',
+        paddingRight: '2px'
+      }}>
+        {validMainCategories.map((mainCat) => {
+          const isHovered = activeHoverCategory === mainCat.id;
+          const subCats = Array.isArray(mainCat.subCategories) ? mainCat.subCategories : [];
+          const hasSubs = subCats.length > 0;
 
-            return (
-              <div
-                key={mainCat.id}
-                style={{ position: 'relative' }}
-                onMouseEnter={() => setActiveHoverCategory(mainCat.id)}
+          return (
+            <div
+              key={mainCat.id}
+              style={{ position: 'relative' }}
+              onMouseEnter={() => setActiveHoverCategory(mainCat.id)}
+            >
+              <button
+                onClick={() => {
+                  if (!hasSubs) {
+                    onSelectCategory(product, mainCat.id, mainCat.id);
+                    onClose();
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.48rem 0.65rem',
+                  borderRadius: '8px',
+                  border: isHovered ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid transparent',
+                  background: isHovered ? 'rgba(37, 99, 235, 0.4)' : 'transparent',
+                  color: isHovered ? '#FFFFFF' : '#E2E8F0',
+                  cursor: 'pointer',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
+                }}
               >
-                <button
-                  onClick={() => {
-                    if (!hasSubs) {
-                      onSelectCategory(product, mainCat.id, mainCat.id);
-                      onClose();
-                    }
-                  }}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+                  <span style={{ fontSize: '1rem' }}>{mainCat.icon || '📁'}</span>
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>
+                    {mainCat.name}
+                  </span>
+                </div>
+                {hasSubs && (
+                  <ChevronRight size={14} color={isHovered ? '#60A5FA' : '#64748B'} />
+                )}
+              </button>
+
+              {/* 🌟 SOUS-MENU EN CASCADE SOLIDAIRE AVEC PROPRE BARRE DE DÉFILEMENT */}
+              {isHovered && hasSubs && (
+                <div
                   style={{
-                    width: '100%',
+                    position: 'absolute',
+                    top: '-4px',
+                    left: isFlyoutLeft ? 'auto' : 'calc(100% + 6px)',
+                    right: isFlyoutLeft ? 'calc(100% + 6px)' : 'auto',
+                    width: '240px',
+                    background: 'rgba(15, 23, 42, 0.98)',
+                    backdropFilter: 'blur(25px)',
+                    border: '1.5px solid rgba(59, 130, 246, 0.55)',
+                    borderRadius: '14px',
+                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.95), 0 0 25px rgba(37, 99, 235, 0.4)',
+                    padding: '0.4rem',
+                    zIndex: 1000000,
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.5rem 0.65rem',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: isHovered ? 'rgba(37, 99, 235, 0.35)' : 'transparent',
-                    color: isHovered ? '#FFFFFF' : '#E2E8F0',
-                    cursor: 'pointer',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    textAlign: 'left',
-                    transition: 'all 0.15s ease'
+                    flexDirection: 'column',
+                    gap: '2px',
+                    animation: 'modalFade 0.1s ease'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1rem' }}>{mainCat.icon || '📁'}</span>
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>
+                  {/* En-tête du sous-menu */}
+                  <div style={{
+                    padding: '0.3rem 0.5rem',
+                    fontSize: '0.66rem',
+                    color: '#38BDF8',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    marginBottom: '0.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}>
+                    <span>{mainCat.icon}</span>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {mainCat.name}
                     </span>
                   </div>
-                  {hasSubs && (
-                    <ChevronRight size={14} color={isHovered ? '#60A5FA' : '#64748B'} />
-                  )}
-                </button>
 
-                {/* 🌟 SOUS-MENU EN CASCADE (Flyout Sub-Categories) */}
-                {isHovered && hasSubs && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '-4px',
-                      left: isFlyoutLeft ? 'auto' : 'calc(100% + 6px)',
-                      right: isFlyoutLeft ? 'calc(100% + 6px)' : 'auto',
-                      width: '230px',
-                      background: 'rgba(15, 23, 42, 0.98)',
-                      backdropFilter: 'blur(20px)',
-                      border: '1.5px solid rgba(59, 130, 246, 0.45)',
-                      borderRadius: '12px',
-                      boxShadow: '0 15px 40px rgba(0, 0, 0, 0.85), 0 0 20px rgba(37, 99, 235, 0.3)',
-                      padding: '0.4rem',
-                      zIndex: 1000000,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '2px',
-                      animation: 'modalFade 0.1s ease'
-                    }}
-                  >
-                    <div style={{
-                      padding: '0.3rem 0.5rem',
-                      fontSize: '0.66rem',
-                      color: '#38BDF8',
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                      marginBottom: '0.25rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem'
-                    }}>
-                      <span>{mainCat.icon}</span>
-                      <span>Sous-Catégories :</span>
-                    </div>
-
+                  {/* 📜 LISTE DÉFILANTE DES SOUS-CATÉGORIES (SCROLLBAR DÉDIÉE) */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    maxHeight: '230px',
+                    overflowY: 'auto',
+                    paddingRight: '2px'
+                  }}>
                     {subCats.map((sub) => {
                       const isSelected = currentCatId === sub.id;
                       return (
@@ -269,25 +397,28 @@ export function ContextMenuCascade({
                             transition: 'all 0.12s ease'
                           }}
                           onMouseEnter={(e) => {
-                            if (!isSelected) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                            if (!isSelected) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.09)';
                           }}
                           onMouseLeave={(e) => {
                             if (!isSelected) e.currentTarget.style.background = 'transparent';
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
                             <span>{sub.icon || '▫️'}</span>
-                            <span>{sub.name}</span>
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {sub.name}
+                            </span>
                           </div>
                           {isSelected && <Check size={13} color="#34D399" />}
                         </button>
                       );
                     })}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* 🗑️ 3. Option Supprimer l'Article */}
