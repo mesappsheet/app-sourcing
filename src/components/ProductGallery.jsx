@@ -14,10 +14,15 @@ import {
   Move
 } from 'lucide-react';
 
-export function ProductGallery({ images = [], videoDemo, title, onOpenFullscreen }) {
+export function ProductGallery({ images = [], videos = [], videoDemo, title, onOpenFullscreen }) {
   const [activeMedia, setActiveMedia] = useState('photo'); // 'photo' | 'video'
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  
+  const allVideos = (Array.isArray(videos) && videos.length > 0)
+    ? videos
+    : (videoDemo?.videoUrl ? [videoDemo.videoUrl] : (typeof videoDemo === 'string' ? [videoDemo] : []));
   
   // Interactive Zoom State
   const [zoomLevel, setZoomLevel] = useState(1); // 1 to 3x
@@ -210,11 +215,13 @@ export function ProductGallery({ images = [], videoDemo, title, onOpenFullscreen
               </div>
             ))}
 
-            {/* Video Thumbnail Button */}
-            {videoDemo && (
+            {/* Video Thumbnail Buttons (Multi-Vidéos) */}
+            {allVideos.map((vidUrl, vIdx) => (
               <div
+                key={`vid-${vIdx}`}
                 onClick={() => {
                   resetZoom();
+                  setCurrentVideoIndex(vIdx);
                   setActiveMedia('video');
                 }}
                 style={{
@@ -223,7 +230,9 @@ export function ProductGallery({ images = [], videoDemo, title, onOpenFullscreen
                   borderRadius: '10px',
                   overflow: 'hidden',
                   cursor: 'pointer',
-                  border: activeMedia === 'video' ? '3px solid var(--amber-gold)' : '1px solid var(--border-subtle)',
+                  border: activeMedia === 'video' && currentVideoIndex === vIdx 
+                    ? '3px solid var(--amber-gold)' 
+                    : '1px solid var(--border-subtle)',
                   background: '#0B1120',
                   display: 'flex',
                   flexDirection: 'column',
@@ -231,9 +240,11 @@ export function ProductGallery({ images = [], videoDemo, title, onOpenFullscreen
                   justifyContent: 'center',
                   gap: '0.2rem',
                   flexShrink: 0,
-                  boxShadow: activeMedia === 'video' ? '0 0 14px var(--glow-amber)' : 'none'
+                  boxShadow: activeMedia === 'video' && currentVideoIndex === vIdx 
+                    ? '0 0 14px var(--glow-amber)' 
+                    : 'none'
                 }}
-                title="Voir la vidéo démo"
+                title={`Voir la vidéo #${vIdx + 1}`}
               >
                 <div style={{
                   width: '32px',
@@ -246,9 +257,11 @@ export function ProductGallery({ images = [], videoDemo, title, onOpenFullscreen
                 }}>
                   <Play size={16} fill="#F59E0B" color="#F59E0B" style={{ marginLeft: '2px' }} />
                 </div>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--amber-light)' }}>Vidéo</span>
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--amber-light)' }}>
+                  {allVideos.length > 1 ? `Vidéo #${vIdx + 1}` : 'Vidéo'}
+                </span>
               </div>
-            )}
+            ))}
           </div>
 
           {/* Scroll Down Button */}
@@ -489,10 +502,11 @@ export function ProductGallery({ images = [], videoDemo, title, onOpenFullscreen
               </div>
             </div>
           ) : (
-            /* 🎥 REAL VIDEO PLAYER STAGE (ALIBABA STYLE) */
+            /* 🎥 REAL VIDEO PLAYER STAGE (ALIBABA MULTI-VIDÉO STYLE) */
             <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <video 
-                src={videoDemo?.videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-power-drill-screwing-a-screw-into-wood-41712-large.mp4'} 
+                key={allVideos[currentVideoIndex] || currentVideoIndex}
+                src={allVideos[currentVideoIndex] || videoDemo?.videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-power-drill-screwing-a-screw-into-wood-41712-large.mp4'} 
                 controls 
                 autoPlay 
                 loop 
@@ -502,19 +516,49 @@ export function ProductGallery({ images = [], videoDemo, title, onOpenFullscreen
                 position: 'absolute',
                 top: 12,
                 left: 14,
-                background: 'rgba(245, 158, 11, 0.95)',
-                color: '#0F172A',
-                padding: '0.25rem 0.65rem',
-                borderRadius: '6px',
-                fontSize: '0.72rem',
-                fontWeight: 900,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.35rem',
-                zIndex: 10
+                gap: '0.4rem',
+                zIndex: 10,
+                flexWrap: 'wrap'
               }}>
-                <Play size={12} fill="#0F172A" />
-                <span>VIDÉO USINE RÉELLE (DOUYIN / 1688)</span>
+                <div style={{
+                  background: 'rgba(245, 158, 11, 0.95)',
+                  color: '#0F172A',
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 900,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}>
+                  <Play size={12} fill="#0F172A" />
+                  <span>VIDÉO {allVideos.length > 1 ? `${currentVideoIndex + 1}/${allVideos.length}` : 'USINE RÉELLE'}</span>
+                </div>
+
+                {allVideos.length > 1 && (
+                  <div style={{ display: 'flex', gap: '3px', background: 'rgba(15, 23, 42, 0.9)', padding: '2px 4px', borderRadius: '6px', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                    {allVideos.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={(e) => { e.stopPropagation(); setCurrentVideoIndex(idx); }}
+                        style={{
+                          background: currentVideoIndex === idx ? '#F59E0B' : 'rgba(255,255,255,0.1)',
+                          color: currentVideoIndex === idx ? '#000' : '#FFF',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '0.15rem 0.45rem',
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        #{idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

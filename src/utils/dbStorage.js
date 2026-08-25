@@ -36,32 +36,54 @@ function openDatabase() {
   });
 }
 
+export function parseProductVideos(videoDemo, videos) {
+  if (Array.isArray(videos) && videos.length > 0) {
+    return videos.filter(v => typeof v === 'string' && v.trim().length > 0);
+  }
+  if (!videoDemo) return [];
+  if (typeof videoDemo === 'string') {
+    try {
+      const parsed = JSON.parse(videoDemo);
+      if (Array.isArray(parsed)) return parsed.filter(v => typeof v === 'string' && v.trim().length > 0);
+    } catch (e) {}
+    return [videoDemo].filter(Boolean);
+  }
+  if (typeof videoDemo === 'object') {
+    if (Array.isArray(videoDemo.videos)) return videoDemo.videos.filter(Boolean);
+    if (videoDemo.videoUrl) return [videoDemo.videoUrl].filter(Boolean);
+  }
+  return [];
+}
+
 // 💾 Sauvegarde dans Supabase Cloud + IndexedDB locale
 export async function saveAllProductsToDb(products, workspaceId = 'ws_quincaillerie') {
   // 1. Sauvegarde Cloud Supabase
   if (supabase && isSupabaseConfigured && Array.isArray(products) && products.length > 0) {
     try {
-      const rows = products.map(p => ({
-        id: p.id,
-        workspace_id: p.workspaceId || workspaceId,
-        sku: p.sku || 'SKU-001',
-        title_fr: p.titleFr || 'Article',
-        title_cn: p.titleCn || '',
-        category: p.category || 'all',
-        material: p.material || '',
-        dimensions: p.dimensions || '',
-        images: p.images || [],
-        video_demo: p.videoDemo || null,
-        specifications: p.specifications || [],
-        factory_name: p.factoryName || '',
-        factory_city: p.factoryCity || '',
-        tier_pricing: p.tierPricing || [],
-        moq: p.moq || '1 pièce',
-        suppliers: p.suppliers || [],
-        price_cny: parseFloat(p.priceCny) || 0,
-        unit: p.unit || 'Pièce (pc)',
-        source_url: p.sourceUrl || ''
-      }));
+      const rows = products.map(p => {
+        const productVideos = parseProductVideos(p.videoDemo, p.videos);
+        return {
+          id: p.id,
+          workspace_id: p.workspaceId || workspaceId,
+          sku: p.sku || 'SKU-001',
+          title_fr: p.titleFr || 'Article',
+          title_cn: p.titleCn || '',
+          category: p.category || 'all',
+          material: p.material || '',
+          dimensions: p.dimensions || '',
+          images: p.images || [],
+          video_demo: productVideos.length > 0 ? JSON.stringify(productVideos) : null,
+          specifications: p.specifications || [],
+          factory_name: p.factoryName || '',
+          factory_city: p.factoryCity || '',
+          tier_pricing: p.tierPricing || [],
+          moq: p.moq || '1 pièce',
+          suppliers: p.suppliers || [],
+          price_cny: parseFloat(p.priceCny) || 0,
+          unit: p.unit || 'Pièce (pc)',
+          source_url: p.sourceUrl || ''
+        };
+      });
 
       await supabase.from('products').upsert(rows);
     } catch (sbErr) {
@@ -105,27 +127,31 @@ export async function loadAllProductsFromDb(workspaceId = 'ws_quincaillerie') {
         .eq('workspace_id', workspaceId);
 
       if (!error && data && Array.isArray(data) && data.length > 0) {
-        return data.map(r => ({
-          id: r.id,
-          workspaceId: r.workspace_id,
-          sku: r.sku,
-          titleFr: r.title_fr,
-          titleCn: r.title_cn,
-          category: r.category,
-          material: r.material,
-          dimensions: r.dimensions,
-          images: r.images || [],
-          videoDemo: r.video_demo,
-          specifications: r.specifications || [],
-          factoryName: r.factory_name,
-          factoryCity: r.factory_city,
-          tierPricing: r.tier_pricing || [],
-          moq: r.moq,
-          suppliers: r.suppliers || [],
-          priceCny: r.price_cny,
-          unit: r.unit,
-          sourceUrl: r.source_url
-        }));
+        return data.map(r => {
+          const vids = parseProductVideos(r.video_demo, r.videos);
+          return {
+            id: r.id,
+            workspaceId: r.workspace_id,
+            sku: r.sku,
+            titleFr: r.title_fr,
+            titleCn: r.title_cn,
+            category: r.category,
+            material: r.material,
+            dimensions: r.dimensions,
+            images: r.images || [],
+            videos: vids,
+            videoDemo: vids[0] || (r.video_demo && typeof r.video_demo === 'string' && !r.video_demo.startsWith('[') ? r.video_demo : null),
+            specifications: r.specifications || [],
+            factoryName: r.factory_name,
+            factoryCity: r.factory_city,
+            tierPricing: r.tier_pricing || [],
+            moq: r.moq,
+            suppliers: r.suppliers || [],
+            priceCny: r.price_cny,
+            unit: r.unit,
+            sourceUrl: r.source_url
+          };
+        });
       }
     } catch (sbErr) {
       console.warn('Erreur chargement Supabase:', sbErr);

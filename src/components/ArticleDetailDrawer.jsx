@@ -492,15 +492,16 @@ export function ArticleDetailDrawer({
 
           {/* 📷 VRAIE GALERIE PHOTOS STYLE ALIBABA AVEC ZOOM & DÉFILEMENT */}
           <ProductGallery 
-        images={product.images || []}
-        videoDemo={product.videoDemo}
-        title={product.titleFr}
-        onOpenFullscreen={(idx) => {
-          if (onOpenImageViewer) {
-            onOpenImageViewer(product, idx);
-          }
-        }}
-      />
+            images={product.images || []}
+            videos={product.videos || []}
+            videoDemo={product.videoDemo}
+            title={product.titleFr}
+            onOpenFullscreen={(idx) => {
+              if (onOpenImageViewer) {
+                onOpenImageViewer(product, idx);
+              }
+            }}
+          />
 
       {/* ⚖️ COMMUTATEUR DYNAMIQUE D'UNITÉ & BANNIÈRE DE PRIX RÉACTIF */}
       <div style={{

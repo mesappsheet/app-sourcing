@@ -1389,6 +1389,7 @@ export function App() {
         isOpen={imageViewerState.isOpen}
         onClose={() => setImageViewerState({ isOpen: false, product: null, initialIndex: 0 })}
         images={imageViewerState.product?.images || []}
+        videos={imageViewerState.product?.videos || []}
         videoDemo={imageViewerState.product?.videoDemo}
         initialIndex={imageViewerState.initialIndex}
         productTitle={imageViewerState.product?.titleFr || ''}

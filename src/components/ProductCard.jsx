@@ -253,26 +253,53 @@ export function ProductCard({
             </button>
           )}
 
-          {/* Top Right: Photos Counter Badge */}
+          {/* Top Right: Photos & Videos Counter Badge */}
           <div style={{
             position: 'absolute',
             top: 10,
             right: 10,
-            background: 'rgba(15, 23, 42, 0.9)',
-            backdropFilter: 'blur(8px)',
-            padding: '0.25rem 0.6rem',
-            borderRadius: '8px',
-            fontSize: '0.72rem',
-            fontWeight: 800,
-            color: 'white',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.35rem',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
+            gap: '4px',
             zIndex: 5
           }}>
-            <Camera size={13} />
-            <span>{currentImgIdx + 1}/{images.length}</span>
+            {product?.videos && product.videos.length > 0 && (
+              <div style={{
+                background: 'rgba(245, 158, 11, 0.92)',
+                backdropFilter: 'blur(8px)',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '8px',
+                fontSize: '0.7rem',
+                fontWeight: 900,
+                color: '#0F172A',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+              }}
+              title={`${product.videos.length} vidéo(s) disponible(s)`}>
+                <Video size={12} />
+                <span>{product.videos.length > 1 ? `${product.videos.length} Vids` : 'Vid'}</span>
+              </div>
+            )}
+
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.9)',
+              backdropFilter: 'blur(8px)',
+              padding: '0.25rem 0.6rem',
+              borderRadius: '8px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <Camera size={13} />
+              <span>{currentImgIdx + 1}/{images.length}</span>
+            </div>
           </div>
 
           {/* Bottom Center: Pagination Dots Indicator */}

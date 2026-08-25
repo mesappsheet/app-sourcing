@@ -22,6 +22,7 @@ import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDeleteProduct, categories }) {
   const [formData, setFormData] = useState(null);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [newVideoUrl, setNewVideoUrl] = useState('');
   const [activeEditTab, setActiveEditTab] = useState('general'); // 'general' | 'suppliers' | 'video' | 'images'
   const [newSpecLabel, setNewSpecLabel] = useState('');
   const [newSpecValue, setNewSpecValue] = useState('');
@@ -47,9 +48,14 @@ export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDe
 
   useEffect(() => {
     if (product) {
+      const initialVideos = (product.videos && Array.isArray(product.videos) && product.videos.length > 0)
+        ? [...product.videos]
+        : (product.videoDemo?.videoUrl ? [product.videoDemo.videoUrl] : (typeof product.videoDemo === 'string' ? [product.videoDemo] : []));
+
       setFormData({
         ...product,
         images: product.images ? [...product.images] : [],
+        videos: initialVideos,
         suppliers: product.suppliers ? product.suppliers.map(s => ({ ...s })) : [
           {
             id: 'sup-1',
@@ -68,7 +74,7 @@ export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDe
         videoDemo: product.videoDemo ? { ...product.videoDemo } : {
           source: 'Douyin / Démo Vidéo',
           views: '150K vues',
-          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-kitchen-drawer-opening-and-closing-smoothly-41224-large.mp4',
+          videoUrl: initialVideos[0] || '',
           transcriptCn: '五金配件工厂直发，安装简单。',
           script30s: {
             hook: '🔥 Arrêtez de perdre du temps sur vos chantiers !',
@@ -100,23 +106,68 @@ export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDe
     });
   };
 
+  const handleAddVideoUrl = () => {
+    if (newVideoUrl.trim()) {
+      setFormData(prev => {
+        const updated = [...(prev.videos || []), newVideoUrl.trim()];
+        return {
+          ...prev,
+          videos: updated,
+          hasVideoDemo: true,
+          videoDemo: {
+            ...prev.videoDemo,
+            videoUrl: updated[0] || ''
+          }
+        };
+      });
+      setNewVideoUrl('');
+    }
+  };
+
   const handleVideoFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setFormData(prev => ({
-            ...prev,
-            videoDemo: {
-              ...prev.videoDemo,
-              videoUrl: event.target.result
-            }
-          }));
+          setFormData(prev => {
+            const updated = [...(prev.videos || []), event.target.result];
+            return {
+              ...prev,
+              videos: updated,
+              hasVideoDemo: true,
+              videoDemo: {
+                ...prev.videoDemo,
+                videoUrl: updated[0] || ''
+              }
+            };
+          });
         }
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveVideo = (indexToRemove) => {
+    promptDelete({
+      title: 'Supprimer cette Vidéo ?',
+      message: 'Voulez-vous retirer cette vidéo de la liste des vidéos de cet article ?',
+      itemName: `Vidéo #${indexToRemove + 1}`,
+      itemType: 'vidéo',
+      onConfirm: () => {
+        setFormData(prev => {
+          const updated = (prev.videos || []).filter((_, idx) => idx !== indexToRemove);
+          return {
+            ...prev,
+            videos: updated,
+            videoDemo: {
+              ...prev.videoDemo,
+              videoUrl: updated[0] || ''
+            }
+          };
+        });
+      }
+    });
   };
 
   const handleAddImage = () => {
@@ -205,7 +256,16 @@ export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDe
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSaveProduct(formData);
+    const cleanVideos = (formData.videos || []).filter(v => typeof v === 'string' && v.trim().length > 0);
+    const updated = {
+      ...formData,
+      videos: cleanVideos,
+      videoDemo: {
+        ...(typeof formData.videoDemo === 'object' ? formData.videoDemo : {}),
+        videoUrl: cleanVideos[0] || ''
+      }
+    };
+    onSaveProduct(updated);
     onClose();
   };
 
@@ -560,64 +620,165 @@ export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDe
             </div>
           )}
 
-          {/* TAB 2: VIDÉO DÉMO & SCRIPT 30S */}
+          {/* TAB 2: MULTI-VIDÉOS DÉMO & SCRIPT 30S */}
           {activeEditTab === 'video' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ background: '#0B1120', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--purple-accent)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Video size={16} />
-                  <span>Configuration du Lien Vidéo Démo (Douyin / TikTok / MP4) :</span>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--purple-accent)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Video size={16} />
+                    <span>Vidéos Démo & Usine de l'Article ({(formData.videos || []).length}) :</span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#93C5FD', background: 'rgba(59, 130, 246, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                    Cloud Supabase Synchronisé
+                  </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.65rem', marginBottom: '0.65rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                      URL de la Vidéo (Lien direct .mp4 ou lien vidéo démo) :
-                    </label>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      <input 
-                        type="text"
-                        value={formData.videoDemo?.videoUrl || ''}
-                        onChange={e => setFormData({
-                          ...formData,
-                          hasVideoDemo: true,
-                          videoDemo: { ...formData.videoDemo, videoUrl: e.target.value }
-                        })}
-                        style={{ flex: 1, padding: '0.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
-                      />
-                      <input 
-                        type="file" 
-                        id="edit-video-upload" 
-                        accept="video/*" 
-                        onChange={handleVideoFileUpload}
-                        style={{ display: 'none' }} 
-                      />
-                      <label 
-                        htmlFor="edit-video-upload"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.3rem',
-                          background: 'rgba(139, 92, 246, 0.2)',
-                          border: '1px solid rgba(139, 92, 246, 0.4)',
-                          color: '#C4B5FD',
-                          padding: '0.45rem 0.75rem',
-                          borderRadius: '6px',
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        <Upload size={13} />
-                        <span>📁 Importer MP4</span>
-                      </label>
-                    </div>
-                  </div>
+                {/* 🎬 LISTE DES VIDÉOS EXISTANTES */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+                  {(formData.videos || []).map((vidUrl, vIdx) => (
+                    <div 
+                      key={vIdx}
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        border: '1px solid rgba(139, 92, 246, 0.3)',
+                        borderRadius: '10px',
+                        padding: '0.65rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#C4B5FD', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Video size={14} />
+                          <span>Vidéo #{vIdx + 1} {vIdx === 0 && '🌟 (Principale)'}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVideo(vIdx)}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            color: '#F87171',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
+                          <Trash2 size={12} />
+                          <span>Supprimer</span>
+                        </button>
+                      </div>
 
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.6rem', alignItems: 'center' }}>
+                        <input 
+                          type="text"
+                          value={vidUrl}
+                          onChange={e => {
+                            const updated = [...(formData.videos || [])];
+                            updated[vIdx] = e.target.value;
+                            setFormData({
+                              ...formData,
+                              videos: updated,
+                              videoDemo: { ...formData.videoDemo, videoUrl: updated[0] || '' }
+                            });
+                          }}
+                          placeholder="URL de la vidéo (https://...mp4 ou lien)"
+                          style={{ width: '100%', padding: '0.45rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'white', fontSize: '0.78rem' }}
+                        />
+
+                        {/* Mini lecteur de test */}
+                        {vidUrl && vidUrl.startsWith('http') && (
+                          <video 
+                            src={vidUrl} 
+                            controls 
+                            style={{ width: '100%', height: '70px', borderRadius: '6px', objectFit: 'cover', background: '#000' }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {(!formData.videos || formData.videos.length === 0) && (
+                    <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-tertiary)', fontSize: '0.78rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                      Aucune vidéo associée pour le moment. Ajoutez votre première vidéo ci-dessous !
+                    </div>
+                  )}
+                </div>
+
+                {/* ➕ AJOUTER UNE NOUVELLE VIDÉO */}
+                <div style={{ background: 'rgba(37, 99, 235, 0.08)', border: '1px dashed rgba(59, 130, 246, 0.4)', borderRadius: '10px', padding: '0.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.72rem', color: '#93C5FD', fontWeight: 800, marginBottom: '0.35rem' }}>
+                    + Ajouter une Autre Vidéo (Lien direct MP4 / Web ou Fichier Local) :
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <input 
+                      type="text"
+                      value={newVideoUrl}
+                      onChange={e => setNewVideoUrl(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddVideoUrl(); } }}
+                      placeholder="Collez ici l'URL MP4 (ex: https://...video.mp4)"
+                      style={{ flex: 1, minWidth: '200px', padding: '0.45rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
+                    />
+                    
+                    <button
+                      type="button"
+                      onClick={handleAddVideoUrl}
+                      className="btn-primary-action"
+                      style={{ padding: '0.45rem 0.8rem', fontSize: '0.75rem' }}
+                    >
+                      <Plus size={14} />
+                      <span>Ajouter Vidéo</span>
+                    </button>
+
+                    <input 
+                      type="file" 
+                      id="edit-video-upload" 
+                      accept="video/*" 
+                      onChange={handleVideoFileUpload}
+                      style={{ display: 'none' }} 
+                    />
+                    <label 
+                      htmlFor="edit-video-upload"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        background: 'rgba(139, 92, 246, 0.2)',
+                        border: '1px solid rgba(139, 92, 246, 0.4)',
+                        color: '#C4B5FD',
+                        padding: '0.45rem 0.75rem',
+                        borderRadius: '6px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <Upload size={13} />
+                      <span>📁 Importer MP4</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* SCRIPT COMMERCIAL 30 SECONDES & TRANSCRIPTION */}
+              <div style={{ background: '#0B1120', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--amber-light)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Sparkles size={16} />
+                  <span>Script Vidéo Commercial 30s & Transcription :</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginBottom: '0.65rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                      Source & Vues :
+                      Source & Vues Démo :
                     </label>
                     <input 
                       type="text"
@@ -626,24 +787,24 @@ export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDe
                         ...formData,
                         videoDemo: { ...formData.videoDemo, views: e.target.value }
                       })}
-                      style={{ width: '100%', padding: '0.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
+                      style={{ width: '100%', padding: '0.45rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'white', fontSize: '0.78rem' }}
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                    Transcription Chinoise Originale (Douyin) :
-                  </label>
-                  <input 
-                    type="text"
-                    value={formData.videoDemo?.transcriptCn || ''}
-                    onChange={e => setFormData({
-                      ...formData,
-                      videoDemo: { ...formData.videoDemo, transcriptCn: e.target.value }
-                    })}
-                    style={{ width: '100%', padding: '0.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--amber-light)', fontSize: '0.8rem' }}
-                  />
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                      Transcription Chinoise (Douyin) :
+                    </label>
+                    <input 
+                      type="text"
+                      value={formData.videoDemo?.transcriptCn || ''}
+                      onChange={e => setFormData({
+                        ...formData,
+                        videoDemo: { ...formData.videoDemo, transcriptCn: e.target.value }
+                      })}
+                      style={{ width: '100%', padding: '0.45rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--amber-light)', fontSize: '0.78rem' }}
+                    />
+                  </div>
                 </div>
               </div>
 

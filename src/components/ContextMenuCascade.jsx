@@ -285,8 +285,10 @@ export function ContextMenuCascade({
             display: 'flex',
             flexDirection: 'column',
             gap: '2px',
-            maxHeight: '240px',
-            overflowY: 'auto',
+            maxHeight: '175px',
+            overflowY: 'scroll',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#00F0FF rgba(255, 255, 255, 0.15)',
             paddingRight: '4px'
           }}
         >
@@ -415,8 +417,10 @@ export function ContextMenuCascade({
               display: 'flex',
               flexDirection: 'column',
               gap: '2px',
-              maxHeight: '260px',
-              overflowY: 'auto',
+              maxHeight: '180px',
+              overflowY: 'scroll',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#00F0FF rgba(255, 255, 255, 0.15)',
               paddingRight: '4px'
             }}
           >

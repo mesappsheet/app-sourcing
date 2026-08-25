@@ -871,32 +871,36 @@ body {
   box-shadow: 0 8px 24px rgba(2, 132, 199, 0.25) !important;
 }
 
-/* 📜 BARRES DE DÉFILEMENT TOUJOURS VISIBLES & ÉLÉGANTES */
+/* 📜 BARRES DE DÉFILEMENT TOUJOURS VISIBLES & ULTRA-CONTRASTÉES (CYAN / BLEU NÉON) */
 .custom-menu-scroll {
   scrollbar-width: thin !important;
-  scrollbar-color: #3B82F6 rgba(255, 255, 255, 0.08) !important;
+  scrollbar-color: #00F0FF rgba(255, 255, 255, 0.15) !important;
   scrollbar-gutter: stable;
+  overflow-y: scroll !important;
 }
 
 .custom-menu-scroll::-webkit-scrollbar {
-  width: 7px !important;
-  height: 7px !important;
+  width: 8px !important;
+  height: 8px !important;
   display: block !important;
 }
 
 .custom-menu-scroll::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 .custom-menu-scroll::-webkit-scrollbar-thumb {
-  background: #3B82F6 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.7) !important;
+  background: linear-gradient(180deg, #00F0FF, #3B82F6) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 
 .custom-menu-scroll::-webkit-scrollbar-thumb:hover {
-  background: #60A5FA !important;
+  background: #38BDF8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 1) !important;
 }
 
 /* ⚠️ BADGE DOUBLON FLOTTANT */
