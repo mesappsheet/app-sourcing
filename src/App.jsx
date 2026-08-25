@@ -149,38 +149,58 @@ export function App() {
   useEffect(() => {
     let isMounted = true;
 
+    // 🔄 Fonction de synchronisation Cloud Supabase instantanée
+    const refreshFromCloud = async () => {
+      try {
+        const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
+        if (cloudProducts && Array.isArray(cloudProducts) && cloudProducts.length > 0 && isMounted) {
+          setAllProductsByWs(prev => {
+            const current = prev[activeWorkspaceId] || [];
+            if (cloudProducts.length !== current.length || (cloudProducts[0] && cloudProducts[0].id !== current[0]?.id)) {
+              return {
+                ...prev,
+                [activeWorkspaceId]: cloudProducts
+              };
+            }
+            return prev;
+          });
+        }
+      } catch (e) {}
+    };
+
     async function loadDataFromHighCapacityStorage() {
       try {
-        // 1. Essai de chargement depuis le fichier disque serveur
-        const serverProducts = await loadProductsFromServerDisk();
-        if (serverProducts && serverProducts.length > 0 && isMounted) {
-          setAllProductsByWs(prev => {
-            // Fusionner pour ne perdre aucun produit
-            const existing = prev.ws_quincaillerie || [];
-            const existingIds = new Set(existing.map(p => p.id || p.sku));
-            const newProds = serverProducts.filter(p => !existingIds.has(p.id || p.sku));
-            
-            // Priorité absolue aux produits du serveur
-            return {
-              ...prev,
-              ws_quincaillerie: serverProducts
-            };
-          });
+        // 1. Essai de chargement prioritaire depuis Supabase Cloud
+        const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
+        if (cloudProducts && cloudProducts.length > 0 && isMounted) {
+          setAllProductsByWs(prev => ({
+            ...prev,
+            [activeWorkspaceId]: cloudProducts
+          }));
           setIsInitialLoadDone(true);
           return;
         }
 
-        // 2. Essai de chargement depuis la base IndexedDB locale
-        const dbProducts = await loadAllProductsFromDb();
+        // 2. Essai de chargement depuis le fichier disque serveur
+        const serverProducts = await loadProductsFromServerDisk();
+        if (serverProducts && serverProducts.length > 0 && isMounted) {
+          setAllProductsByWs(prev => ({
+            ...prev,
+            ws_quincaillerie: serverProducts
+          }));
+          setIsInitialLoadDone(true);
+          return;
+        }
+
+        // 3. Essai de chargement depuis la base IndexedDB locale
+        const dbProducts = await loadAllProductsFromDb(activeWorkspaceId);
         if (dbProducts && dbProducts.length > 0 && isMounted) {
           setAllProductsByWs(prev => ({
             ...prev,
-            ws_quincaillerie: dbProducts
+            [activeWorkspaceId]: dbProducts
           }));
-          syncProductsToServerDisk(dbProducts);
         } else if (isMounted) {
-          syncProductsToServerDisk(INITIAL_PRODUCTS);
-          saveAllProductsToDb(INITIAL_PRODUCTS);
+          saveAllProductsToDb(INITIAL_PRODUCTS, 'ws_quincaillerie');
         }
       } finally {
         if (isMounted) setIsInitialLoadDone(true);
@@ -189,28 +209,42 @@ export function App() {
 
     loadDataFromHighCapacityStorage();
 
-    // 🔄 Écoute périodique toutes les 3s pour afficher immédiatement les produits sourcés via Telegram
+    // 🔄 Écoute périodique toutes les 3s pour afficher immédiatement les produits sourcés via l'extension Mobile/Cloud
     const interval = setInterval(async () => {
-      const liveProducts = await loadProductsFromServerDisk();
-      if (liveProducts && liveProducts.length > 0 && isMounted) {
-        setAllProductsByWs(prev => {
-          const current = prev.ws_quincaillerie || [];
-          if (liveProducts.length !== current.length || liveProducts[0]?.id !== current[0]?.id) {
-            return {
-              ...prev,
-              ws_quincaillerie: liveProducts
-            };
-          }
-          return prev;
-        });
-      }
+      await refreshFromCloud();
+      try {
+        const liveProducts = await loadProductsFromServerDisk();
+        if (liveProducts && liveProducts.length > 0 && isMounted) {
+          setAllProductsByWs(prev => {
+            const current = prev.ws_quincaillerie || [];
+            if (liveProducts.length !== current.length || liveProducts[0]?.id !== current[0]?.id) {
+              return {
+                ...prev,
+                ws_quincaillerie: liveProducts
+              };
+            }
+            return prev;
+          });
+        }
+      } catch (e) {}
     }, 3000);
+
+    // 👁️ Rechargement instantané dès que l'utilisateur revient sur l'onglet de l'application
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshFromCloud();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', refreshFromCloud);
 
     return () => {
       isMounted = false;
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', refreshFromCloud);
     };
-  }, []);
+  }, [activeWorkspaceId]);
 
   // ⚡ FONCTION UNIVERSELLE DE CONVERSION ET D'IMPORTATION DEPUIS L'EXTENSION (100% Infaillible)
   const handleImportFromExtension = (data) => {
@@ -488,10 +522,10 @@ export function App() {
     const currentProds = allProductsByWs[activeWorkspaceId] || [];
     try {
       localStorage.setItem(`ws_products_${activeWorkspaceId}`, JSON.stringify(currentProds));
+      saveAllProductsToDb(currentProds, activeWorkspaceId);
       if (activeWorkspaceId === 'ws_quincaillerie') {
         localStorage.setItem('quin_source_products', JSON.stringify(currentProds));
         syncProductsToServerDisk(currentProds);
-        saveAllProductsToDb(currentProds);
       }
     } catch (e) {
       console.warn('LocalStorage error:', e);
@@ -989,23 +1023,29 @@ export function App() {
                 }}
                 onClick={async () => {
                   try {
+                    showToast("⏳ Synchronisation Cloud en cours...");
+                    // 1. Recharger depuis Supabase Cloud
+                    const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
+                    if (cloudProducts && cloudProducts.length > 0) {
+                      setAllProductsByWs(prev => ({
+                        ...prev,
+                        [activeWorkspaceId]: cloudProducts
+                      }));
+                      showToast(`✅ ${cloudProducts.length} articles synchronisés avec Supabase Cloud !`);
+                      return;
+                    }
+
+                    // 2. Presse-papier
                     const text = await navigator.clipboard.readText();
                     if (text && handleImportFromExtension(text)) {
                       return;
                     }
-                    const res = await fetch('/api/import-live');
-                    if (res.ok) {
-                      const data = await res.json();
-                      if (data && (data.title || data.url)) {
-                        if (handleImportFromExtension(data)) return;
-                      }
-                    }
-                    showToast("💡 Astuce : Sur votre onglet Alibaba, cliquez sur l'extension Chrome puis sur « Importer » !");
+                    showToast("💡 Sur Alibaba, ouvrez l'extension et cliquez sur « ⚡ Importer ce Produit » !");
                   } catch (e) {
-                    showToast("💡 Astuce : Sur votre onglet Alibaba, cliquez sur l'extension Chrome puis sur « Importer » !");
+                    showToast("💡 Sur Alibaba, ouvrez l'extension et cliquez sur « ⚡ Importer ce Produit » !");
                   }
                 }}
-                title="Réceptionner ou forcer l'importation de l'extension Chrome (1-Clic)"
+                title="Réceptionner ou synchroniser le catalogue Cloud Supabase (1-Clic)"
               >
                 <Zap size={16} color="#34D399" />
                 <span>⚡ Réceptionner Extension</span>

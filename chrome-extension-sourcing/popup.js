@@ -682,10 +682,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         timestamp: Date.now()
       };
 
-      // 1️⃣ PONT 1 : Injection directe en mémoire dans l'application
+      // 1️⃣ PONT 1 : Injection directe en mémoire dans tous les onglets de l'application (Netlify / Mobile / Local)
       try {
         const allTabs = await chrome.tabs.query({});
-        const appTabs = allTabs.filter(t => t.url && (t.url.includes('localhost') || t.url.includes('127.0.0.1') || t.title?.includes('SOURCING') || t.title?.includes('QUIN-SOURCE')));
+        const appTabs = allTabs.filter(t => t.url && (
+          t.url.includes('netlify.app') || 
+          t.url.includes('quin-source') || 
+          t.url.includes('localhost') || 
+          t.url.includes('127.0.0.1') || 
+          t.url.includes('192.168.') ||
+          t.title?.includes('SOURCING') || 
+          t.title?.includes('QUIN-SOURCE')
+        ));
         for (const appTab of appTabs) {
           try {
             await chrome.scripting.executeScript({
