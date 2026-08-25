@@ -805,4 +805,121 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnImport.innerHTML = '<span>📥 Réessayer l\'Envoi</span>';
     }
   });
+
+  // 🎬 CAPTURE VIDÉO UNIQUE DANS LE MAGASIN D'ARRIVAGE
+  const btnCaptureVideo = document.getElementById('btnCaptureVideo');
+  if (btnCaptureVideo) {
+    btnCaptureVideo.addEventListener('click', async () => {
+      if (!cachedData) return;
+      const videoUrl = cachedData.videoUrl;
+
+      if (!videoUrl) {
+        msgBox.className = 'msg msg-error';
+        msgBox.innerHTML = '⚠️ Aucune vidéo détectée sur cette page produit.';
+        msgBox.style.display = 'block';
+        return;
+      }
+
+      const mediaItem = {
+        id: 'media-' + Date.now(),
+        type: 'video',
+        url: videoUrl,
+        title: cachedData.title ? `Vidéo : ${cachedData.title.slice(0, 45)}...` : 'Vidéo Démo Usine',
+        platform: 'Extension Chrome',
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        const allTabs = await chrome.tabs.query({});
+        for (const t of allTabs) {
+          if (t.url && (t.url.includes('localhost') || t.url.includes('127.0.0.1') || t.url.includes('quin-source') || t.url.includes('netlify.app'))) {
+            try {
+              await chrome.scripting.executeScript({
+                target: { tabId: t.id },
+                func: (item) => {
+                  window.postMessage({ type: 'CAPTURE_MEDIA', payload: item }, '*');
+                  window.dispatchEvent(new CustomEvent('CAPTURE_MEDIA_EVENT', { detail: item }));
+                  try {
+                    const raw = localStorage.getItem('quin_source_captured_media');
+                    const arr = raw ? JSON.parse(raw) : [];
+                    arr.unshift(item);
+                    localStorage.setItem('quin_source_captured_media', JSON.stringify(arr));
+                  } catch (e) {}
+                },
+                args: [mediaItem]
+              });
+            } catch (e) {}
+          }
+        }
+
+        msgBox.className = 'msg msg-success';
+        msgBox.innerHTML = '🎬 <strong>Vidéo Capturée !</strong> Envoyée dans la section Médias du Magasin d\'Arrivage.';
+        msgBox.style.display = 'block';
+        btnCaptureVideo.innerHTML = '<span>✅ Vidéo Envoyée !</span>';
+      } catch (e) {
+        msgBox.className = 'msg msg-error';
+        msgBox.innerHTML = '⚠️ Erreur lors de la capture vidéo.';
+        msgBox.style.display = 'block';
+      }
+    });
+  }
+
+  // 📷 CAPTURE PHOTOS / GALERIE DANS LE MAGASIN D'ARRIVAGE
+  const btnCaptureImages = document.getElementById('btnCaptureImages');
+  if (btnCaptureImages) {
+    btnCaptureImages.addEventListener('click', async () => {
+      if (!cachedData) return;
+      const images = cachedData.images || [];
+
+      if (images.length === 0) {
+        msgBox.className = 'msg msg-error';
+        msgBox.innerHTML = '⚠️ Aucune photo trouvée sur cette page.';
+        msgBox.style.display = 'block';
+        return;
+      }
+
+      const mediaItems = images.map((imgUrl, i) => ({
+        id: 'media-' + Date.now() + '-' + i,
+        type: 'image',
+        url: imgUrl,
+        title: cachedData.title ? `Photo #${i + 1} : ${cachedData.title.slice(0, 35)}...` : `Photo HD #${i + 1}`,
+        platform: 'Extension Chrome',
+        createdAt: new Date().toISOString()
+      }));
+
+      try {
+        const allTabs = await chrome.tabs.query({});
+        for (const t of allTabs) {
+          if (t.url && (t.url.includes('localhost') || t.url.includes('127.0.0.1') || t.url.includes('quin-source') || t.url.includes('netlify.app'))) {
+            try {
+              await chrome.scripting.executeScript({
+                target: { tabId: t.id },
+                func: (items) => {
+                  items.forEach(item => {
+                    window.postMessage({ type: 'CAPTURE_MEDIA', payload: item }, '*');
+                    window.dispatchEvent(new CustomEvent('CAPTURE_MEDIA_EVENT', { detail: item }));
+                  });
+                  try {
+                    const raw = localStorage.getItem('quin_source_captured_media');
+                    const arr = raw ? JSON.parse(raw) : [];
+                    localStorage.setItem('quin_source_captured_media', JSON.stringify([...items, ...arr]));
+                  } catch (e) {}
+                },
+                args: [mediaItems]
+              });
+            } catch (e) {}
+          }
+        }
+
+        msgBox.className = 'msg msg-success';
+        msgBox.innerHTML = `📷 <strong>${images.length} Photos Capturées !</strong> Envoyées dans le Magasin d'Arrivage.`;
+        msgBox.style.display = 'block';
+        btnCaptureImages.innerHTML = '<span>✅ Photos Envoyées !</span>';
+      } catch (e) {
+        msgBox.className = 'msg msg-error';
+        msgBox.innerHTML = '⚠️ Erreur lors de la capture des photos.';
+        msgBox.style.display = 'block';
+      }
+    });
+  }
 });
