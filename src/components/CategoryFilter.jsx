@@ -9,8 +9,14 @@ export function CategoryFilter({
   inboxCount = 0,
   totalCount = 0,
   onOpenManageCategories,
-  onMoveProductToCategory 
+  onMoveProductToCategory,
+  isCollapsed = false,
+  onToggleCollapse
 }) {
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const activeCollapsed = onToggleCollapse ? isCollapsed : internalCollapsed;
+  const toggleCollapse = onToggleCollapse || (() => setInternalCollapsed(!internalCollapsed));
+
   const [draggedOverCatId, setDraggedOverCatId] = useState(null);
   const [expandedCats, setExpandedCats] = useState(() => {
     // Par défaut, développer toutes les catégories principales
@@ -52,25 +58,114 @@ export function CategoryFilter({
 
   const validMainCategories = categoriesTree.filter(c => c.id !== 'inbox' && c.id !== 'all');
 
+  // Si le panneau est replié, afficher un onglet vertical ultra-discret et aéré
+  if (activeCollapsed) {
+    return (
+      <div style={{ position: 'sticky', top: '75px', zIndex: 50 }}>
+        <button
+          onClick={toggleCollapse}
+          style={{
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+            border: '1.5px solid rgba(59, 130, 246, 0.6)',
+            color: '#38BDF8',
+            padding: '0.65rem 0.5rem',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(56, 189, 248, 0.3)',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.2s ease'
+          }}
+          title="Déplier le panneau des Rayons & Catégories"
+        >
+          <ChevronRight size={18} color="#38BDF8" />
+          <span style={{
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            fontSize: '0.74rem',
+            fontWeight: 800,
+            letterSpacing: '0.05em',
+            color: '#F8FAFC'
+          }}>
+            RAYONS ({totalCount})
+          </span>
+          {inboxCount > 0 && (
+            <span style={{
+              background: '#F59E0B',
+              color: '#000',
+              fontSize: '0.65rem',
+              fontWeight: 900,
+              padding: '0.15rem 0.35rem',
+              borderRadius: '999px',
+              marginTop: '0.2rem'
+            }}>
+              {inboxCount}
+            </span>
+          )}
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="card" style={{ padding: '0.85rem' }}>
+    <div 
+      className="card" 
+      style={{ 
+        padding: '0.85rem',
+        position: 'sticky',
+        top: '75px',
+        maxHeight: 'calc(100vh - 95px)',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.45)',
+        zIndex: 40
+      }}
+    >
       {/* En-tête de la barre latérale */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '0.85rem',
-        paddingLeft: '0.2rem'
+        marginBottom: '0.75rem',
+        paddingLeft: '0.2rem',
+        flexShrink: 0
       }}>
-        <span style={{
-          fontSize: '0.72rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          color: 'var(--text-tertiary)',
-          fontWeight: 800
-        }}>
-          Rayons & Magasin
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{
+            fontSize: '0.72rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: 'var(--text-tertiary)',
+            fontWeight: 800
+          }}>
+            Rayons & Magasin
+          </span>
+          
+          {/* Bouton Replier / Masquer */}
+          <button
+            onClick={toggleCollapse}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#94A3B8',
+              padding: '0.15rem 0.4rem',
+              borderRadius: '5px',
+              fontSize: '0.66rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.2rem',
+              cursor: 'pointer'
+            }}
+            title="Replier le panneau latéral pour aérer l'écran"
+          >
+            <span>◀</span>
+            <span>Replier</span>
+          </button>
+        </div>
 
         {/* Bouton Gérer les Catégories */}
         <button
@@ -95,7 +190,19 @@ export function CategoryFilter({
         </button>
       </div>
 
-      <div className="category-menu" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div 
+        className="category-menu custom-menu-scroll" 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '4px',
+          overflowY: 'scroll',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#00F0FF rgba(255, 255, 255, 0.15)',
+          paddingRight: '4px',
+          flex: 1
+        }}
+      >
         
         {/* 🗂️ 1. TOUS LES ARTICLES */}
         <button

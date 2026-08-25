@@ -25,6 +25,7 @@ import { ManageWorkspacesModal } from './components/ManageWorkspacesModal';
 import { FullScreenImageViewer } from './components/FullScreenImageViewer';
 import { LoginPage } from './components/LoginPage';
 import { ContextMenuCascade } from './components/ContextMenuCascade';
+import { CapturedMediaHub } from './components/CapturedMediaHub';
 
 import { 
   saveAllProductsToDb, 
@@ -154,6 +155,109 @@ export function App() {
     setTimeout(() => {
       setToastMessage('');
     }, 4000);
+  };
+
+  // 🎬 Section Photos & Vidéos Capturées du Magasin d'Arrivage
+  const [inboxSubTab, setInboxSubTab] = useState('products'); // 'products' | 'media'
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const [capturedMedia, setCapturedMedia] = useState(() => {
+    try {
+      const raw = localStorage.getItem('quin_source_captured_media');
+      return raw ? JSON.parse(raw) : [
+        {
+          id: 'demo-vid-drill',
+          type: 'video',
+          url: 'https://assets.mixkit.co/videos/preview/mixkit-power-drill-screwing-a-screw-into-wood-41712-large.mp4',
+          title: 'Démo Usine Visseuse Sans Fil',
+          platform: 'Douyin / TikTok',
+          createdAt: new Date().toISOString()
+        }
+      ];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('quin_source_captured_media', JSON.stringify(capturedMedia));
+    } catch (e) {}
+  }, [capturedMedia]);
+
+  const handleAddCapturedMedia = (newMedia) => {
+    setCapturedMedia(prev => [newMedia, ...prev]);
+    showToast(`🎬 Média « ${newMedia.title || 'Média capturé'} » ajouté dans le Magasin d'Arrivage !`);
+  };
+
+  const handleRemoveCapturedMedia = (mediaId) => {
+    setCapturedMedia(prev => prev.filter(m => m.id !== mediaId));
+    showToast(`🗑️ Média supprimé du Magasin d'Arrivage.`);
+  };
+
+  const handleAssignMediaToProduct = (media, targetProductId) => {
+    const currentList = allProductsByWs[activeWorkspaceId] || [];
+    const prod = currentList.find(p => p.id === targetProductId);
+    if (!prod) return;
+
+    let updatedProd = { ...prod };
+    if (media.type === 'video') {
+      const existingVids = Array.isArray(prod.videos) ? prod.videos : (prod.videoDemo?.videoUrl ? [prod.videoDemo.videoUrl] : []);
+      const newVids = existingVids.includes(media.url) ? existingVids : [media.url, ...existingVids];
+      updatedProd = {
+        ...updatedProd,
+        hasVideoDemo: true,
+        videos: newVids,
+        videoDemo: {
+          ...(typeof prod.videoDemo === 'object' ? prod.videoDemo : {}),
+          videoUrl: newVids[0] || media.url
+        }
+      };
+    } else {
+      const existingImgs = Array.isArray(prod.images) ? prod.images : [];
+      const newImgs = existingImgs.includes(media.url) ? existingImgs : [media.url, ...existingImgs];
+      updatedProd = {
+        ...updatedProd,
+        images: newImgs
+      };
+    }
+
+    handleSaveProduct(updatedProd);
+    handleRemoveCapturedMedia(media.id);
+    showToast(`🎉 Média ajouté avec succès à « ${prod.titleFr.slice(0, 30)}... » !`);
+  };
+
+  const handleCreateProductFromMedia = (media) => {
+    const isVideo = media.type === 'video';
+    const newProd = {
+      id: 'prod-' + Date.now(),
+      sku: 'QUIN-ARR-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+      category: 'inbox',
+      categoryName: 'Magasin d\'Arrivage',
+      categoryIcon: '📥',
+      titleFr: media.title || 'Nouvel Article Capturé',
+      titleCn: '新到样品配件',
+      unit: 'Pièce (pc)',
+      priceCny: 10.0,
+      images: isVideo ? ['https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800'] : [media.url],
+      videos: isVideo ? [media.url] : [],
+      hasVideoDemo: isVideo,
+      videoDemo: isVideo ? { videoUrl: media.url, views: '150K vues' } : null,
+      suppliers: [
+        {
+          id: 'sup-' + Date.now(),
+          name: 'Fournisseur Direct Chine',
+          city: 'Guangdong, Chine',
+          badge: 'Verified Supplier',
+          priceCny: 10.0,
+          moq: 100,
+          isPreferred: true
+        }
+      ]
+    };
+    handleImportProduct(newProd);
+    handleRemoveCapturedMedia(media.id);
+    showToast(`✨ Nouvel article créé dans le Magasin d'Arrivage à partir du média !`);
   };
 
   const [isInitialLoadDone, setIsInitialLoadDone] = useState(false);
@@ -466,10 +570,13 @@ export function App() {
   useEffect(() => {
     let lastSeen = Date.now() - 3000;
 
-    // 1. Écoute des messages directs envoyés dans l'onglet
+    // 1. Écoute des messages directs envoyés dans l'onglet (Produits & Médias)
     const handleWindowMessage = (e) => {
-      if (e.data && (e.data.type === 'EXTENSION_DIRECT_IMPORT' || e.data.type === 'EXTENSION_INJECT_PRODUCT')) {
+      if (!e.data) return;
+      if (e.data.type === 'EXTENSION_DIRECT_IMPORT' || e.data.type === 'EXTENSION_INJECT_PRODUCT') {
         handleImportFromExtension(e.data.payload);
+      } else if (e.data.type === 'CAPTURE_MEDIA' || e.data.type === 'EXTENSION_INJECT_MEDIA') {
+        handleAddCapturedMedia(e.data.payload);
       }
     };
     window.addEventListener('message', handleWindowMessage);
@@ -477,10 +584,17 @@ export function App() {
     // 2. Écoute des événements personnalisés
     const handleCustomEvent = (e) => {
       if (e.detail) {
-        handleImportFromExtension(e.detail);
+        if (e.detail.isMedia || e.detail.mediaUrl) {
+          handleAddCapturedMedia(e.detail);
+        } else {
+          handleImportFromExtension(e.detail);
+        }
       }
     };
     window.addEventListener('EXTENSION_IMPORT_EVENT', handleCustomEvent);
+    window.addEventListener('CAPTURE_MEDIA_EVENT', (e) => {
+      if (e.detail) handleAddCapturedMedia(e.detail);
+    });
 
     // 3. Écoute du collage clavier (Ctrl+V)
     const handlePaste = (e) => {
@@ -1263,11 +1377,20 @@ export function App() {
             </div>
           </div>
 
-          {/* Dashboard 2-column or 3-column Grid */}
-          <div className={`dashboard-grid ${selectedProduct ? 'has-drawer' : ''}`}>
+          {/* Dashboard 2-column or 3-column Grid (Avec Sidebar Sticky & Pliable) */}
+          <div 
+            className={`dashboard-grid ${selectedProduct ? 'has-drawer' : ''}`}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isSidebarCollapsed ? '48px 1fr' : '260px 1fr',
+              gap: '1.25rem',
+              alignItems: 'start',
+              transition: 'all 0.25s ease'
+            }}
+          >
             
-            {/* Left Column: Categories Menu with Manage Button */}
-            <div>
+            {/* Left Column: Categories Menu with Sticky, Internal Scroll & Collapse */}
+            <div style={{ position: 'sticky', top: '75px' }}>
               <CategoryFilter 
                 categoriesTree={categoriesTree}
                 selectedCategory={selectedCategory}
@@ -1277,105 +1400,189 @@ export function App() {
                 totalCount={totalCount}
                 onOpenManageCategories={() => setIsManageCategoriesOpen(true)}
                 onMoveProductToCategory={handleMoveProductToCategory}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               />
 
-              {/* Workspace Summary Card */}
-              <div className="card" style={{ marginTop: '1rem', fontSize: '0.8rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', color: '#93C5FD', fontWeight: 700 }}>
-                  <Sparkles size={14} />
-                  <span>Statistiques : {activeWsObj?.name}</span>
+              {/* Workspace Summary Card (Visible si la sidebar n'est pas repliée) */}
+              {!isSidebarCollapsed && (
+                <div className="card" style={{ marginTop: '1rem', fontSize: '0.8rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', color: '#93C5FD', fontWeight: 700 }}>
+                    <Sparkles size={14} />
+                    <span>Statistiques : {activeWsObj?.name}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
+                    <span>Total Références :</span>
+                    <strong style={{ color: 'white' }}>{totalCount}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
+                    <span>Magasin d'Arrivage :</span>
+                    <strong style={{ color: inboxCount > 0 ? '#FCD34D' : 'var(--text-secondary)' }}>{inboxCount} non triés</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                    <span>Photos/Vidéos en Sas :</span>
+                    <strong style={{ color: '#60A5FA' }}>{capturedMedia.length}</strong>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                  <span>Total Références :</span>
-                  <strong style={{ color: 'white' }}>{totalCount}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                  <span>Magasin d'Arrivage :</span>
-                  <strong style={{ color: inboxCount > 0 ? '#FCD34D' : 'var(--text-secondary)' }}>{inboxCount} non triés</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-                  <span>Rayons Principaux :</span>
-                  <strong style={{ color: 'var(--blue-light)' }}>{categoriesTree.filter(c => c.id !== 'inbox' && c.id !== 'all').length}</strong>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Center Column: Products Cards Grid */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                  {filteredProducts.length} articles dans l'espace « {activeWsObj?.name} »
-                </div>
-                
-                {searchQuery && (
-                  <button 
-                    style={{ background: 'transparent', border: 'none', color: 'var(--blue-light)', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 700 }}
-                    onClick={() => setSearchQuery('')}
-                  >
-                    Effacer la recherche
-                  </button>
-                )}
-              </div>
-
-              {filteredProducts.length === 0 ? (
+            {/* Center Column: Products Cards Grid OR Captured Media Hub */}
+            <div style={{ minWidth: 0 }}>
+              
+              {/* 📥 ONGLETS DU MAGASIN D'ARRIVAGE (Articles vs Médias Capturés) */}
+              {selectedCategory === 'inbox' && (
                 <div style={{
-                  background: '#0B1120',
-                  border: '1.5px dashed var(--border-subtle)',
-                  borderRadius: '16px',
-                  padding: '3rem 2rem',
-                  textAlign: 'center'
+                  display: 'flex',
+                  gap: '0.5rem',
+                  marginBottom: '1.2rem',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  padding: '0.4rem',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-subtle)',
+                  width: 'fit-content'
                 }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{activeWsObj?.icon || '📦'}</div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.35rem' }}>
-                    {selectedCategory === 'inbox' 
-                      ? "Le Magasin d'Arrivage est vide !"
-                      : searchQuery ? 'Aucun article ne correspond à votre recherche' : `Votre catalogue « ${activeWsObj?.name} » est prêt !`}
-                  </h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1.25rem' }}>
-                    {selectedCategory === 'inbox'
-                      ? 'Tous vos produits importés ont été classés avec succès dans leurs sous-catégories respectives.'
-                      : searchQuery 
-                        ? 'Essayez avec un autre mot-clé ou réinitialisez le filtre.' 
-                        : 'Importez des produits avec votre extension ou ajoutez votre premier article manuellement.'}
-                  </p>
+                  <button
+                    onClick={() => setInboxSubTab('products')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.45rem 1rem',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      background: inboxSubTab === 'products' ? 'linear-gradient(135deg, #F59E0B, #D97706)' : 'transparent',
+                      border: 'none',
+                      color: inboxSubTab === 'products' ? '#000000' : 'var(--text-secondary)',
+                      transition: 'all 0.2s ease',
+                      boxShadow: inboxSubTab === 'products' ? '0 2px 10px rgba(245, 158, 11, 0.4)' : 'none'
+                    }}
+                  >
+                    <span>📦 Articles en Attente</span>
+                    <span style={{ background: inboxSubTab === 'products' ? '#000' : 'rgba(255,255,255,0.1)', color: inboxSubTab === 'products' ? '#FCD34D' : 'var(--text-secondary)', padding: '0.1rem 0.45rem', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 900 }}>
+                      {filteredProducts.length}
+                    </span>
+                  </button>
 
-                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => setInboxSubTab('media')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.45rem 1rem',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      background: inboxSubTab === 'media' ? 'linear-gradient(135deg, #2563EB, #1D4ED8)' : 'transparent',
+                      border: 'none',
+                      color: inboxSubTab === 'media' ? '#FFFFFF' : 'var(--text-secondary)',
+                      transition: 'all 0.2s ease',
+                      boxShadow: inboxSubTab === 'media' ? '0 2px 10px rgba(37, 99, 235, 0.4)' : 'none'
+                    }}
+                  >
+                    <span>🎬 Photos & Vidéos Capturées</span>
+                    <span style={{ background: inboxSubTab === 'media' ? '#FFF' : 'rgba(255,255,255,0.1)', color: inboxSubTab === 'media' ? '#2563EB' : 'var(--text-secondary)', padding: '0.1rem 0.45rem', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 900 }}>
+                      {capturedMedia.length}
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* VUE 1 : HUB DES PHOTOS & VIDÉOS CAPTURÉES */}
+              {selectedCategory === 'inbox' && inboxSubTab === 'media' ? (
+                <CapturedMediaHub 
+                  capturedMedia={capturedMedia}
+                  onAddMedia={handleAddCapturedMedia}
+                  onRemoveMedia={handleRemoveCapturedMedia}
+                  onAssignMediaToProduct={handleAssignMediaToProduct}
+                  onCreateProductFromMedia={handleCreateProductFromMedia}
+                  categoriesTree={categoriesTree}
+                  allProducts={products}
+                  showToast={showToast}
+                />
+              ) : (
+                /* VUE 2 : CATALOGUE STANDARD D'ARTICLES */
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      {filteredProducts.length} articles dans l'espace « {activeWsObj?.name} »
+                    </div>
+                    
                     {searchQuery && (
                       <button 
-                        className="nav-btn"
-                        style={{ padding: '0.55rem 1.2rem', fontSize: '0.82rem' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--blue-light)', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 700 }}
                         onClick={() => setSearchQuery('')}
                       >
                         Effacer la recherche
                       </button>
                     )}
-                    <button 
-                      className="btn-primary-action"
-                      style={{ padding: '0.55rem 1.2rem', fontSize: '0.82rem' }}
-                      onClick={() => setIsAddModalOpen(true)}
-                    >
-                      <Plus size={15} />
-                      <span>+ Ajouter un Premier Article</span>
-                    </button>
                   </div>
-                </div>
-              ) : (
-                <div className="products-grid">
-                  {filteredProducts.map(product => (
-                    <ProductCard 
-                      key={product.id}
-                      product={product}
-                      isSelected={selectedProduct?.id === product.id}
-                      onSelect={setSelectedProduct}
-                      onOpenImageViewer={handleOpenImageViewer}
-                      formatPrice={formatPrice}
-                      categories={categoriesTree}
-                      onMoveProductToCategory={handleMoveProductToCategory}
-                      onOpenContextMenu={handleOpenContextMenu}
-                      isDuplicate={duplicateProductIds.has(product.id)}
-                    />
-                  ))}
-                </div>
+
+                  {filteredProducts.length === 0 ? (
+                    <div style={{
+                      background: '#0B1120',
+                      border: '1.5px dashed var(--border-subtle)',
+                      borderRadius: '16px',
+                      padding: '3rem 2rem',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{activeWsObj?.icon || '📦'}</div>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+                        {selectedCategory === 'inbox' 
+                          ? "Le Magasin d'Arrivage est vide !"
+                          : searchQuery ? 'Aucun article ne correspond à votre recherche' : `Votre catalogue « ${activeWsObj?.name} » est prêt !`}
+                      </h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1.25rem' }}>
+                        {selectedCategory === 'inbox'
+                          ? 'Tous vos produits importés ont été classés avec succès dans leurs sous-catégories respectives.'
+                          : searchQuery 
+                            ? 'Essayez avec un autre mot-clé ou réinitialisez le filtre.' 
+                            : 'Importez des produits avec votre extension ou ajoutez votre premier article manuellement.'}
+                      </p>
+
+                      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                        {searchQuery && (
+                          <button 
+                            className="nav-btn"
+                            style={{ padding: '0.55rem 1.2rem', fontSize: '0.82rem' }}
+                            onClick={() => setSearchQuery('')}
+                          >
+                            Effacer la recherche
+                          </button>
+                        )}
+                        <button 
+                          className="btn-primary-action"
+                          style={{ padding: '0.55rem 1.2rem', fontSize: '0.82rem' }}
+                          onClick={() => setIsAddModalOpen(true)}
+                        >
+                          <Plus size={15} />
+                          <span>+ Ajouter un Premier Article</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="products-grid">
+                      {filteredProducts.map(product => (
+                        <ProductCard 
+                          key={product.id}
+                          product={product}
+                          isSelected={selectedProduct?.id === product.id}
+                          onSelect={setSelectedProduct}
+                          onOpenImageViewer={handleOpenImageViewer}
+                          formatPrice={formatPrice}
+                          categories={categoriesTree}
+                          onMoveProductToCategory={handleMoveProductToCategory}
+                          onOpenContextMenu={handleOpenContextMenu}
+                          isDuplicate={duplicateProductIds.has(product.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -1473,6 +1680,7 @@ export function App() {
           onOpenImageViewer={handleOpenImageViewer}
           settings={settings}
           formatPrice={formatPrice}
+          onUpdateProduct={handleSaveProduct}
           isDuplicate={duplicateProductIds.has(selectedProduct.id)}
           onImportFromClipboard={(data, targetId) => {
             let pData = data;

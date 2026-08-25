@@ -38,6 +38,7 @@ export function ArticleDetailDrawer({
   settings, 
   formatPrice,
   onImportFromClipboard,
+  onUpdateProduct,
   isDuplicate = false 
 }) {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
@@ -135,15 +136,34 @@ export function ArticleDetailDrawer({
     unitLabel = product.unit || 'Pièce';
   }
 
-  const currentPriceCny = basePriceCny * unitMultiplier;
-  const costInSelectedCurrency = currentPriceCny * rate;
-  
-  // Freight estimation adapted to currency & weight
-  const estimatedFreight = settings.currency === 'FCFA' ? (unitMultiplier >= 10 ? 4500 : (unitMultiplier < 1 ? 5 : 650)) : 0.85;
-  const totalCostPrice = costInSelectedCurrency + estimatedFreight;
+  // Freight estimation adapted to currency & weight - Modifiable par l'utilisateur
+  const defaultFreight = settings.currency === 'FCFA' ? (unitMultiplier >= 10 ? 4500 : (unitMultiplier < 1 ? 5 : 650)) : 0.85;
+  const [customFreight, setCustomFreight] = useState(
+    product?.customTransitFee !== undefined ? product.customTransitFee : defaultFreight
+  );
+
+  useEffect(() => {
+    if (product?.customTransitFee !== undefined) {
+      setCustomFreight(product.customTransitFee);
+    } else {
+      setCustomFreight(defaultFreight);
+    }
+  }, [product?.customTransitFee, product?.id, defaultFreight]);
+
+  const activeFreight = parseFloat(customFreight) || 0;
+  const totalCostPrice = costInSelectedCurrency + activeFreight;
   const suggestedResellPrice = totalCostPrice * customMarkup;
   const marginPerPiece = suggestedResellPrice - totalCostPrice;
   const marginPercentage = suggestedResellPrice > 0 ? ((marginPerPiece / suggestedResellPrice) * 100).toFixed(0) : 50;
+
+  const handleFreightChange = (newVal) => {
+    const val = parseFloat(newVal);
+    const validVal = isNaN(val) ? 0 : val;
+    setCustomFreight(validVal);
+    if (onUpdateProduct && product) {
+      onUpdateProduct({ ...product, customTransitFee: validVal });
+    }
+  };
 
   useEffect(() => {
     if (product?.unit) {
@@ -1032,9 +1052,39 @@ export function ArticleDetailDrawer({
               </span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Fret Transit Cargo Chine ➔ Afrique :</span>
-              <span style={{ fontFamily: 'var(--font-mono)' }}>+{settings.currency === 'FCFA' ? Math.round(estimatedFreight).toLocaleString() : estimatedFreight.toFixed(2)} {settings.currency}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(59, 130, 246, 0.08)', padding: '0.4rem 0.6rem', borderRadius: '8px', border: '1px dashed rgba(59, 130, 246, 0.3)' }}>
+              <span style={{ color: '#93C5FD', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span>🚢 Fret Transit Cargo Chine ➔ Afrique :</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--amber-light)', background: 'rgba(245, 158, 11, 0.15)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>✏️ Modifiable</span>
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 800 }}>+</span>
+                <input 
+                  type="number"
+                  min="0"
+                  step={settings.currency === 'FCFA' ? '10' : '0.1'}
+                  value={customFreight}
+                  onChange={(e) => handleFreightChange(e.target.value)}
+                  style={{
+                    width: '95px',
+                    padding: '0.25rem 0.45rem',
+                    background: '#05080E',
+                    border: '1.5px solid var(--blue-primary)',
+                    borderRadius: '6px',
+                    color: '#60A5FA',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    textAlign: 'right',
+                    outline: 'none',
+                    boxShadow: '0 0 8px rgba(37, 99, 235, 0.3)'
+                  }}
+                  title="Cliquez pour ajuster le montant exact du fret/transit"
+                />
+                <span style={{ fontFamily: 'var(--font-mono)', color: 'white', fontWeight: 700, fontSize: '0.78rem' }}>
+                  {settings.currency}
+                </span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.4rem', borderTop: '1px solid var(--border-subtle)', fontWeight: 700 }}>

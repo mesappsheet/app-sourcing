@@ -120,8 +120,19 @@ export function Navbar({
             />
           </div>
 
-          {/* 3️⃣ DROITE : Actions Claires + MENU DÉROULANT TOUT-EN-UN */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
+          {/* 3️⃣ DROITE : Actions Claires Défilantes + MENU DÉROULANT TOUT-EN-UN + BOUTON REPLIER */}
+          <div 
+            className="custom-menu-scroll"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.45rem', 
+              overflowX: 'auto',
+              maxWidth: '100%',
+              paddingBottom: '2px',
+              scrollbarWidth: 'thin'
+            }}
+          >
             
             {/* 📲 Bouton d'Installation PWA */}
             {installPrompt && (
@@ -139,6 +150,7 @@ export function Navbar({
                   fontSize: '0.74rem',
                   fontWeight: 800,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                   boxShadow: '0 0 12px rgba(16, 185, 129, 0.35)'
                 }}
                 title="Installer l'application sur votre écran d'accueil (PWA)"
@@ -163,6 +175,7 @@ export function Navbar({
                 fontSize: '0.78rem',
                 fontWeight: 800,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
                 boxShadow: '0 2px 10px rgba(37, 99, 235, 0.35)',
                 transition: 'all 0.2s'
               }}
@@ -187,7 +200,8 @@ export function Navbar({
                   borderRadius: '8px',
                   fontSize: '0.74rem',
                   fontWeight: 700,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
                 }}
                 title={`Connecté : ${user.email || 'Propriétaire'} - Cliquer pour se déconnecter`}
               >
@@ -212,6 +226,7 @@ export function Navbar({
                   fontSize: '0.76rem',
                   fontWeight: 800,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                   transition: 'all 0.2s ease',
                   boxShadow: isMenuOpen ? '0 0 15px rgba(37, 99, 235, 0.4)' : 'none'
                 }}
