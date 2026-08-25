@@ -1,19 +1,21 @@
-﻿// Background Service Worker for App Sourcing Extension
+// Background Service Worker for App Sourcing Extension
 // Context Menus for Right-Click Capture
 
 chrome.runtime.onInstalled.addListener(() => {
-  // 1. Context Menu for Videos
-  chrome.contextMenus.create({
-    id: 'capture_video_menu',
-    title: '🎬 Envoyer cette Vidéo vers App Sourcing',
-    contexts: ['video', 'link']
-  });
+  chrome.contextMenus.removeAll(() => {
+    // 1. Context Menu for Videos
+    chrome.contextMenus.create({
+      id: 'capture_video_menu',
+      title: '🎬 Envoyer cette Vidéo vers App Sourcing',
+      contexts: ['video', 'link']
+    });
 
-  // 2. Context Menu for Images
-  chrome.contextMenus.create({
-    id: 'capture_image_menu',
-    title: '📷 Envoyer cette Photo vers App Sourcing',
-    contexts: ['image']
+    // 2. Context Menu for Images
+    chrome.contextMenus.create({
+      id: 'capture_image_menu',
+      title: '📷 Envoyer cette Photo vers App Sourcing',
+      contexts: ['image']
+    });
   });
 });
 
@@ -27,7 +29,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         id: 'media-' + Date.now(),
         type: 'video',
         url: videoUrl,
-        title: tab?.title ? Vidéo : ... : 'Vidéo Web Capturée',
+        title: tab?.title ? ('Vidéo : ' + tab.title.slice(0, 45) + '...') : 'Vidéo Web Capturée',
         platform: 'Clic Droit Web',
         createdAt: new Date().toISOString()
       };
@@ -39,7 +41,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         id: 'media-' + Date.now(),
         type: 'image',
         url: imgUrl,
-        title: tab?.title ? Photo : ... : 'Photo Web Capturée',
+        title: tab?.title ? ('Photo : ' + tab.title.slice(0, 45) + '...') : 'Photo Web Capturée',
         platform: 'Clic Droit Web',
         createdAt: new Date().toISOString()
       };
