@@ -99,7 +99,7 @@ export function CategoryFilter({
         
         {/* 🗂️ 1. TOUS LES ARTICLES */}
         <button
-          className={category-btn }
+          className={`category-btn ${selectedCategory === 'all' ? 'active' : ''}`}
           onClick={() => onSelectCategory('all')}
           style={{ marginBottom: '2px' }}
         >
@@ -112,7 +112,7 @@ export function CategoryFilter({
 
         {/* 📥 2. MAGASIN D'ARRIVAGE (SAS DE TRANSIT) */}
         <button
-          className={category-btn  }
+          className={`category-btn ${selectedCategory === 'inbox' ? 'active' : ''} ${draggedOverCatId === 'inbox' ? 'drag-over' : ''}`}
           onClick={() => onSelectCategory('inbox')}
           onDragOver={(e) => handleDragOver(e, 'inbox')}
           onDragLeave={(e) => handleDragLeave(e, 'inbox')}
@@ -172,7 +172,7 @@ export function CategoryFilter({
               
               {/* Ligne Catégorie Principale */}
               <div
-                className={category-btn  }
+                className={`category-btn ${isMainActive ? 'active' : ''} ${isOverMain ? 'drag-over' : ''}`}
                 onClick={() => onSelectCategory(mainCat.id)}
                 onDragOver={(e) => handleDragOver(e, mainCat.id)}
                 onDragLeave={(e) => handleDragLeave(e, mainCat.id)}
@@ -231,7 +231,7 @@ export function CategoryFilter({
                     return (
                       <button
                         key={sub.id}
-                        className={category-btn  }
+                        className={`category-btn ${isSubActive ? 'active' : ''} ${isOverSub ? 'drag-over' : ''}`}
                         onClick={() => onSelectCategory(sub.id)}
                         onDragOver={(e) => handleDragOver(e, sub.id)}
                         onDragLeave={(e) => handleDragLeave(e, sub.id)}
