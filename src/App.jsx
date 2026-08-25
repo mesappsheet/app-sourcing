@@ -727,6 +727,10 @@ export function App() {
     }
     const hasTree = raw.some(c => Array.isArray(c.subCategories));
     if (hasTree) {
+      const realMainCount = raw.filter(c => c.id !== 'inbox' && c.id !== 'all').length;
+      if (realMainCount <= 1) {
+        return DEFAULT_CATEGORIES_TREE;
+      }
       const hasInbox = raw.some(c => c.id === 'inbox');
       if (!hasInbox) {
         return [
@@ -737,16 +741,7 @@ export function App() {
       return raw;
     }
 
-    // Convertir ancienne liste plate en arbre
-    return [
-      { id: 'inbox', name: 'Magasin d\'Arrivage', icon: '📥', isInbox: true, subCategories: [] },
-      {
-        id: 'cat_quincaillerie',
-        name: 'Quincaillerie & Fixations',
-        icon: '🔩',
-        subCategories: raw.filter(c => c.id !== 'all' && c.id !== 'inbox').map(c => ({ id: c.id, name: c.name, icon: c.icon }))
-      }
-    ];
+    return DEFAULT_CATEGORIES_TREE;
   }, [allCategoriesByWs, activeWorkspaceId]);
 
   // Total & Inbox Counts

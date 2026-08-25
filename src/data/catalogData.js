@@ -38,6 +38,16 @@ export const DEFAULT_CATEGORIES_TREE = [
       { id: 'machines', name: 'Électroportatif Usine', icon: '⚡' },
       { id: 'mesure', name: 'Mesure & Niveaux Lasers', icon: '📏' }
     ]
+  },
+  {
+    id: 'cat_electromenager',
+    name: 'Électroménager & Cuisson',
+    icon: '🔌',
+    subCategories: [
+      { id: 'cuiseurs', name: 'Cuisinières à Riz & Cuiseurs', icon: '🍚' },
+      { id: 'petit_electro', name: 'Petits Appareils Cuisine', icon: '🍳' },
+      { id: 'accessoires_cuisine', name: 'Ustensiles & Accessoires', icon: '🥄' }
+    ]
   }
 ];
 
