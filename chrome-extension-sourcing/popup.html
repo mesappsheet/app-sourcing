@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>App Sourcing • Importateur E-Commerce</title>
+  <title>App Sourcing • Injecteur E-Commerce</title>
   <style>
     * { 
       box-sizing: border-box; 
@@ -26,7 +26,6 @@
       width: 100%;
       min-width: 320px;
       max-width: 480px;
-      min-height: 280px;
       background: #080D1A;
       color: #F8FAFC;
       padding: 0 12px 14px 12px;
@@ -61,8 +60,8 @@
     .drag-handle-container:hover .drag-pill,
     .drag-handle-container:active .drag-pill {
       background: #38BDF8;
-      width: 60px;
-      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+      width: 64px;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
     }
     
     /* Header */
@@ -107,52 +106,111 @@
       font-size: 12px;
     }
 
-    /* Media Preview Card (Photos uniquement) */
-    .media-preview-container { 
-      background: #0B1120; 
-      border: 1.5px solid #1E293B; 
+    /* Status Card (Données Fiche Produit Complètes) */
+    .status-card { 
+      background: #0F172A; 
+      border: 1px solid #334155; 
       border-radius: 10px; 
-      padding: 8px 10px; 
+      padding: 10px 11px; 
       margin-bottom: 8px; 
+      font-size: 11.5px; 
       width: 100%; 
     }
-    .section-header { 
+    .preview-title { 
+      font-weight: 700; 
+      color: #FFFFFF; 
+      margin-bottom: 6px; 
+      line-height: 1.35; 
+      font-size: 12px; 
+      word-break: break-word; 
+    }
+    .preview-row { 
       display: flex; 
       align-items: center; 
-      justify-content: space-between; 
-      margin-bottom: 6px; 
-      font-size: 10.5px; 
-      font-weight: 800; 
+      justify-content: space-between;
+      gap: 6px; 
+      margin-bottom: 4px; 
       color: #94A3B8; 
-      text-transform: uppercase; 
-      letter-spacing: 0.03em; 
+      font-size: 11px; 
+    }
+    .preview-val { 
+      color: #FCD34D; 
+      font-weight: 800; 
+      font-size: 12px;
+    }
+    .preview-sup { 
+      color: #60A5FA; 
+      font-weight: 700; 
+      text-align: right;
+      word-break: break-word; 
+      max-width: 60%;
     }
 
-    /* Images Gallery */
-    .images-preview-box { margin-bottom: 4px; width: 100%; }
-    .images-header-actions { display: flex; align-items: center; gap: 6px; }
-    .btn-toggle-all { background: none; border: none; color: #38BDF8; font-size: 10px; font-weight: 700; cursor: pointer; text-decoration: underline; }
-    .images-scroll-grid { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; width: 100%; scrollbar-width: thin; scrollbar-color: #3B82F6 #0B1120; }
-    .images-scroll-grid::-webkit-scrollbar { height: 4px; }
-    .images-scroll-grid::-webkit-scrollbar-thumb { background: #3B82F6; border-radius: 4px; }
-    
-    .img-thumb-card { position: relative; width: 62px; height: 62px; min-width: 62px; border-radius: 6px; overflow: hidden; border: 2px solid #334155; cursor: pointer; background: #1E293B; transition: all 0.15s; flex-shrink: 0; }
-    .img-thumb-card.selected { border-color: #10B981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
-    .img-thumb-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .img-thumb-check { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; background: rgba(15, 23, 42, 0.85); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #10B981; font-weight: 900; }
-    .img-thumb-card:not(.selected) .img-thumb-check { display: none; }
-    .img-thumb-card:not(.selected) { opacity: 0.45; filter: grayscale(80%); }
+    /* Paliers de Prix Réels Usine */
+    .tiers-section {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.15);
+    }
+    .tiers-title {
+      color: #93C5FD;
+      font-weight: 800;
+      font-size: 9.5px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .tiers-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .tier-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 3px 6px;
+      border-radius: 5px;
+      font-size: 10.5px;
+    }
 
-    .btn-media-sub { flex: 1; padding: 7px 8px; font-size: 11px; font-weight: 800; border-radius: 6px; cursor: pointer; border: none; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; }
-    .btn-images-send { background: rgba(59, 130, 246, 0.15); border: 1.5px solid #3B82F6; color: #93C5FD; }
-    .btn-images-send:hover { background: #3B82F6; color: #FFF; }
-
-    /* Status Card (Product Specs) */
-    .status-card { background: #0F172A; border: 1px solid #334155; border-radius: 10px; padding: 9px 10px; margin-bottom: 8px; font-size: 11.5px; width: 100%; }
-    .preview-title { font-weight: 700; color: #FFFFFF; margin-bottom: 5px; line-height: 1.3; font-size: 11.5px; word-break: break-word; }
-    .preview-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; color: #94A3B8; font-size: 11px; }
-    .preview-val { color: #FCD34D; font-weight: 700; }
-    .preview-sup { color: #60A5FA; font-weight: 700; word-break: break-word; }
+    /* Spécifications & Caractéristiques Techniques Détectées */
+    .specs-section {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.15);
+    }
+    .specs-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #34D399;
+      font-weight: 800;
+      font-size: 9.5px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .specs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 120px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+    .spec-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      background: rgba(16, 185, 129, 0.05);
+      border-left: 2px solid #10B981;
+      padding: 2px 6px;
+      border-radius: 0 4px 4px 0;
+    }
+    .spec-label { color: #94A3B8; font-weight: 600; }
+    .spec-value { color: #F1F5F9; font-weight: 700; text-align: right; }
 
     /* Mode Tabs */
     .mode-tabs { display: flex; gap: 6px; margin-bottom: 8px; width: 100%; }
@@ -164,7 +222,7 @@
     .target-product-select { width: 100%; background: #0B1120; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 11px; padding: 6px; outline: none; }
 
     /* Main Import Buttons */
-    .btn-import { width: 100%; background: linear-gradient(135deg, #2563EB, #1D4ED8); color: white; border: none; border-radius: 8px; padding: 11px 12px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); margin-bottom: 6px; }
+    .btn-import { width: 100%; background: linear-gradient(135deg, #2563EB, #1D4ED8); color: white; border: none; border-radius: 8px; padding: 12px 12px; font-size: 12.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); margin-bottom: 6px; }
     .btn-import:hover, .btn-import:active { background: linear-gradient(135deg, #1D4ED8, #1E40AF); }
     .btn-import.btn-enrich { background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
     .btn-import.btn-enrich:hover, .btn-import.btn-enrich:active { background: linear-gradient(135deg, #047857, #065F46); }
@@ -174,10 +232,10 @@
     .msg-error { background: rgba(244, 63, 94, 0.2); border: 1px solid #F43F5E; color: #FDA4AF; }
     
     /* État Réduit / Compact */
-    body.is-compact .media-preview-container,
+    body.is-compact .specs-section,
+    body.is-compact .tiers-section,
     body.is-compact .mode-tabs,
-    body.is-compact .target-product-box,
-    body.is-compact #previewTiersBox {
+    body.is-compact .target-product-box {
       display: none !important;
     }
   </style>
@@ -192,35 +250,11 @@
   <div class="header">
     <div class="header-title">
       <span style="font-size: 15px;">⚡</span>
-      <h2>App Sourcing • Mobile</h2>
+      <h2>App Sourcing • Injecteur</h2>
     </div>
     <div style="display: flex; align-items: center; gap: 6px;">
       <span id="platformBadge" class="badge-platform">Détection...</span>
       <button type="button" id="btnMinimizeToggle" class="btn-minimize-toggle" title="Agrandir / Réduire">↕</button>
-    </div>
-  </div>
-
-  <!-- ZONE PRÉVISUALISATION DES PHOTOS DÉTECTÉES -->
-  <div id="mediaContainer" class="media-preview-container">
-    <div id="imagesPreviewBox" class="images-preview-box" style="display: none;">
-      <div class="section-header">
-        <span id="imagesCountBadge">📷 Photos HD Détectées (0)</span>
-        <div class="images-header-actions">
-          <button type="button" id="btnToggleAllImages" class="btn-toggle-all">Tout désélectionner</button>
-        </div>
-      </div>
-      <div id="imagesGrid" class="images-scroll-grid">
-        <!-- Vignettes générées dynamiquement en JS -->
-      </div>
-      <div style="margin-top: 6px; display: flex; gap: 6px;">
-        <button type="button" id="btnSendImagesDirect" class="btn-media-sub btn-images-send" style="width: 100%;">
-          <span id="btnSendImagesText">📷 Capter les Photos dans Magasin</span>
-        </button>
-      </div>
-    </div>
-
-    <div id="noMediaDetectedBox" style="font-size: 10px; color: #64748B; text-align: center; padding: 4px 0; display: none;">
-      🔍 Analyse des photos du produit...
     </div>
   </div>
 
@@ -230,42 +264,57 @@
     <button type="button" id="tabEnrich" class="mode-tab">🏭 Compléter Fiche</button>
   </div>
 
-  <!-- Preview Card (Données Fiche Produit) -->
+  <!-- Preview Card (Données Fiche Produit Extraites) -->
   <div class="status-card">
-    <div id="previewTitle" class="preview-title">Détection du produit...</div>
+    <div id="previewTitle" class="preview-title">Extraction des données réelles du produit...</div>
+    
     <div class="preview-row">
-      <span>💰 Prix Estimé :</span>
+      <span>💰 Vrai Prix Affiché :</span>
       <span id="previewPrice" class="preview-val">Analyse...</span>
     </div>
+
     <div class="preview-row">
-      <span>🏭 Fournisseur :</span>
+      <span>🏭 Usine / Fournisseur :</span>
       <span id="previewSupplier" class="preview-sup">Recherche...</span>
     </div>
-    <div class="preview-row" id="previewLocationRow" style="display: none;">
-      <span>📍 Origine :</span>
-      <span id="previewLocation" style="color: #CBD5E1;">Chine</span>
+
+    <div class="preview-row" id="previewLocationRow">
+      <span>📍 Origine Fabricant :</span>
+      <span id="previewLocation" style="color: #CBD5E1; font-weight: 600;">Guangdong, Chine</span>
+    </div>
+
+    <div class="preview-row">
+      <span>📦 Quantité Minimum (MOQ) :</span>
+      <span id="previewMoq" style="color: #FCD34D; font-weight: 700;">1 pièce</span>
     </div>
     
     <!-- Paliers MOQ & Tarification Dégressive -->
-    <div id="previewTiersBox" style="margin-top: 6px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.15); display: none;">
-      <div style="color: #93C5FD; font-weight: 800; font-size: 9.5px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em;">
-        📊 Paliers & MOQ Usine Détectés :
+    <div id="previewTiersBox" class="tiers-section" style="display: none;">
+      <div class="tiers-title">📊 Vrais Paliers de Prix Usine :</div>
+      <div id="previewTiersList" class="tiers-grid"></div>
+    </div>
+
+    <!-- Spécifications & Caractéristiques Techniques Détectées -->
+    <div id="previewSpecsBox" class="specs-section" style="display: none;">
+      <div class="specs-title">
+        <span>📐 Caractéristiques Détectées :</span>
+        <span id="previewSpecsCount" style="color: #34D399; font-size: 9px; font-weight: bold;">(0)</span>
       </div>
-      <div id="previewTiersList" style="display: flex; flex-direction: column; gap: 3px;"></div>
+      <div id="previewSpecsList" class="specs-list"></div>
     </div>
   </div>
 
   <!-- Target Product Selection for Option B -->
   <div id="targetProductBox" class="target-product-box">
-    <label class="target-product-label">🔗 Article Cible dans votre Application :</label>
+    <label class="target-product-label">🔗 Article Cible dans votre Catalogue :</label>
     <select id="targetProductSelect" class="target-product-select">
-      <option value="">Chargement des articles du catalogue...</option>
+      <option value="">Chargement des articles...</option>
     </select>
   </div>
 
   <!-- Main Action Button -->
   <button id="btnImport" class="btn-import">
-    <span id="btnImportText">📥 IMPORTER DANS LE SOURCING</span>
+    <span id="btnImportText">📥 INJECTER L'ARTICLE COMPLET DANS SOURCING</span>
   </button>
 
   <div id="msgBox" class="msg"></div>
