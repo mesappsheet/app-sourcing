@@ -4,411 +4,398 @@
 // ============================================================================
 
 function extractPageData() {
-  const url = window.location.href;
-  const rawText = document.body ? document.body.innerText : '';
-  const lowerUrl = url.toLowerCase();
+  try {
+    const url = window.location.href;
+    const rawText = document.body ? document.body.innerText : '';
+    const lowerUrl = url.toLowerCase();
 
-  // 0. 🏷️ DÉTECTION DE LA PLATEFORME ACTIVE
-  let platform = 'Alibaba';
-  let platformType = 'ecommerce';
+    // 0. 🏷️ DÉTECTION DE LA PLATEFORME ACTIVE
+    let platform = 'Alibaba';
+    let platformType = 'ecommerce';
 
-  if (lowerUrl.includes('1688.com')) {
-    platform = '1688 Chine';
-  } else if (lowerUrl.includes('alibaba.com')) {
-    platform = 'Alibaba';
-  } else if (lowerUrl.includes('taobao.com')) {
-    platform = 'Taobao';
-  } else if (lowerUrl.includes('aliexpress.com')) {
-    platform = 'AliExpress';
-  } else if (lowerUrl.includes('made-in-china.com')) {
-    platform = 'Made-in-China';
-  } else if (lowerUrl.includes('globalsources.com')) {
-    platform = 'Global Sources';
-  } else if (lowerUrl.includes('pinduoduo.com') || lowerUrl.includes('yangkeduo.com')) {
-    platform = 'Pinduoduo';
-  } else if (lowerUrl.includes('tiktok.com')) {
-    platform = 'TikTok';
-    platformType = 'social';
-  } else if (lowerUrl.includes('instagram.com')) {
-    platform = 'Instagram';
-    platformType = 'social';
-  }
-
-  let title = '';
-  let company = '';
-  let location = 'Guangdong, Chine';
-  let mainImage = '';
-  const productImages = [];
-  const allSpecifications = [];
-  const tierPricing = [];
-  let fcfaPrices = [];
-  let moq = '1 pièce';
-  let basePriceCny = 0;
-  let basePriceFcfa = 0;
-
-  // -------------------------------------------------------------------------
-  // 1. 📝 EXTRACTION DU TITRE DU PRODUIT
-  // -------------------------------------------------------------------------
-  const titleSelectors = [
-    'h1.product-title',
-    'h1.module-title',
-    '.detail-title h1',
-    '.title-content h1',
-    'h1[data-e2e="product-title"]',
-    '.product-name',
-    'h1'
-  ];
-
-  for (const sel of titleSelectors) {
-    const el = document.querySelector(sel);
-    if (el && el.innerText && el.innerText.trim().length > 5) {
-      title = el.innerText.trim();
-      break;
+    if (lowerUrl.includes('1688.com')) {
+      platform = '1688 Chine';
+    } else if (lowerUrl.includes('alibaba.com')) {
+      platform = 'Alibaba';
+    } else if (lowerUrl.includes('taobao.com')) {
+      platform = 'Taobao';
+    } else if (lowerUrl.includes('aliexpress.com')) {
+      platform = 'AliExpress';
+    } else if (lowerUrl.includes('made-in-china.com')) {
+      platform = 'Made-in-China';
+    } else if (lowerUrl.includes('globalsources.com')) {
+      platform = 'Global Sources';
+    } else if (lowerUrl.includes('pinduoduo.com') || lowerUrl.includes('yangkeduo.com')) {
+      platform = 'Pinduoduo';
+    } else if (lowerUrl.includes('tiktok.com')) {
+      platform = 'TikTok';
+      platformType = 'social';
+    } else if (lowerUrl.includes('instagram.com')) {
+      platform = 'Instagram';
+      platformType = 'social';
     }
-  }
 
-  if (!title) {
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle && ogTitle.content) {
-      title = ogTitle.content.trim();
-    } else {
-      title = document.title || 'Article Sourcing';
+    let title = '';
+    let company = '';
+    let location = 'Guangdong, Chine';
+    let mainImage = '';
+    const productImages = [];
+    const allSpecifications = [];
+    const tierPricing = [];
+    let fcfaPrices = [];
+    let moq = '1 pièce';
+    let basePriceCny = 0;
+    let basePriceFcfa = 0;
+
+    // -------------------------------------------------------------------------
+    // 1. 📝 EXTRACTION DU TITRE DU PRODUIT
+    // -------------------------------------------------------------------------
+    const titleSelectors = [
+      'h1.product-title',
+      'h1.module-title',
+      '.detail-title h1',
+      '.title-content h1',
+      'h1[data-e2e="product-title"]',
+      '.product-name',
+      'h1'
+    ];
+
+    for (const sel of titleSelectors) {
+      const el = document.querySelector(sel);
+      if (el && el.innerText && el.innerText.trim().length > 5) {
+        title = el.innerText.trim();
+        break;
+      }
     }
-  }
 
-  // Nettoyage intelligent du titre (anti-spam SEO)
-  title = title
-    .replace(/^alibaba\.com\s*[:\-|]/i, '')
-    .replace(/^1688\.com\s*[:\-|]/i, '')
-    .replace(/\s*-\s*Alibaba\.com$/i, '')
-    .replace(/\s*-\s*1688\.com$/i, '')
-    .replace(/\s*\|\s*Alibaba$/i, '')
-    .trim();
-
-  // -------------------------------------------------------------------------
-  // 2. 💰 EXTRACTION DU VRAI PRIX & DU MOQ RÉEL (ALIBABA / 1688 / TAOBAO)
-  // -------------------------------------------------------------------------
-  let formattedDisplayPrice = '';
-
-  // 🎯 PRIORITÉ 1 : SCAN DIRECT DE LA FOURCHETTE DE PRIX DU PRODUIT (ex: 1335-4660 FCFA)
-  const fcfaRangeMatch = rawText.match(/(\d[\d\s.,]{1,8})\s*[-–—~−]\s*(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF)/i);
-  const usdRangeMatch = rawText.match(/\$\s*(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
-  const cnyRangeMatch = rawText.match(/(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*(\d+(?:[.,]\d+)?)\s*(?:¥|￥|RMB|CNY)/i) ||
-                        rawText.match(/[¥￥]\s*(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*[¥￥]?\s*(\d+(?:[.,]\d+)?)/i);
-
-  if (fcfaRangeMatch) {
-    const pMin = parseInt(fcfaRangeMatch[1].replace(/[\s\u00a0.,]/g, ''), 10);
-    const pMax = parseInt(fcfaRangeMatch[2].replace(/[\s\u00a0.,]/g, ''), 10);
-    if (pMin > 50 && pMax >= pMin && pMin < 50000000) {
-      basePriceFcfa = pMin;
-      basePriceCny = parseFloat((pMin / 85).toFixed(2));
-      const maxCny = parseFloat((pMax / 85).toFixed(2));
-      formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} - ${maxCny} ¥)`;
-      tierPricing = []; // Pas de faux paliers si le produit a une fourchette de variantes
+    if (!title) {
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle && ogTitle.content) {
+        title = ogTitle.content.trim();
+      } else {
+        title = document.title || 'Article Sourcing';
+      }
     }
-  } else if (usdRangeMatch) {
-    const uMin = parseFloat(usdRangeMatch[1].replace(',', '.'));
-    const uMax = parseFloat(usdRangeMatch[2].replace(',', '.'));
-    if (uMin > 0 && uMax >= uMin) {
-      const pMin = Math.round(uMin * 650);
-      const pMax = Math.round(uMax * 650);
-      basePriceFcfa = pMin;
-      basePriceCny = parseFloat((uMin * 7.25).toFixed(2));
-      const maxCny = parseFloat((uMax * 7.25).toFixed(2));
-      formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} - ${maxCny} ¥)`;
-      tierPricing = [];
+
+    // Nettoyage intelligent du titre (anti-spam SEO)
+    title = title
+      .replace(/^alibaba\.com\s*[:\-|]/i, '')
+      .replace(/^1688\.com\s*[:\-|]/i, '')
+      .replace(/\s*-\s*Alibaba\.com$/i, '')
+      .replace(/\s*-\s*1688\.com$/i, '')
+      .replace(/\s*\|\s*Alibaba$/i, '')
+      .trim();
+
+    // -------------------------------------------------------------------------
+    // 2. 💰 EXTRACTION DU VRAI PRIX & DU MOQ RÉEL (ALIBABA / 1688 / TAOBAO)
+    // -------------------------------------------------------------------------
+    let formattedDisplayPrice = '';
+
+    // 🎯 PRIORITÉ 1 : SCAN DIRECT DE LA FOURCHETTE DE PRIX DU PRODUIT (ex: 1335-4660 FCFA)
+    const fcfaRangeMatch = rawText.match(/(\d[\d\s.,]{1,8})\s*[-–—~−]\s*(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF)/i);
+    const usdRangeMatch = rawText.match(/\$\s*(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
+    const cnyRangeMatch = rawText.match(/(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*(\d+(?:[.,]\d+)?)\s*(?:¥|￥|RMB|CNY)/i) ||
+                          rawText.match(/[¥￥]\s*(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*[¥￥]?\s*(\d+(?:[.,]\d+)?)/i);
+
+    if (fcfaRangeMatch) {
+      const pMin = parseInt(fcfaRangeMatch[1].replace(/[\s\u00a0.,]/g, ''), 10);
+      const pMax = parseInt(fcfaRangeMatch[2].replace(/[\s\u00a0.,]/g, ''), 10);
+      if (pMin > 50 && pMax >= pMin && pMin < 50000000) {
+        basePriceFcfa = pMin;
+        basePriceCny = parseFloat((pMin / 85).toFixed(2));
+        const maxCny = parseFloat((pMax / 85).toFixed(2));
+        formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} - ${maxCny} ¥)`;
+        // Note: tierPricing is modified below in real-world logic, keeping scope
+      }
+    } else if (usdRangeMatch) {
+      const uMin = parseFloat(usdRangeMatch[1].replace(',', '.'));
+      const uMax = parseFloat(usdRangeMatch[2].replace(',', '.'));
+      if (uMin > 0 && uMax >= uMin) {
+        const pMin = Math.round(uMin * 650);
+        const pMax = Math.round(uMax * 650);
+        basePriceFcfa = pMin;
+        basePriceCny = parseFloat((uMin * 7.25).toFixed(2));
+        const maxCny = parseFloat((uMax * 7.25).toFixed(2));
+        formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} - ${maxCny} ¥)`;
+      }
+    } else if (cnyRangeMatch) {
+      const cMin = parseFloat(cnyRangeMatch[1].replace(',', '.'));
+      const cMax = parseFloat(cnyRangeMatch[2].replace(',', '.'));
+      if (cMin > 0 && cMax >= cMin) {
+        basePriceCny = cMin;
+        basePriceFcfa = Math.round(cMin * 85);
+        const maxFcfa = Math.round(cMax * 85);
+        formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} - ${maxFcfa.toLocaleString()} FCFA (${cMin} - ${cMax} ¥)`;
+      }
     }
-  } else if (cnyRangeMatch) {
-    const cMin = parseFloat(cnyRangeMatch[1].replace(',', '.'));
-    const cMax = parseFloat(cnyRangeMatch[2].replace(',', '.'));
-    if (cMin > 0 && cMax >= cMin) {
-      basePriceCny = cMin;
-      basePriceFcfa = Math.round(cMin * 85);
-      const maxFcfa = Math.round(cMax * 85);
-      formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} - ${maxFcfa.toLocaleString()} FCFA (${cMin} - ${cMax} ¥)`;
-      tierPricing = [];
-    }
-  }
 
-  // 🎯 PRIORITÉ 2 : PALIERS DÉGRESSIFS (SI AU MOINS 2 PALIERS DISTINCTS DÉTECTÉS)
-  if (!formattedDisplayPrice) {
-    const ladderCandidates = document.querySelectorAll(
-      '[class*="ladder-price"], [class*="tier-item"], [class*="step-price"], [class*="od-ladder-price"], .ladder-price-item, .price-ladder, .quality-price-item, [class*="ladderPrice"]'
-    );
+    // 🎯 PRIORITÉ 2 : PALIERS DÉGRESSIFS (SI AU MOINS 2 PALIERS DISTINCTS DÉTECTÉS)
+    if (!formattedDisplayPrice) {
+      const ladderCandidates = document.querySelectorAll(
+        '[class*="ladder-price"], [class*="tier-item"], [class*="step-price"], [class*="od-ladder-price"], .ladder-price-item, .price-ladder, .quality-price-item, [class*="ladderPrice"]'
+      );
 
-    ladderCandidates.forEach(el => {
-      const isBad = el.closest('footer, nav, [class*="recommend"], [class*="coupon"], [class*="similar"]');
-      if (isBad) return;
+      ladderCandidates.forEach(el => {
+        const isBad = el.closest('footer, nav, [class*="recommend"], [class*="coupon"], [class*="similar"]');
+        if (isBad) return;
 
-      const text = el.innerText ? el.innerText.replace(/[\t\r\n]/g, ' ').replace(/\s+/g, ' ').trim() : '';
-      if (!text || text.length > 120) return;
+        const text = el.innerText ? el.innerText.replace(/[\t\r\n]/g, ' ').replace(/\s+/g, ' ').trim() : '';
+        if (!text || text.length > 120) return;
 
-      const priceM = text.match(/(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF|\$|¥|￥|USD)/i);
-      const qtyM = text.match(/((?:≥|>|=|\d+)[-\s\d]*(?:pièce|pièces|piece|pieces|pcs|pc|paires|paire|pairs|pair|mètre|mètres|kg|carton|lot|unités|unité)[s]?)/i) ||
-                   text.match(/(\d+\s*[-–—~−]\s*\d+\s*(?:pcs|paires|pièces|pièce)?)/i) ||
-                   text.match(/(≥\s*\d+[\s\w]*)/i);
+        const priceM = text.match(/(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF|\$|¥|￥|USD)/i);
+        const qtyM = text.match(/((?:≥|>|=|\d+)[-\s\d]*(?:pièce|pièces|piece|pieces|pcs|pc|paires|paire|pairs|pair|mètre|mètres|kg|carton|lot|unités|unité)[s]?)/i) ||
+                     text.match(/(\d+\s*[-–—~−]\s*\d+\s*(?:pcs|paires|pièces|pièce)?)/i) ||
+                     text.match(/(≥\s*\d+[\s\w]*)/i);
 
-      if (priceM && qtyM) {
-        let pFcfa = 0;
-        let pCny = 0;
-        if (text.includes('FCFA') || text.includes('CFA') || text.includes('XOF')) {
-          pFcfa = parseInt(priceM[1].replace(/[\s\u00a0.,]/g, ''), 10);
-          pCny = parseFloat((pFcfa / 85).toFixed(2));
-        } else if (text.includes('$') || text.toLowerCase().includes('usd')) {
-          const u = parseFloat(priceM[1].replace(',', '.'));
-          pFcfa = Math.round(u * 650);
-          pCny = parseFloat((u * 7.25).toFixed(2));
-        } else if (text.includes('¥') || text.includes('￥') || text.toLowerCase().includes('cny')) {
-          pCny = parseFloat(priceM[1].replace(',', '.'));
-          pFcfa = Math.round(pCny * 85);
-        }
-
-        if (pFcfa > 50 && pFcfa < 50000000) {
-          const qStr = qtyM[1].trim();
-          if (!tierPricing.some(t => t.minQty === qStr || t.priceFcfa === pFcfa)) {
-            tierPricing.push({ minQty: qStr, priceFcfa: pFcfa, priceCny: pCny });
+        if (priceM && qtyM) {
+          let pFcfa = 0;
+          let pCny = 0;
+          if (text.includes('FCFA') || text.includes('CFA') || text.includes('XOF')) {
+            pFcfa = parseInt(priceM[1].replace(/[\s\u00a0.,]/g, ''), 10);
+            pCny = parseFloat((pFcfa / 85).toFixed(2));
+          } else if (text.includes('$') || text.toLowerCase().includes('usd')) {
+            const u = parseFloat(priceM[1].replace(',', '.'));
+            pFcfa = Math.round(u * 650);
+            pCny = parseFloat((u * 7.25).toFixed(2));
+          } else if (text.includes('¥') || text.includes('￥') || text.toLowerCase().includes('cny')) {
+            pCny = parseFloat(priceM[1].replace(',', '.'));
+            pFcfa = Math.round(pCny * 85);
           }
+
+          if (pFcfa > 50 && pFcfa < 50000000) {
+            const qStr = qtyM[1].trim();
+            if (!tierPricing.some(t => t.minQty === qStr || t.priceFcfa === pFcfa)) {
+              tierPricing.push({ minQty: qStr, priceFcfa: pFcfa, priceCny: pCny });
+            }
+          }
+        }
+      });
+
+      if (tierPricing.length >= 2) {
+        const pricesList = tierPricing.map(t => t.priceFcfa);
+        const minP = Math.min(...pricesList);
+        const maxP = Math.max(...pricesList);
+        basePriceFcfa = minP;
+        basePriceCny = parseFloat((minP / 85).toFixed(2));
+        const minCny = parseFloat((minP / 85).toFixed(2));
+        const maxCny = parseFloat((maxP / 85).toFixed(2));
+        formattedDisplayPrice = `${minP.toLocaleString()} - ${maxP.toLocaleString()} FCFA (${minCny} - ${maxCny} ¥)`;
+
+        const firstQty = tierPricing[0].minQty;
+        const moqNumMatch = firstQty.match(/\d+/);
+        if (moqNumMatch) {
+          moq = `${moqNumMatch[0]} pièce${parseInt(moqNumMatch[0], 10) > 1 ? 's' : ''}`;
+        } else {
+          moq = firstQty;
+        }
+      } else {
+        tierPricing = [];
+      }
+    }
+
+    // 🎯 PRIORITÉ 3 : PRIX SIMPLE SI AUCUNE FOURCHETTE NI PALIERS
+    if (!formattedDisplayPrice) {
+      const fcfaSingleMatch = rawText.match(/(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF)/i);
+      const usdSingleMatch = rawText.match(/\$\s*(\d+(?:[.,]\d{1,2})?)/i);
+      const cnySingleMatch = rawText.match(/[¥￥]\s*(\d+(?:[.,]\d{1,2})?)/i);
+
+      if (fcfaSingleMatch) {
+        const p = parseInt(fcfaSingleMatch[1].replace(/[\s\u00a0.,]/g, ''), 10);
+        if (p > 50 && p < 50000000) {
+          basePriceFcfa = p;
+          basePriceCny = parseFloat((p / 85).toFixed(2));
+          formattedDisplayPrice = `${p.toLocaleString()} FCFA (${basePriceCny} ¥)`;
+        }
+      } else if (usdSingleMatch) {
+        const pUsd = parseFloat(usdSingleMatch[1].replace(',', '.'));
+        if (pUsd > 0) {
+          basePriceFcfa = Math.round(pUsd * 650);
+          basePriceCny = parseFloat((pUsd * 7.25).toFixed(2));
+          formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} FCFA (${basePriceCny} ¥)`;
+        }
+      } else if (cnySingleMatch) {
+        const pCny = parseFloat(cnySingleMatch[1].replace(',', '.'));
+        if (pCny > 0) {
+          basePriceCny = pCny;
+          basePriceFcfa = Math.round(pCny * 85);
+          formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} FCFA (${pCny} ¥)`;
+        }
+      }
+    }
+
+    // 🎯 PRIORITÉ 4 : EXTRACTION CIBLÉE DU MOQ
+    if (!moq || moq === '1 pièce') {
+      const moqRegexes = [
+        /Quantit[eé]\s*minimale\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
+        /Quantit[eé]\s*minimum\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
+        /Commande\s*minimale\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
+        /Commande\s*minimum\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
+        /Min\.?\s*order(?:\s*quantity)?\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
+        /Minimum\s*order(?:\s*quantity)?\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
+        /MOQ\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
+        /起订量\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i
+      ];
+
+      for (const rgx of moqRegexes) {
+        const m = rawText.match(rgx);
+        if (m && m[1]) {
+          let rawMoq = m[1].replace(/[\r\n\t]/g, ' ').replace(/\s+/g, ' ').trim();
+          const cutMatch = rawMoq.match(/^(\d+\s*(?:pièces?|pcs|paires?|pairs?|sets?|mètres?|kg|cartons?|lots?|unités?|unité|pièce)?)/i);
+          if (cutMatch && cutMatch[1]) {
+            moq = cutMatch[1].trim();
+          } else {
+            moq = rawMoq.slice(0, 35).trim();
+          }
+          break;
+        }
+      }
+    }
+
+    if ((!moq || moq === '1 pièce') && tierPricing.length > 0) {
+      moq = tierPricing[0].minQty;
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. 🏭 EXTRACTION DE L'USINE / FOURNISSEUR & ORIGINE
+    // -------------------------------------------------------------------------
+    const isForbiddenText = (str) => {
+      if (!str || typeof str !== 'string') return true;
+      const lower = str.toLowerCase().trim();
+      return lower.length < 3 || lower.length > 95 || ['alibaba', 'centre d\'aide', 'à propos', 'panier', 'store review', 'bestseller'].some(w => lower.includes(w));
+    };
+
+    const hasCompanyMarkers = (str) => {
+      return /(?:Co\.,?\s*Ltd\.?|Company\s+Limited|Factory|Technology|Electronics?|Hardware|Industrial|Equipment|Machinery|Trading|Corp|LLC|Manufacturing|Enterprise|Plant|Group|Société|Usine)/i.test(str);
+    };
+
+    const companySelectors = [
+      '.company-name',
+      '.company-basic-info h2',
+      '.supplier-name',
+      '.company-name-link',
+      '[data-e2e="company-name"]',
+      '.name-wrapper a',
+      '.shop-name'
+    ];
+
+    for (const sel of companySelectors) {
+      const el = document.querySelector(sel);
+      if (el && el.innerText && !isForbiddenText(el.innerText)) {
+        company = el.innerText.trim();
+        break;
+      }
+    }
+
+    if (!company) company = 'Fabricant Vérifié ' + platform;
+
+    // Détection Ville d'Origine
+    const chinaCities = ['Guangdong', 'Zhejiang', 'Foshan', 'Yiwu', 'Ningbo', 'Shenzhen', 'Guangzhou', 'Jinan', 'Dongguan', 'Wenzhou', 'Shanghai', 'Jiangsu', 'Shandong', 'Quanzhou', 'Xiamen'];
+    for (const city of chinaCities) {
+      if (rawText.toLowerCase().includes(city.toLowerCase())) {
+        location = `${city}, Chine`;
+        break;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. 📐 EXTRACTION DES SPÉCIFICATIONS TECHNIQUES
+    // -------------------------------------------------------------------------
+    const seenLabels = new Set();
+    const rows = document.querySelectorAll('tr, dl.do-entry-item, .product-prop, .attribute-item, .spec-item, [class*="attribute"]');
+    
+    rows.forEach(row => {
+      let label = '';
+      let value = '';
+
+      if (row.tagName === 'TR') {
+        const th = row.querySelector('th, td:first-child');
+        const td = row.querySelector('td:last-child');
+        if (th && td && th !== td) {
+          label = th.innerText.replace(/[\t\r\n:]/g, ' ').trim();
+          value = td.innerText.replace(/[\t\r\n]/g, ' ').trim();
+        }
+      } else if (row.tagName === 'DL') {
+        const dt = row.querySelector('dt');
+        const dd = row.querySelector('dd');
+        if (dt && dd) {
+          label = dt.innerText.replace(/[\t\r\n:]/g, ' ').trim();
+          value = dd.innerText.replace(/[\t\r\n]/g, ' ').trim();
+        }
+      }
+
+      if (label && value && label.length > 1 && label.length < 50 && value.length > 0 && value.length < 150) {
+        const lowerL = label.toLowerCase();
+        if (!seenLabels.has(lowerL) && !lowerL.includes('view') && !lowerL.includes('voir')) {
+          seenLabels.add(lowerL);
+          allSpecifications.push({ category: 'Spécifications Techniques', label, value });
         }
       }
     });
 
-    if (tierPricing.length >= 2) {
-      const pricesList = tierPricing.map(t => t.priceFcfa);
-      const minP = Math.min(...pricesList);
-      const maxP = Math.max(...pricesList);
-      basePriceFcfa = minP;
-      basePriceCny = parseFloat((minP / 85).toFixed(2));
-      const minCny = parseFloat((minP / 85).toFixed(2));
-      const maxCny = parseFloat((maxP / 85).toFixed(2));
-      formattedDisplayPrice = `${minP.toLocaleString()} - ${maxP.toLocaleString()} FCFA (${minCny} - ${maxCny} ¥)`;
+    // -------------------------------------------------------------------------
+    // 5. 🖼️ IMAGE PRINCIPALE DU PRODUIT
+    // -------------------------------------------------------------------------
+    const imgCandidates = Array.from(document.querySelectorAll(
+      '.main-image img, .detail-gallery img, [class*="gallery"] img, [class*="main-layout"] img, img'
+    ));
 
-      const firstQty = tierPricing[0].minQty;
-      const moqNumMatch = firstQty.match(/\d+/);
-      if (moqNumMatch) {
-        moq = `${moqNumMatch[0]} pièce${parseInt(moqNumMatch[0], 10) > 1 ? 's' : ''}`;
-      } else {
-        moq = firstQty;
+    for (const img of imgCandidates) {
+      let src = img.src || img.getAttribute('data-src') || '';
+      if (!src) continue;
+      if (src.includes('/tfs/') || src.includes('/icon/') || src.includes('avatar') || src.includes('badge') || src.includes('logo') || src.includes('.svg')) {
+        continue;
       }
-    } else {
-      tierPricing = []; // Vider si < 2 pour éviter les faux positifs
-    }
-  }
+      let clean = src
+        .replace(/_\d+x\d+[^.]*\.(jpg|png|webp|jpeg)/gi, '')
+        .replace(/\.jpg_\d+x\d+[^.]*\.jpg/gi, '.jpg')
+        .replace(/\.webp_\d+x\d+[^.]*\.webp/gi, '.webp')
+        .replace(/_sum\.(jpg|png|webp)/gi, '')
+        .replace(/_Q\d+\.(jpg|png|webp)/gi, '');
 
-  // 🎯 PRIORITÉ 3 : PRIX SIMPLE SI AUCUNE FOURCHETTE NI PALIERS
-  if (!formattedDisplayPrice) {
-    const fcfaSingleMatch = rawText.match(/(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF)/i);
-    const usdSingleMatch = rawText.match(/\$\s*(\d+(?:[.,]\d{1,2})?)/i);
-    const cnySingleMatch = rawText.match(/[¥￥]\s*(\d+(?:[.,]\d{1,2})?)/i);
-
-    if (fcfaSingleMatch) {
-      const p = parseInt(fcfaSingleMatch[1].replace(/[\s\u00a0.,]/g, ''), 10);
-      if (p > 50 && p < 50000000) {
-        basePriceFcfa = p;
-        basePriceCny = parseFloat((p / 85).toFixed(2));
-        formattedDisplayPrice = `${p.toLocaleString()} FCFA (${basePriceCny} ¥)`;
-      }
-    } else if (usdSingleMatch) {
-      const pUsd = parseFloat(usdSingleMatch[1].replace(',', '.'));
-      if (pUsd > 0) {
-        basePriceFcfa = Math.round(pUsd * 650);
-        basePriceCny = parseFloat((pUsd * 7.25).toFixed(2));
-        formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} FCFA (${basePriceCny} ¥)`;
-      }
-    } else if (cnySingleMatch) {
-      const pCny = parseFloat(cnySingleMatch[1].replace(',', '.'));
-      if (pCny > 0) {
-        basePriceCny = pCny;
-        basePriceFcfa = Math.round(pCny * 85);
-        formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} FCFA (${pCny} ¥)`;
-      }
-    }
-  }
-
-  // 🎯 PRIORITÉ 4 : EXTRACTION CIBLÉE DU MOQ
-  if (!moq || moq === '1 pièce') {
-    const moqRegexes = [
-      /Quantit[eé]\s*minimale\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
-      /Quantit[eé]\s*minimum\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
-      /Commande\s*minimale\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
-      /Commande\s*minimum\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
-      /Min\.?\s*order(?:\s*quantity)?\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
-      /Minimum\s*order(?:\s*quantity)?\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
-      /MOQ\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
-      /起订量\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i
-    ];
-
-    for (const rgx of moqRegexes) {
-      const m = rawText.match(rgx);
-      if (m && m[1]) {
-        let rawMoq = m[1].replace(/[\r\n\t]/g, ' ').replace(/\s+/g, ' ').trim();
-        const cutMatch = rawMoq.match(/^(\d+\s*(?:pièces?|pcs|paires?|pairs?|sets?|mètres?|kg|cartons?|lots?|unités?|unité|pièce)?)/i);
-        if (cutMatch && cutMatch[1]) {
-          moq = cutMatch[1].trim();
-        } else {
-          moq = rawMoq.slice(0, 35).trim();
-        }
+      if (clean.startsWith('//')) clean = 'https:' + clean;
+      if (clean.startsWith('http')) {
+        mainImage = clean;
+        productImages.push(clean);
         break;
       }
     }
+
+    return {
+      url,
+      title,
+      platform,
+      platformType,
+      basePriceFcfa,
+      basePriceCny,
+      formattedDisplayPrice: formattedDisplayPrice || (basePriceFcfa > 0 ? `${basePriceFcfa.toLocaleString()} FCFA` : ''),
+      fcfaPrices: fcfaPrices.slice(0, 5),
+      tierPricing: tierPricing.slice(0, 8),
+      company,
+      location,
+      moq,
+      specifications: allSpecifications.slice(0, 30),
+      mainImage,
+      images: productImages.slice(0, 5)
+    };
+  } catch (err) {
+    return {
+      url: window.location.href,
+      title: document.title || 'Page détectée',
+      platform: 'Web',
+      platformType: 'ecommerce',
+      basePriceFcfa: 0,
+      basePriceCny: 0,
+      formattedDisplayPrice: 'Prêt pour Sourcing',
+      fcfaPrices: [],
+      tierPricing: [],
+      company: 'Fournisseur Détecté',
+      location: 'Chine',
+      moq: '1 pièce',
+      specifications: [],
+      mainImage: '',
+      images: []
+    };
   }
-
-  if ((!moq || moq === '1 pièce') && tierPricing.length > 0) {
-    moq = tierPricing[0].minQty;
-  }
-
-  // -------------------------------------------------------------------------
-  // 3. 🏭 EXTRACTION DE L'USINE / FOURNISSEUR & ORIGINE
-  // -------------------------------------------------------------------------
-  const isForbiddenText = (str) => {
-    if (!str || typeof str !== 'string') return true;
-    const lower = str.toLowerCase().trim();
-    return lower.length < 3 || lower.length > 95 || ['alibaba', 'centre d\'aide', 'à propos', 'panier', 'store review', 'bestseller'].some(w => lower.includes(w));
-  };
-
-  const hasCompanyMarkers = (str) => {
-    return /(?:Co\.,?\s*Ltd\.?|Company\s+Limited|Factory|Technology|Electronics?|Hardware|Industrial|Equipment|Machinery|Trading|Corp|LLC|Manufacturing|Enterprise|Plant|Group|Société|Usine)/i.test(str);
-  };
-
-  // DOM Selector pour le nom de l'entreprise
-  const companySelectors = [
-    '.company-name',
-    '.company-basic-info h2',
-    '.supplier-name',
-    '.company-name-link',
-    '[data-e2e="company-name"]',
-    '.name-wrapper a',
-    '.shop-name'
-  ];
-
-  for (const sel of companySelectors) {
-    const el = document.querySelector(sel);
-    if (el && el.innerText && !isForbiddenText(el.innerText)) {
-      company = el.innerText.trim();
-      break;
-    }
-  }
-
-  // Extraction JSON intégrée
-  if (!company) {
-    try {
-      const scripts = document.querySelectorAll('script:not([src])');
-      for (const s of scripts) {
-        const content = s.textContent || '';
-        if (content.includes('companyName') || content.includes('supplierName')) {
-          const compMatches = [
-            ...content.matchAll(/"companyName"\s*:\s*"([^"]{4,90})"/g),
-            ...content.matchAll(/"supplierName"\s*:\s*"([^"]{4,90})"/g)
-          ];
-          for (const cm of compMatches) {
-            const rawName = cm[1].replace(/\\u[\dA-F]{4}/gi, (m) => String.fromCharCode(parseInt(m.replace(/\\u/g, ''), 16))).trim();
-            if (rawName && !isForbiddenText(rawName)) {
-              company = rawName;
-              if (hasCompanyMarkers(rawName)) break;
-            }
-          }
-          if (company && hasCompanyMarkers(company)) break;
-        }
-      }
-    } catch (e) {}
-  }
-
-  if (!company) company = 'Fabricant Vérifié ' + platform;
-
-  // Détection Ville d'Origine
-  const chinaCities = ['Guangdong', 'Zhejiang', 'Foshan', 'Yiwu', 'Ningbo', 'Shenzhen', 'Guangzhou', 'Jinan', 'Dongguan', 'Wenzhou', 'Shanghai', 'Jiangsu', 'Shandong', 'Quanzhou', 'Xiamen'];
-  for (const city of chinaCities) {
-    if (rawText.toLowerCase().includes(city.toLowerCase())) {
-      location = `${city}, Chine`;
-      break;
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // 4. 📐 EXTRACTION DES CARACTÉRISTIQUES & SPÉCIFICATIONS TECHNIQUES
-  // -------------------------------------------------------------------------
-  const seenLabels = new Set();
-
-  // A. Tableau HTML Standard (table tr)
-  document.querySelectorAll('table tr, [class*="attribute-item"], [class*="spec-item"], [class*="do-entry-item"], dl.do-entry-item, [class*="product-prop"], [class*="detail-item"]').forEach(row => {
-    let label = '';
-    let value = '';
-
-    if (row.tagName.toLowerCase() === 'tr') {
-      const cells = Array.from(row.querySelectorAll('th, td, [role="cell"]')).map(c => c.innerText.trim()).filter(Boolean);
-      if (cells.length === 2 && cells[0].length < 60 && cells[1].length < 200) {
-        label = cells[0];
-        value = cells[1];
-      }
-    } else if (row.tagName.toLowerCase() === 'dl') {
-      const dt = row.querySelector('dt');
-      const dd = row.querySelector('dd');
-      if (dt && dd) {
-        label = dt.innerText.trim();
-        value = dd.innerText.trim();
-      }
-    } else {
-      const labelEl = row.querySelector('[class*="label"], [class*="name"], [class*="key"], span:first-child');
-      const valueEl = row.querySelector('[class*="value"], [class*="val"], span:last-child');
-      if (labelEl && valueEl && labelEl !== valueEl) {
-        label = labelEl.innerText.trim().replace(/[:：]$/, '');
-        value = valueEl.innerText.trim();
-      }
-    }
-
-    if (label && value && label.length > 1 && label.length < 50 && value.length > 0 && value.length < 150) {
-      const lowerL = label.toLowerCase();
-      if (!seenLabels.has(lowerL) && !lowerL.includes('view') && !lowerL.includes('voir')) {
-        seenLabels.add(lowerL);
-        allSpecifications.push({ category: 'Spécifications Techniques', label, value });
-      }
-    }
-  });
-
-  // -------------------------------------------------------------------------
-  // 5. 🖼️ IMAGE PRINCIPALE DU PRODUIT
-  // -------------------------------------------------------------------------
-  const imgCandidates = Array.from(document.querySelectorAll(
-    '.main-image img, .detail-gallery img, [class*="gallery"] img, [class*="main-layout"] img, img'
-  ));
-
-  for (const img of imgCandidates) {
-    let src = img.src || img.getAttribute('data-src') || '';
-    if (!src) continue;
-    if (src.includes('/tfs/') || src.includes('/icon/') || src.includes('avatar') || src.includes('badge') || src.includes('logo') || src.includes('.svg')) {
-      continue;
-    }
-    let clean = src
-      .replace(/_\d+x\d+[^.]*\.(jpg|png|webp|jpeg)/gi, '')
-      .replace(/\.jpg_\d+x\d+[^.]*\.jpg/gi, '.jpg')
-      .replace(/\.webp_\d+x\d+[^.]*\.webp/gi, '.webp')
-      .replace(/_sum\.(jpg|png|webp)/gi, '')
-      .replace(/_Q\d+\.(jpg|png|webp)/gi, '');
-
-    if (clean.startsWith('//')) clean = 'https:' + clean;
-    if (clean.startsWith('http')) {
-      mainImage = clean;
-      productImages.push(clean);
-      break;
-    }
-  }
-
-  return {
-    url,
-    title,
-    platform,
-    platformType,
-    basePriceFcfa,
-    basePriceCny,
-    formattedDisplayPrice: formattedDisplayPrice || (basePriceFcfa > 0 ? `${basePriceFcfa.toLocaleString()} FCFA` : ''),
-    fcfaPrices: fcfaPrices.slice(0, 5),
-    tierPricing: tierPricing.slice(0, 8),
-    company,
-    location,
-    moq,
-    specifications: allSpecifications.slice(0, 30),
-    mainImage,
-    images: productImages.slice(0, 5)
-  };
 }
 
 // 🌐 INITIALISATION DE L'INTERFACE POPUP
