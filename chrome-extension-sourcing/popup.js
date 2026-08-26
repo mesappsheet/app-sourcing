@@ -825,42 +825,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     try {
-      // 1. Copie automatique dans le presse-papier pour synchronisation universelle instantanée
+      const importEventPayload = (isEnrichMode && targetId)
+        ? { ...cleanProductPayload, importMode: 'enrich', targetProductId: targetId }
+        : cleanProductPayload;
+
+      // 1. Enregistrement dans le stockage local de l'extension
       try {
-        await navigator.clipboard.writeText(JSON.stringify(cleanProductPayload));
+        chrome.storage?.local?.set({ 'quin_source_latest_import': importEventPayload });
+      } catch (stErr) {}
+
+      // 2. Copie automatique dans le presse-papier
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(importEventPayload));
       } catch (clipErr) {}
 
-      // 2. Diffusion directe à tous les onglets ouverts de l'application (Localhost, IP Locale & Netlify)
+      // 3. Diffusion multi-canaux vers tous les onglets ouverts de l'application
       const allTabs = await chrome.tabs.query({});
       let dispatched = false;
 
       for (const t of allTabs) {
-        if (t.url && (t.url.includes('localhost') || t.url.includes('127.0.0.1') || t.url.includes('192.168.') || t.url.includes('quin-source') || t.url.includes('netlify.app') || t.url.includes('sourcing'))) {
+        if (t.id && t.url && (t.url.includes('localhost') || t.url.includes('127.0.0.1') || t.url.includes('192.168.') || t.url.includes('quin-source') || t.url.includes('netlify.app') || t.url.includes('sourcing'))) {
+          // Canal A : Envoi de message Runtime
+          try {
+            chrome.tabs.sendMessage(t.id, {
+              type: 'EXTENSION_DIRECT_IMPORT',
+              payload: importEventPayload
+            });
+            dispatched = true;
+          } catch (e) {}
+
+          // Canal B : Injection directe de script
           try {
             await chrome.scripting.executeScript({
               target: { tabId: t.id },
-              func: (productPayload, enrichMode, targetProdId) => {
-                const importEventPayload = (enrichMode && targetProdId)
-                  ? { ...productPayload, importMode: 'enrich', targetProductId: targetProdId }
-                  : productPayload;
-
-                // Enregistrement LocalStorage prioritaire
+              func: (payload) => {
                 try {
                   localStorage.setItem('quin_source_latest_import', JSON.stringify({
-                    ...importEventPayload,
+                    ...payload,
                     timestamp: Date.now()
                   }));
                 } catch (e) {}
 
-                // Envoi direct aux écouteurs de l'application
                 window.postMessage({
                   type: 'EXTENSION_DIRECT_IMPORT',
-                  payload: importEventPayload
+                  payload: payload
                 }, '*');
 
-                window.dispatchEvent(new CustomEvent('EXTENSION_IMPORT_EVENT', { detail: importEventPayload }));
+                window.dispatchEvent(new CustomEvent('EXTENSION_IMPORT_EVENT', { detail: payload }));
               },
-              args: [cleanProductPayload, isEnrichMode, targetId]
+              args: [importEventPayload]
             });
             dispatched = true;
           } catch (e) {}
