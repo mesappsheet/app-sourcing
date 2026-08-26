@@ -104,6 +104,46 @@ export function App() {
 
   // Articles & Rayons de l'espace actif
   const products = allProductsByWs[activeWorkspaceId] || [];
+
+  // ⚡ Synchronisation automatique avec Supabase Cloud et Nettoyage des Doublons
+  useEffect(() => {
+    async function syncCleanDb() {
+      try {
+        const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
+        if (cloudProducts && Array.isArray(cloudProducts)) {
+          setAllProductsByWs(prev => ({
+            ...prev,
+            [activeWorkspaceId]: cloudProducts
+          }));
+          localStorage.setItem(`ws_products_${activeWorkspaceId}`, JSON.stringify(cloudProducts));
+          if (activeWorkspaceId === 'ws_quincaillerie') {
+            localStorage.setItem('quin_source_products', JSON.stringify(cloudProducts));
+          }
+        }
+      } catch (e) {}
+    }
+    syncCleanDb();
+  }, [activeWorkspaceId]);
+
+  // ⚡ Synchronisation automatique avec Supabase Cloud et Nettoyage des Doublons
+  useEffect(() => {
+    async function syncCleanDb() {
+      try {
+        const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
+        if (cloudProducts && Array.isArray(cloudProducts)) {
+          setAllProductsByWs(prev => ({
+            ...prev,
+            [activeWorkspaceId]: cloudProducts
+          }));
+          localStorage.setItem(`ws_products_${activeWorkspaceId}`, JSON.stringify(cloudProducts));
+          if (activeWorkspaceId === 'ws_quincaillerie') {
+            localStorage.setItem('quin_source_products', JSON.stringify(cloudProducts));
+          }
+        }
+      } catch (e) {}
+    }
+    syncCleanDb();
+  }, [activeWorkspaceId]);
   const categories = allCategoriesByWs[activeWorkspaceId] || CATEGORIES;
 
   const [currentTab, setCurrentTab] = useState('catalog');
