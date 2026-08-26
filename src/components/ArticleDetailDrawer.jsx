@@ -136,6 +136,10 @@ export function ArticleDetailDrawer({
     unitLabel = product.unit || 'Pièce';
   }
 
+  // Prix en Yuan et Coût dans la devise active (FCFA / USD / EUR)
+  const currentPriceCny = basePriceCny * unitMultiplier;
+  const costInSelectedCurrency = currentPriceCny * rate;
+
   // Freight estimation adapted to currency & weight - Modifiable par l'utilisateur
   const defaultFreight = settings.currency === 'FCFA' ? (unitMultiplier >= 10 ? 4500 : (unitMultiplier < 1 ? 5 : 650)) : 0.85;
   const [customFreight, setCustomFreight] = useState(

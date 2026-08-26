@@ -1,4 +1,3 @@
-import React, { useState, useRef } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -13,12 +12,15 @@ import {
   RotateCcw,
   Move
 } from 'lucide-react';
+import { UniversalVideoPlayerModal } from './UniversalVideoPlayerModal';
+import { getPlayableVideoSrc } from '../utils/mediaUtils';
 
 export function ProductGallery({ images = [], videos = [], videoDemo, title, onOpenFullscreen }) {
   const [activeMedia, setActiveMedia] = useState('photo'); // 'photo' | 'video'
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   
   const allVideos = (Array.isArray(videos) && videos.length > 0)
     ? videos
@@ -502,16 +504,133 @@ export function ProductGallery({ images = [], videos = [], videoDemo, title, onO
               </div>
             </div>
           ) : (
-            /* 🎥 REAL VIDEO PLAYER STAGE (ALIBABA MULTI-VIDÉO STYLE) */
+            /* 🎥 REAL VIDEO PLAYER STAGE (ALIBABA MULTI-VIDÉO STYLE & FLUX RÉSEAUX) */
             <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <video 
-                key={allVideos[currentVideoIndex] || currentVideoIndex}
-                src={allVideos[currentVideoIndex] || videoDemo?.videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-power-drill-screwing-a-screw-into-wood-41712-large.mp4'} 
-                controls 
-                autoPlay 
-                loop 
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-              />
+              {(() => {
+                const rawVidUrl = allVideos[currentVideoIndex] || videoDemo?.videoUrl || '';
+                const lower = (rawVidUrl || '').toLowerCase();
+                const isDirectMp4 = rawVidUrl && (
+                  lower.includes('.mp4') || 
+                  lower.includes('mime_type=video') || 
+                  lower.includes('video/tos') || 
+                  lower.includes('tiktokcdn') || 
+                  lower.includes('byteoversea') || 
+                  lower.includes('alicdn') || 
+                  rawVidUrl.startsWith('blob:') || 
+                  rawVidUrl.startsWith('data:video') || 
+                  lower.endsWith('.webm') || 
+                  lower.endsWith('.mov')
+                );
+                const isYouTube = rawVidUrl && (rawVidUrl.includes('youtube.com') || rawVidUrl.includes('youtu.be'));
+                const poster = videoDemo?.poster || safeImages[0] || '';
+
+                if (isDirectMp4) {
+                  return (
+                    <video 
+                      key={rawVidUrl || currentVideoIndex}
+                      src={getPlayableVideoSrc(rawVidUrl)} 
+                      poster={poster}
+                      controls 
+                      autoPlay 
+                      loop 
+                      playsInline
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                    />
+                  );
+                }
+
+                if (isYouTube) {
+                  let ytEmbedId = '';
+                  const m1 = rawVidUrl.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+                  const m2 = rawVidUrl.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+                  const m3 = rawVidUrl.match(/\/embed\/([a-zA-Z0-9_-]+)/);
+                  if (m1) ytEmbedId = m1[1];
+                  else if (m2) ytEmbedId = m2[1];
+                  else if (m3) ytEmbedId = m3[1];
+
+                  if (ytEmbedId) {
+                    return (
+                      <iframe 
+                        src={`https://www.youtube.com/embed/${ytEmbedId}?autoplay=1`}
+                        title="Démonstration Vidéo YouTube"
+                        style={{ width: '100%', height: '100%', border: 'none' }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    );
+                  }
+                }
+
+                // Flux Réseau Social Sécurisé (TikTok / Instagram / Facebook)
+                return (
+                  <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050811' }}>
+                    <img 
+                      src={poster} 
+                      alt="Aperçu Démonstration"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(0,0,0,0.4)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.6rem'
+                    }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsVideoModalOpen(true);
+                        }}
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#000',
+                          boxShadow: '0 0 25px rgba(245, 158, 11, 0.8)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'transform 0.15s ease'
+                        }}
+                        title="Visionner la vidéo en direct"
+                      >
+                        <Play size={24} fill="#000" style={{ marginLeft: '4px' }} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsVideoModalOpen(true);
+                        }}
+                        style={{
+                          background: 'rgba(15, 23, 42, 0.95)',
+                          border: '1.5px solid rgba(245, 158, 11, 0.5)',
+                          color: '#FCD34D',
+                          fontSize: '0.78rem',
+                          fontWeight: 800,
+                          padding: '0.35rem 0.85rem',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                        }}
+                      >
+                        <span>▶ Visionner la Vidéo sur {videoDemo?.source || 'TikTok / Réseau'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
               <div style={{
                 position: 'absolute',
                 top: 12,
@@ -632,6 +751,16 @@ export function ProductGallery({ images = [], videos = [], videoDemo, title, onO
           </button>
         </div>
       </div>
+
+      {/* 🎬 Lecteur Vidéo Universel Plein Écran */}
+      <UniversalVideoPlayerModal 
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+        videoUrl={allVideos[currentVideoIndex] || (typeof videoDemo === 'object' ? videoDemo?.videoUrl : videoDemo)}
+        poster={images[0] || (typeof videoDemo === 'object' ? videoDemo?.poster : '')}
+        title={title || 'Démonstration Vidéo'}
+        platform={typeof videoDemo === 'object' ? videoDemo?.source : 'Réseaux Sociaux'}
+      />
 
     </div>
   );

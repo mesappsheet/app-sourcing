@@ -1,4 +1,3 @@
-import React, { useState, useRef } from 'react';
 import { 
   Video, 
   Image as ImageIcon, 
@@ -9,13 +8,17 @@ import {
   ChevronRight, 
   Sparkles,
   Link2,
-  X
+  X,
+  Play
 } from 'lucide-react';
+import { UniversalVideoPlayerModal } from './UniversalVideoPlayerModal';
+import { getPlayableVideoSrc, isDirectPlayableVideo } from '../utils/mediaUtils';
 
 export function CapturedMediaHub({
   capturedMedia = [],
   onAddMedia,
   onRemoveMedia,
+  onTrashMedia,
   onAssignMediaToProduct,
   onCreateProductFromMedia,
   categoriesTree = [],
@@ -27,6 +30,7 @@ export function CapturedMediaHub({
   const [newMediaType, setNewMediaType] = useState('auto');
   const [newMediaPlatform, setNewMediaPlatform] = useState('Web / E-commerce');
   const [selectedMediaForDispatch, setSelectedMediaForDispatch] = useState(null);
+  const [activeVideoModal, setActiveVideoModal] = useState(null);
 
   // Dispatch Cascade Navigation State
   const [dispatchMainCatId, setDispatchMainCatId] = useState(null);
@@ -301,13 +305,96 @@ export function CapturedMediaHub({
                 }}
               >
                 {/* Visual Area */}
-                <div style={{ position: 'relative', width: '100%', height: '180px', background: '#000' }}>
+                <div style={{ position: 'relative', width: '100%', height: '190px', background: '#000', overflow: 'hidden' }}>
                   {isVideo ? (
-                    <video 
-                      src={media.url}
-                      controls
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+                    (() => {
+                      const isPlayableDirect = isDirectPlayableVideo(media.url);
+                      const displayPoster = media.poster || (media.url && !media.url.includes('tiktok.com') && !media.url.includes('instagram.com') && !media.url.includes('facebook.com') ? media.url : 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80');
+
+                      if (isPlayableDirect) {
+                        return (
+                          <video 
+                            src={getPlayableVideoSrc(media.url)}
+                            poster={media.poster || ''}
+                            controls
+                            preload="metadata"
+                            playsInline
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+                          />
+                        );
+                      }
+
+                      // Mode Flux Réseau Social (TikTok / Instagram / YouTube)
+                      return (
+                        <div style={{ width: '100%', height: '100%', position: 'relative', background: '#050811' }}>
+                          <img 
+                            src={displayPoster}
+                            alt={media.title}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                          />
+                          
+                          {/* Play Button Overlay */}
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.4rem'
+                          }}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveVideoModal(media);
+                              }}
+                              style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#000',
+                                boxShadow: '0 0 22px rgba(245, 158, 11, 0.75)',
+                                border: 'none',
+                                transition: 'transform 0.15s ease',
+                                cursor: 'pointer'
+                              }}
+                              title="Visionner la vidéo directement"
+                            >
+                              <Play size={22} fill="#000" style={{ marginLeft: '3px' }} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveVideoModal(media);
+                              }}
+                              style={{
+                                background: 'rgba(15, 23, 42, 0.9)',
+                                border: '1px solid rgba(245, 158, 11, 0.5)',
+                                color: '#FCD34D',
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                padding: '0.25rem 0.65rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.3rem'
+                              }}
+                            >
+                              <span>▶ Visionner la Vidéo</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()
                   ) : (
                     <img 
                       src={media.url}
@@ -386,7 +473,13 @@ export function CapturedMediaHub({
                     </button>
 
                     <button
-                      onClick={() => onRemoveMedia(media.id)}
+                      onClick={() => {
+                        if (onTrashMedia) {
+                          onTrashMedia(media);
+                        } else {
+                          onRemoveMedia(media.id);
+                        }
+                      }}
                       style={{
                         background: 'rgba(239, 68, 68, 0.15)',
                         border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -398,7 +491,7 @@ export function CapturedMediaHub({
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}
-                      title="Supprimer ce média"
+                      title="Mettre ce média à la corbeille"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -654,6 +747,16 @@ export function CapturedMediaHub({
           </div>
         </div>
       )}
+
+      {/* 🎬 4. LECTEUR VIDÉO INTERACTIF UNIVERSEL (TIKTOK / YOUTUBE / INSTA / MP4) */}
+      <UniversalVideoPlayerModal 
+        isOpen={Boolean(activeVideoModal)}
+        onClose={() => setActiveVideoModal(null)}
+        videoUrl={activeVideoModal?.url}
+        poster={activeVideoModal?.poster}
+        title={activeVideoModal?.title}
+        platform={activeVideoModal?.platform}
+      />
 
     </div>
   );

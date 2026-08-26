@@ -149,6 +149,61 @@ function scraperApiPlugin() {
           });
         }
       });
+
+      // 🎬 Proxy Vidéo Haute Performance Anti-403 (TikTok / Instagram / Alibaba / Réseaux)
+      server.middlewares.use('/api/proxy-video', async (req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', '*');
+
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 200;
+          res.end();
+          return;
+        }
+
+        try {
+          const parsedUrl = new URL(req.url, 'http://localhost');
+          const targetUrl = parsedUrl.searchParams.get('url');
+          if (!targetUrl) {
+            res.statusCode = 400;
+            res.end('Missing url');
+            return;
+          }
+
+          const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Referer': targetUrl.includes('tiktok') || targetUrl.includes('byteoversea') ? 'https://www.tiktok.com/' : (targetUrl.includes('instagram') ? 'https://www.instagram.com/' : 'https://www.alibaba.com/')
+          };
+
+          if (req.headers.range) {
+            headers['Range'] = req.headers.range;
+          }
+
+          const isHttps = targetUrl.startsWith('https');
+          const client = isHttps ? await import('https') : await import('http');
+
+          const proxyReq = client.get(targetUrl, { headers }, (proxyRes) => {
+            res.statusCode = proxyRes.statusCode || 200;
+            for (const [key, val] of Object.entries(proxyRes.headers)) {
+              if (key.toLowerCase() !== 'access-control-allow-origin') {
+                res.setHeader(key, val);
+              }
+            }
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Accept-Ranges', 'bytes');
+            proxyRes.pipe(res);
+          });
+
+          proxyReq.on('error', (err) => {
+            res.statusCode = 502;
+            res.end('Proxy streaming error: ' + err.message);
+          });
+        } catch (err) {
+          res.statusCode = 500;
+          res.end('Error: ' + err.message);
+        }
+      });
     }
   };
 }

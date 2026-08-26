@@ -26,6 +26,7 @@ import { FullScreenImageViewer } from './components/FullScreenImageViewer';
 import { LoginPage } from './components/LoginPage';
 import { ContextMenuCascade } from './components/ContextMenuCascade';
 import { CapturedMediaHub } from './components/CapturedMediaHub';
+import { InboxTrashView } from './components/InboxTrashView';
 
 import { 
   saveAllProductsToDb, 
@@ -164,16 +165,62 @@ export function App() {
   const [capturedMedia, setCapturedMedia] = useState(() => {
     try {
       const raw = localStorage.getItem('quin_source_captured_media');
-      return raw ? JSON.parse(raw) : [
-        {
-          id: 'demo-vid-drill',
-          type: 'video',
-          url: 'https://assets.mixkit.co/videos/preview/mixkit-power-drill-screwing-a-screw-into-wood-41712-large.mp4',
-          title: 'Démo Usine Visseuse Sans Fil',
-          platform: 'Douyin / TikTok',
-          createdAt: new Date().toISOString()
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      // Nettoyage et déduplication automatique des médias au chargement
+      const seen = new Set();
+      return arr.filter(item => {
+        const key = item.url || item.id || (item.title + item.poster);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Chargement asynchrone depuis IndexedDB pour restaurer les vidéos réelles Base64 / MP4
+  useEffect(() => {
+    import('./utils/indexedMediaDB').then(({ getAllMediaItemsFromDB }) => {
+      getAllMediaItemsFromDB().then(dbItems => {
+        if (dbItems && dbItems.length > 0) {
+          setCapturedMedia(prev => {
+            const map = new Map();
+            prev.forEach(it => map.set(it.id, it));
+            dbItems.forEach(it => {
+              // Si la version DB contient la vraie vidéo Base64, la prioriser
+              if (it.url && it.url.startsWith('data:video')) {
+                map.set(it.id, it);
+              } else if (!map.has(it.id)) {
+                map.set(it.id, it);
+              }
+            });
+            return Array.from(map.values());
+          });
         }
-      ];
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      // Stocker une version légère dans localStorage pour éviter le dépassement de quota
+      const lightweight = capturedMedia.map(m => {
+        if (m.url && m.url.startsWith('data:video') && m.url.length > 500000) {
+          return { ...m, url: m.poster || 'local-video-stored-in-indexeddb' };
+        }
+        return m;
+      });
+      localStorage.setItem('quin_source_captured_media', JSON.stringify(lightweight));
+    } catch (e) {}
+  }, [capturedMedia]);
+
+  // 🗑️ Section Corbeille du Magasin d'Arrivage
+  const [trashedItems, setTrashedItems] = useState(() => {
+    try {
+      const raw = localStorage.getItem('quin_source_trashed_items');
+      return raw ? JSON.parse(raw) : [];
     } catch (e) {
       return [];
     }
@@ -181,18 +228,100 @@ export function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('quin_source_captured_media', JSON.stringify(capturedMedia));
+      localStorage.setItem('quin_source_trashed_items', JSON.stringify(trashedItems));
     } catch (e) {}
-  }, [capturedMedia]);
+  }, [trashedItems]);
 
-  const handleAddCapturedMedia = (newMedia) => {
-    setCapturedMedia(prev => [newMedia, ...prev]);
+  const handleAddCapturedMedia = async (newMedia) => {
+    if (!newMedia) return;
+
+    // Enregistrement permanent dans IndexedDB (Capacité illimitée pour fichiers vidéos)
+    try {
+      const { saveMediaItemToDB } = await import('./utils/indexedMediaDB');
+      await saveMediaItemToDB(newMedia);
+    } catch (e) {}
+
+    setCapturedMedia(prev => {
+      // Déduplication absolue par ID, par URL ou par titre/poster
+      const isDuplicate = prev.some(m => 
+        m.id === newMedia.id || 
+        (m.url && newMedia.url && m.url === newMedia.url) ||
+        (m.poster && newMedia.poster && m.poster === newMedia.poster && m.title === newMedia.title)
+      );
+      if (isDuplicate) {
+        return prev;
+      }
+      return [newMedia, ...prev];
+    });
     showToast(`🎬 Média « ${newMedia.title || 'Média capturé'} » ajouté dans le Magasin d'Arrivage !`);
   };
 
   const handleRemoveCapturedMedia = (mediaId) => {
     setCapturedMedia(prev => prev.filter(m => m.id !== mediaId));
-    showToast(`🗑️ Média supprimé du Magasin d'Arrivage.`);
+  };
+
+  // Déplacement d'un média capturé vers la Corbeille
+  const handleTrashCapturedMedia = (media) => {
+    const trashEntry = {
+      trashId: 'trash-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      itemType: 'media',
+      deletedAt: new Date().toISOString(),
+      data: media
+    };
+    setCapturedMedia(prev => prev.filter(m => m.id !== media.id));
+    setTrashedItems(prev => [trashEntry, ...prev]);
+    showToast(`🗑️ Média « ${media.title || 'Média'} » placé dans la Corbeille.`);
+  };
+
+  // Déplacement d'un article d'arrivage vers la Corbeille
+  const handleTrashProduct = (product) => {
+    const trashEntry = {
+      trashId: 'trash-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      itemType: 'product',
+      deletedAt: new Date().toISOString(),
+      data: product
+    };
+    setAllProductsByWs(prev => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).filter(p => p.id !== product.id)
+    }));
+    setTrashedItems(prev => [trashEntry, ...prev]);
+    if (selectedProduct?.id === product.id) setSelectedProduct(null);
+    showToast(`🗑️ Article « ${product.titleFr} » placé dans la Corbeille.`);
+  };
+
+  // Restauration d'un élément depuis la Corbeille
+  const handleRestoreItem = (trashEntry) => {
+    if (trashEntry.itemType === 'media') {
+      setCapturedMedia(prev => [trashEntry.data, ...prev]);
+    } else if (trashEntry.itemType === 'product') {
+      setAllProductsByWs(prev => ({
+        ...prev,
+        [activeWorkspaceId]: [trashEntry.data, ...(prev[activeWorkspaceId] || [])]
+      }));
+    }
+    setTrashedItems(prev => prev.filter(i => i.trashId !== trashEntry.trashId));
+    showToast(`♻️ « ${trashEntry.data?.titleFr || trashEntry.data?.title || 'Élément'} » restauré dans le Magasin d'Arrivage !`);
+  };
+
+  // Suppression définitive d'un élément de la Corbeille
+  const handlePermanentDeleteItem = (trashEntry) => {
+    if (trashEntry.itemType === 'product' && trashEntry.data?.id) {
+      deleteProductFromDb(trashEntry.data.id);
+    }
+    setTrashedItems(prev => prev.filter(i => i.trashId !== trashEntry.trashId));
+    showToast(`❌ Élément définitivement supprimé.`);
+  };
+
+  // Vidage complet de la Corbeille
+  const handleEmptyTrash = () => {
+    trashedItems.forEach(item => {
+      if (item.itemType === 'product' && item.data?.id) {
+        deleteProductFromDb(item.data.id);
+      }
+    });
+    setTrashedItems([]);
+    showToast(`🧹 La Corbeille a été entièrement vidée.`);
   };
 
   const handleAssignMediaToProduct = (media, targetProductId) => {
@@ -204,13 +333,19 @@ export function App() {
     if (media.type === 'video') {
       const existingVids = Array.isArray(prod.videos) ? prod.videos : (prod.videoDemo?.videoUrl ? [prod.videoDemo.videoUrl] : []);
       const newVids = existingVids.includes(media.url) ? existingVids : [media.url, ...existingVids];
+      const existingImgs = Array.isArray(prod.images) ? prod.images : [];
+      const newImgs = (media.poster && !existingImgs.includes(media.poster)) ? [media.poster, ...existingImgs] : existingImgs;
+
       updatedProd = {
         ...updatedProd,
         hasVideoDemo: true,
         videos: newVids,
+        images: newImgs.length > 0 ? newImgs : prod.images,
         videoDemo: {
           ...(typeof prod.videoDemo === 'object' ? prod.videoDemo : {}),
-          videoUrl: newVids[0] || media.url
+          videoUrl: newVids[0] || media.url,
+          poster: media.poster || prod.videoDemo?.poster || '',
+          source: media.platform || prod.videoDemo?.source || 'Vidéo Démo'
         }
       };
     } else {
@@ -229,6 +364,7 @@ export function App() {
 
   const handleCreateProductFromMedia = (media) => {
     const isVideo = media.type === 'video';
+    const posterImg = media.poster || (isVideo ? null : media.url);
     const newProd = {
       id: 'prod-' + Date.now(),
       sku: 'QUIN-ARR-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
@@ -239,10 +375,15 @@ export function App() {
       titleCn: '新到样品配件',
       unit: 'Pièce (pc)',
       priceCny: 10.0,
-      images: isVideo ? ['https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800'] : [media.url],
+      images: posterImg ? [posterImg] : ['https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800'],
       videos: isVideo ? [media.url] : [],
       hasVideoDemo: isVideo,
-      videoDemo: isVideo ? { videoUrl: media.url, views: '150K vues' } : null,
+      videoDemo: isVideo ? { 
+        videoUrl: media.url, 
+        poster: media.poster || '',
+        source: media.platform || 'Démo Social / Usine',
+        views: '150K vues' 
+      } : null,
       suppliers: [
         {
           id: 'sup-' + Date.now(),
@@ -499,9 +640,11 @@ export function App() {
         'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80'
       ],
       hasVideoDemo: Boolean(parsedData.videoUrl),
+      videos: parsedData.videoUrl ? [parsedData.videoUrl] : [],
       videoDemo: parsedData.videoUrl ? {
-        source: 'Démonstration Usine Réelle',
+        source: parsedData.platform ? `Démo ${parsedData.platform}` : 'Démonstration Usine Réelle',
         videoUrl: parsedData.videoUrl,
+        poster: parsedData.videoPoster || '',
         views: '100K vues'
       } : null,
       specifications: parsedData.specifications || [],
@@ -1044,6 +1187,12 @@ export function App() {
     const productId = typeof productOrId === 'object' ? productOrId.id : productOrId;
     const prod = products.find(p => p.id === productId);
 
+    // Si l'article est dans le Magasin d'Arrivage, le déplacer dans la Corbeille
+    if (prod && (prod.category === 'inbox' || selectedCategory === 'inbox')) {
+      handleTrashProduct(prod);
+      return;
+    }
+
     setAllProductsByWs(prev => {
       const remaining = (prev[activeWorkspaceId] || []).filter(p => p.id !== productId);
       saveAllProductsToDb(remaining, activeWorkspaceId);
@@ -1430,7 +1579,7 @@ export function App() {
             {/* Center Column: Products Cards Grid OR Captured Media Hub */}
             <div style={{ minWidth: 0 }}>
               
-              {/* 📥 ONGLETS DU MAGASIN D'ARRIVAGE (Articles vs Médias Capturés) */}
+              {/* 📥 ONGLETS DU MAGASIN D'ARRIVAGE (Articles vs Médias Capturés vs Corbeille) */}
               {selectedCategory === 'inbox' && (
                 <div style={{
                   display: 'flex',
@@ -1440,7 +1589,8 @@ export function App() {
                   padding: '0.4rem',
                   borderRadius: '12px',
                   border: '1px solid var(--border-subtle)',
-                  width: 'fit-content'
+                  width: 'fit-content',
+                  flexWrap: 'wrap'
                 }}>
                   <button
                     onClick={() => setInboxSubTab('products')}
@@ -1489,15 +1639,49 @@ export function App() {
                       {capturedMedia.length}
                     </span>
                   </button>
+
+                  <button
+                    onClick={() => setInboxSubTab('trash')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.45rem 1rem',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      background: inboxSubTab === 'trash' ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'transparent',
+                      border: 'none',
+                      color: inboxSubTab === 'trash' ? '#FFFFFF' : 'var(--text-secondary)',
+                      transition: 'all 0.2s ease',
+                      boxShadow: inboxSubTab === 'trash' ? '0 2px 10px rgba(239, 68, 68, 0.4)' : 'none'
+                    }}
+                  >
+                    <span>🗑️ Corbeille Arrivage</span>
+                    <span style={{ background: inboxSubTab === 'trash' ? '#FFF' : 'rgba(255,255,255,0.1)', color: inboxSubTab === 'trash' ? '#EF4444' : 'var(--text-secondary)', padding: '0.1rem 0.45rem', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 900 }}>
+                      {trashedItems.length}
+                    </span>
+                  </button>
                 </div>
               )}
 
-              {/* VUE 1 : HUB DES PHOTOS & VIDÉOS CAPTURÉES */}
-              {selectedCategory === 'inbox' && inboxSubTab === 'media' ? (
+              {/* VUE 1 : CORBEILLE DU MAGASIN D'ARRIVAGE */}
+              {selectedCategory === 'inbox' && inboxSubTab === 'trash' ? (
+                <InboxTrashView 
+                  trashedItems={trashedItems}
+                  onRestoreItem={handleRestoreItem}
+                  onPermanentDeleteItem={handlePermanentDeleteItem}
+                  onEmptyTrash={handleEmptyTrash}
+                  showToast={showToast}
+                />
+              ) : selectedCategory === 'inbox' && inboxSubTab === 'media' ? (
+                /* VUE 2 : HUB DES PHOTOS & VIDÉOS CAPTURÉES */
                 <CapturedMediaHub 
                   capturedMedia={capturedMedia}
                   onAddMedia={handleAddCapturedMedia}
                   onRemoveMedia={handleRemoveCapturedMedia}
+                  onTrashMedia={handleTrashCapturedMedia}
                   onAssignMediaToProduct={handleAssignMediaToProduct}
                   onCreateProductFromMedia={handleCreateProductFromMedia}
                   categoriesTree={categoriesTree}
@@ -1505,7 +1689,7 @@ export function App() {
                   showToast={showToast}
                 />
               ) : (
-                /* VUE 2 : CATALOGUE STANDARD D'ARTICLES */
+                /* VUE 3 : CATALOGUE STANDARD D'ARTICLES */
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
