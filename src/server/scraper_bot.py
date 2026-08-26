@@ -427,11 +427,24 @@ def extract_live_price_and_moq(soup, html_text):
                                     price_cny = round(num_p * 7.23, 2)
                                 elif curr == 'EUR':
                                     price_cny = round(num_p * 7.80, 2)
+                                elif curr in ['XOF', 'XAF', 'FCFA', 'CFA']:
+                                    price_cny = round(num_p / 85.0, 2)
                                 else:
                                     price_cny = round(num_p, 2)
                             min_q = offers.get('eligibleQuantity', {}).get('value') or offers.get('minOrderQuantity')
                             if min_q:
                                 moq_val = int(str(min_q).replace(',', '').strip())
+            except Exception:
+                pass
+
+    # Détection FCFA directe dans le texte
+    if price_cny is None and html_text:
+        fcfa_match = re.search(r'(\d[\d\s\u00a0.,]{0,8})\s*(?:FCFA|CFA|XOF)', html_text, re.IGNORECASE)
+        if fcfa_match:
+            try:
+                p_fcfa = int(re.sub(r'[^\d]', '', fcfa_match.group(1)))
+                if p_fcfa > 5:
+                    price_cny = round(p_fcfa / 85.0, 2)
             except Exception:
                 pass
 
@@ -447,7 +460,7 @@ def extract_live_price_and_moq(soup, html_text):
                 pass
 
     if moq_val is None and html_text:
-        moq_match = re.search(r'(?:min(?:imum)?\.?\s*order|moq)\s*[:=]?\s*(\d+[\d\s,]*)', html_text, re.IGNORECASE)
+        moq_match = re.search(r'(?:min(?:imum)?\.?\s*order|moq|quantit[eé]\s*minimale|quantit[eé]\s*minimum)\s*[:=]?\s*(\d+[\d\s,]*)', html_text, re.IGNORECASE)
         if moq_match:
             try:
                 moq_val = int(re.sub(r'[^\d]', '', moq_match.group(1)))

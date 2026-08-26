@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>App Sourcing • Injecteur E-Commerce</title>
+  <title>App Sourcing • Injecteur E-Commerce Deep Scraper</title>
   <style>
     * { 
       box-sizing: border-box; 
@@ -15,8 +15,8 @@
     
     html {
       width: 100%;
-      min-width: 320px;
-      max-width: 480px;
+      min-width: 350px;
+      max-width: 500px;
       background: #080D1A;
       margin: 0 auto;
       padding: 0;
@@ -24,8 +24,8 @@
 
     body {
       width: 100%;
-      min-width: 320px;
-      max-width: 480px;
+      min-width: 350px;
+      max-width: 500px;
       background: #080D1A;
       color: #F8FAFC;
       padding: 0 12px 14px 12px;
@@ -35,7 +35,7 @@
       transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* 🖐️ Poignée Tactile de Glissement / Déplacement */
+    /* 🖐️ Poignée Tactile */
     .drag-handle-container {
       width: 100%;
       padding: 8px 0 6px 0;
@@ -47,9 +47,6 @@
       touch-action: none;
       user-select: none;
     }
-    .drag-handle-container:active {
-      cursor: grabbing;
-    }
     .drag-pill {
       width: 48px;
       height: 5px;
@@ -57,8 +54,7 @@
       border-radius: 4px;
       transition: all 0.2s ease;
     }
-    .drag-handle-container:hover .drag-pill,
-    .drag-handle-container:active .drag-pill {
+    .drag-handle-container:hover .drag-pill {
       background: #38BDF8;
       width: 64px;
       box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
@@ -146,6 +142,27 @@
       max-width: 60%;
     }
 
+    /* Médias Preview Bar */
+    .media-preview-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 10.5px;
+    }
+    .badge-video {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid #F59E0B;
+      color: #FCD34D;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 9.5px;
+    }
+
     /* Paliers de Prix Réels Usine */
     .tiers-section {
       margin-top: 6px;
@@ -196,7 +213,7 @@
       display: flex;
       flex-direction: column;
       gap: 3px;
-      max-height: 120px;
+      max-height: 140px;
       overflow-y: auto;
       scrollbar-width: thin;
     }
@@ -208,9 +225,10 @@
       border-left: 2px solid #10B981;
       padding: 2px 6px;
       border-radius: 0 4px 4px 0;
+      gap: 6px;
     }
     .spec-label { color: #94A3B8; font-weight: 600; }
-    .spec-value { color: #F1F5F9; font-weight: 700; text-align: right; }
+    .spec-value { color: #F1F5F9; font-weight: 700; text-align: right; max-width: 60%; word-break: break-word; }
 
     /* Mode Tabs */
     .mode-tabs { display: flex; gap: 6px; margin-bottom: 8px; width: 100%; }
@@ -222,7 +240,7 @@
     .target-product-select { width: 100%; background: #0B1120; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 11px; padding: 6px; outline: none; }
 
     /* Main Import Buttons */
-    .btn-import { width: 100%; background: linear-gradient(135deg, #2563EB, #1D4ED8); color: white; border: none; border-radius: 8px; padding: 12px 12px; font-size: 12.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); margin-bottom: 6px; }
+    .btn-import { width: 100%; background: linear-gradient(135deg, #2563EB, #1D4ED8); color: white; border: none; border-radius: 8px; padding: 12px 12px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); margin-bottom: 6px; }
     .btn-import:hover, .btn-import:active { background: linear-gradient(135deg, #1D4ED8, #1E40AF); }
     .btn-import.btn-enrich { background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
     .btn-import.btn-enrich:hover, .btn-import.btn-enrich:active { background: linear-gradient(135deg, #047857, #065F46); }
@@ -235,6 +253,7 @@
     body.is-compact .specs-section,
     body.is-compact .tiers-section,
     body.is-compact .mode-tabs,
+    body.is-compact .media-preview-bar,
     body.is-compact .target-product-box {
       display: none !important;
     }
@@ -242,7 +261,7 @@
 </head>
 <body id="popupBody">
   <!-- 🖐️ Poignée Tactile de Glissement -->
-  <div id="dragHandleBar" class="drag-handle-container" title="Glisser pour déplacer ou ajuster">
+  <div id="dragHandleBar" class="drag-handle-container" title="Glisser pour ajuster">
     <div class="drag-pill"></div>
   </div>
 
@@ -250,7 +269,7 @@
   <div class="header">
     <div class="header-title">
       <span style="font-size: 15px;">⚡</span>
-      <h2>App Sourcing • Injecteur</h2>
+      <h2>App Sourcing • Deep Scraper</h2>
     </div>
     <div style="display: flex; align-items: center; gap: 6px;">
       <span id="platformBadge" class="badge-platform">Détection...</span>
@@ -266,11 +285,22 @@
 
   <!-- Preview Card (Données Fiche Produit Extraites) -->
   <div class="status-card">
-    <div id="previewTitle" class="preview-title">Extraction des données réelles du produit...</div>
+    <div id="previewTitle" class="preview-title">Deep Scraping intégral de la page en cours...</div>
+
+    <!-- Médias Bar -->
+    <div id="previewMediaBar" class="media-preview-bar" style="display: none;">
+      <span id="previewImagesCount" style="color: #93C5FD; font-weight: 700;">📷 0 photos HD</span>
+      <span id="previewVideoBadge" class="badge-video" style="display: none;">🎬 Vidéo Démo Détectée</span>
+    </div>
     
     <div class="preview-row">
       <span>💰 Vrai Prix Affiché :</span>
       <span id="previewPrice" class="preview-val">Analyse...</span>
+    </div>
+
+    <div class="preview-row" id="previewSampleRow" style="display: none;">
+      <span>🧪 Prix Échantillon :</span>
+      <span id="previewSample" style="color: #CBD5E1; font-weight: 700;">-</span>
     </div>
 
     <div class="preview-row">
@@ -297,7 +327,7 @@
     <!-- Spécifications & Caractéristiques Techniques Détectées -->
     <div id="previewSpecsBox" class="specs-section" style="display: none;">
       <div class="specs-title">
-        <span>📐 Caractéristiques Détectées :</span>
+        <span>📐 Spécifications Exhaustives :</span>
         <span id="previewSpecsCount" style="color: #34D399; font-size: 9px; font-weight: bold;">(0)</span>
       </div>
       <div id="previewSpecsList" class="specs-list"></div>

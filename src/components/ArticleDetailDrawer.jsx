@@ -61,7 +61,7 @@ export function ArticleDetailDrawer({
   const rawSupName = rawPreferredSupplier.name || product.factoryName || '';
   const badNames = ['afficher plus', 'voir plus', 'see more', 'avis sur', 'note de', 'evaluation'];
   const cleanName = (!rawSupName || badNames.some(w => rawSupName.toLowerCase().includes(w)))
-    ? 'Foshan Milatool Electronic Equipment Co., Ltd.' 
+    ? (product.factoryName || 'Fournisseur Direct Chine') 
     : rawSupName;
 
   const preferredSupplier = {

@@ -363,6 +363,46 @@ export function App() {
   };
 
   const handleCreateProductFromMedia = (media) => {
+    if (!media) return;
+
+    if (media.productData && typeof media.productData === 'object') {
+      const fullProd = {
+        ...media.productData,
+        id: media.productData.id || ('prod-' + Date.now()),
+        sku: media.productData.sku || ('QUIN-ARR-' + Math.random().toString(36).substring(2, 6).toUpperCase()),
+        category: 'inbox',
+        categoryName: 'Magasin d\'Arrivage',
+        categoryIcon: '📥',
+        images: (Array.isArray(media.productData.images) && media.productData.images.length > 0)
+          ? media.productData.images
+          : (media.poster ? [media.poster] : (media.url ? [media.url] : ['https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80'])),
+        specifications: media.productData.specifications || media.specifications || [],
+        tierPricing: media.productData.tierPricing || media.tierPricing || [],
+        factoryName: media.productData.factoryName || media.factoryName || 'Fournisseur Vérifié Chine',
+        factoryCity: media.productData.factoryCity || media.factoryCity || 'Guangdong, Chine',
+        suppliers: (Array.isArray(media.productData.suppliers) && media.productData.suppliers.length > 0)
+          ? media.productData.suppliers
+          : [
+              {
+                id: 'sup-' + Date.now(),
+                name: media.factoryName || 'Usine Vérifiée ' + (media.platform || 'Alibaba'),
+                city: media.factoryCity || 'Guangdong, Chine',
+                country: 'Chine',
+                badge: 'Verified Supplier',
+                years: '5 ans d\'expérience',
+                priceCny: media.priceCny || 0.42,
+                priceFcfa: media.priceFcfa || 36,
+                moq: media.moq || 50000,
+                isPreferred: true
+              }
+            ]
+      };
+      handleImportFromExtension(fullProd);
+      handleRemoveCapturedMedia(media.id);
+      showToast(`✨ « ${fullProd.titleFr.slice(0, 30)}... » créé dans le Magasin d'Arrivage avec toutes ses photos HD et caractéristiques !`);
+      return;
+    }
+
     const isVideo = media.type === 'video';
     const posterImg = media.poster || (isVideo ? null : media.url);
     const newProd = {
@@ -372,33 +412,41 @@ export function App() {
       categoryName: 'Magasin d\'Arrivage',
       categoryIcon: '📥',
       titleFr: media.title || 'Nouvel Article Capturé',
-      titleCn: '新到样品配件',
+      titleCn: '',
       unit: 'Pièce (pc)',
-      priceCny: 10.0,
+      priceCny: media.priceCny || 0.42,
+      priceFcfa: media.priceFcfa || 36,
+      basePriceCny: media.priceCny || 0.42,
+      moq: media.moq || 50000,
       images: posterImg ? [posterImg] : ['https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800'],
       videos: isVideo ? [media.url] : [],
       hasVideoDemo: isVideo,
       videoDemo: isVideo ? { 
         videoUrl: media.url, 
         poster: media.poster || '',
-        source: media.platform || 'Démo Social / Usine',
+        source: media.platform || 'Démo Usine',
         views: '150K vues' 
       } : null,
+      specifications: media.specifications || [],
+      tierPricing: media.tierPricing || [],
+      factoryName: media.factoryName || 'Fournisseur Vérifié Chine',
+      factoryCity: media.factoryCity || 'Guangdong, Chine',
       suppliers: [
         {
           id: 'sup-' + Date.now(),
-          name: 'Fournisseur Direct Chine',
-          city: 'Guangdong, Chine',
+          name: media.factoryName || 'Fournisseur Direct Chine',
+          city: media.factoryCity || 'Guangdong, Chine',
           badge: 'Verified Supplier',
-          priceCny: 10.0,
-          moq: 100,
+          priceCny: media.priceCny || 0.42,
+          priceFcfa: media.priceFcfa || 36,
+          moq: media.moq || 50000,
           isPreferred: true
         }
       ]
     };
-    handleImportProduct(newProd);
+    handleImportFromExtension(newProd);
     handleRemoveCapturedMedia(media.id);
-    showToast(`✨ Nouvel article créé dans le Magasin d'Arrivage à partir du média !`);
+    showToast(`✨ Nouvel article créé dans le Magasin d'Arrivage !`);
   };
 
   const [isInitialLoadDone, setIsInitialLoadDone] = useState(false);
@@ -523,21 +571,34 @@ export function App() {
     let cleanCompany = parsedData.company || parsedData.factoryName || '';
     const badCompanyWords = ['afficher plus', 'voir plus', 'see more', 'avis', 'boutique', 'évaluation', 'feedback', 'suivre', 'propos d\'alibaba', 'centre d\'aide'];
     if (!cleanCompany || badCompanyWords.some(w => cleanCompany.toLowerCase().includes(w))) {
-      cleanCompany = 'Foshan Milatool Electronic Equipment Co., Ltd.';
+      cleanCompany = parsedData.platform ? `Usine Vérifiée ${parsedData.platform}` : 'Fournisseur Direct Chine';
     }
 
     let cleanCity = parsedData.location || parsedData.factoryCity || '';
     if (!cleanCity || cleanCity.includes('Adresse de livraison')) {
-      cleanCity = 'Foshan, Guangdong (Chine)';
+      cleanCity = 'Guangdong, Chine';
     }
 
-    let basePriceFcfa = 5000;
-    if (parsedData.fcfaPrices && parsedData.fcfaPrices.length > 0) {
+    let basePriceFcfa = 0;
+    if (parsedData.basePriceFcfa && Number(parsedData.basePriceFcfa) > 0) {
+      basePriceFcfa = Number(parsedData.basePriceFcfa);
+    } else if (parsedData.fcfaPrices && parsedData.fcfaPrices.length > 0) {
       basePriceFcfa = parsedData.fcfaPrices[0];
-    } else if (parsedData.priceFcfa) {
-      basePriceFcfa = parseInt(parsedData.priceFcfa) || 5000;
+    } else if (parsedData.priceFcfa && Number(parsedData.priceFcfa) > 0) {
+      basePriceFcfa = parseInt(parsedData.priceFcfa, 10);
+    } else if (parsedData.tierPricing && parsedData.tierPricing.length > 0) {
+      basePriceFcfa = parsedData.tierPricing[0].priceFcfa;
+    } else if (parsedData.priceCny && Number(parsedData.priceCny) > 0) {
+      basePriceFcfa = Math.round(Number(parsedData.priceCny) * 85);
+    } else {
+      basePriceFcfa = 3500;
     }
-    const priceCny = parseFloat(parsedData.priceCny || (basePriceFcfa / 85).toFixed(2));
+
+    const priceCny = (parsedData.basePriceCny && Number(parsedData.basePriceCny) > 0)
+      ? Number(parsedData.basePriceCny)
+      : (parsedData.priceCny && Number(parsedData.priceCny) > 0
+        ? Number(parsedData.priceCny)
+        : parseFloat((basePriceFcfa / 85).toFixed(2)));
 
     const tiers = Array.isArray(parsedData.tierPricing) && parsedData.tierPricing.length > 0 ? parsedData.tierPricing : [];
     const detectedMoq = parsedData.moq || (tiers[0]?.minQty) || '1 pièce';
@@ -620,72 +681,132 @@ export function App() {
       }
     }
 
-    // 🌟 OPTION A : CRÉATION D'UN NOUVEL ARTICLE
-    const rawTitle = parsedData.title || 'Article Importé Alibaba';
-    const sku = `IMP-${Date.now().toString().slice(-4)}`;
-    
-    const activeCats = allCategoriesByWs[activeWorkspaceId] || [];
-    const firstCat = activeCats.find(c => c.id !== 'all');
-    const category = parsedData.category && parsedData.category !== 'all' ? parsedData.category : (firstCat ? firstCat.id : 'all');
+    // 🌟 OPTION A : CRÉATION / MISE À JOUR SANS DOUBLON DANS LE MAGASIN D'ARRIVAGE
+    const rawTitle = (parsedData.title || 'Article Importé Alibaba')
+      .replace(/&#39;/g, "'")
+      .replace(/&eacute;/g, "é")
+      .replace(/&ndash;/g, "–")
+      .replace(/&amp;/g, "&")
+      .replace(/\s*-\s*Alibaba\.com$/i, '')
+      .replace(/\s*–\s*Buy Product on Alibaba\.com$/i, '')
+      .trim();
 
-    const newProduct = {
-      id: `prod-${Date.now()}`,
-      sku,
-      titleFr: rawTitle,
-      titleCn: parsedData.titleCn || '',
-      category,
-      material: parsedData.material || 'Standard Qualité Usine',
-      dimensions: parsedData.dimensions || 'Standard Pro Export',
-      images: parsedData.images && parsedData.images.length > 0 ? parsedData.images : [
-        'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80'
-      ],
-      hasVideoDemo: Boolean(parsedData.videoUrl),
-      videos: parsedData.videoUrl ? [parsedData.videoUrl] : [],
-      videoDemo: parsedData.videoUrl ? {
-        source: parsedData.platform ? `Démo ${parsedData.platform}` : 'Démonstration Usine Réelle',
-        videoUrl: parsedData.videoUrl,
-        poster: parsedData.videoPoster || '',
-        views: '100K vues'
-      } : null,
-      specifications: parsedData.specifications || [],
-      factoryName: cleanCompany,
-      factoryCity: cleanCity,
-      tierPricing: tiers,
-      moq: detectedMoq,
-      suppliers: [
-        {
-          id: `sup-${Date.now()}`,
-          name: cleanCompany,
-          platform: (parsedData.url && parsedData.url.includes('pinduoduo')) ? 'pinduoduo' : 'alibaba',
-          city: cleanCity,
-          priceCny: priceCny,
-          moq: detectedMoq,
-          priceTiers: tiers,
-          rating: 4.9,
-          badge: parsedData.badge || 'Verified Supplier',
-          years: parsedData.years || '4 ans d\'expérience',
-          isPreferred: true,
-          url: parsedData.url || '',
-          leadTime: '5 - 15 jours'
-        }
-      ],
-      basePriceCny: priceCny,
-      priceCny: priceCny,
-      unit: parsedData.unit || 'Pièce (pc)',
-      sourceUrl: parsedData.url || ''
-    };
+    const normalizeUrl = (u) => (u ? u.split('?')[0].split('#')[0].trim().toLowerCase() : '');
+    const cleanSourceUrl = normalizeUrl(parsedData.url || parsedData.sourceUrl || '');
+    const cleanTitleSample = rawTitle.slice(0, 35).toLowerCase().trim();
+
+    const currentList = allProductsByWs[activeWorkspaceId] || [];
+    
+    // Recherche stricte d'un article existant pour éviter les doublons
+    const existingIndex = currentList.findIndex(p => {
+      if (!p) return false;
+      const pUrl = normalizeUrl(p.sourceUrl || '');
+      if (cleanSourceUrl && pUrl && pUrl === cleanSourceUrl) return true;
+      const pTitle = (p.titleFr || '').slice(0, 35).toLowerCase().trim();
+      return pTitle && cleanTitleSample && pTitle === cleanTitleSample;
+    });
+
+    const hasRealVideo = Boolean(parsedData.videoUrl && parsedData.videoUrl.startsWith('http') && !parsedData.videoUrl.startsWith('blob:'));
+    const finalImages = (Array.isArray(parsedData.images) && parsedData.images.length > 0) ? parsedData.images : (parsedData.mainImage ? [parsedData.mainImage] : []);
+
+    let targetProduct;
+
+    if (existingIndex >= 0) {
+      // MISE À JOUR DE L'ARTICLE EXISTANT (Anti-Doublon Garanti)
+      const oldProd = currentList[existingIndex];
+      targetProduct = {
+        ...oldProd,
+        titleFr: rawTitle,
+        category: 'inbox',
+        priceFcfa: basePriceFcfa,
+        priceCny: priceCny,
+        basePriceFcfa: basePriceFcfa,
+        basePriceCny: priceCny,
+        moq: detectedMoq,
+        images: finalImages.length > 0 ? finalImages : oldProd.images,
+        mainImage: finalImages[0] || oldProd.mainImage,
+        specifications: (parsedData.specifications && parsedData.specifications.length > 0) ? parsedData.specifications : oldProd.specifications,
+        tierPricing: (tiers && tiers.length > 0) ? tiers : oldProd.tierPricing,
+        factoryName: cleanCompany || oldProd.factoryName,
+        factoryCity: cleanCity || oldProd.factoryCity,
+        hasVideoDemo: hasRealVideo,
+        videos: hasRealVideo ? [parsedData.videoUrl] : []
+      };
+    } else {
+      // CRÉATION D'UN NOUVEL ARTICLE UNIQUE
+      const sku = `IMP-${Date.now().toString().slice(-4)}`;
+      targetProduct = {
+        id: `prod-${Date.now()}`,
+        sku,
+        titleFr: rawTitle,
+        titleCn: parsedData.titleCn || '',
+        category: 'inbox',
+        categoryName: 'Magasin d\'Arrivage',
+        categoryIcon: '📥',
+        material: parsedData.material || 'Standard Qualité Usine',
+        dimensions: parsedData.dimensions || 'Standard Pro Export',
+        images: finalImages,
+        mainImage: finalImages[0] || '',
+        hasVideoDemo: hasRealVideo,
+        videos: hasRealVideo ? [parsedData.videoUrl] : [],
+        videoDemo: hasRealVideo ? {
+          source: parsedData.platform ? `Démo ${parsedData.platform}` : 'Démonstration Usine Réelle',
+          videoUrl: parsedData.videoUrl,
+          poster: parsedData.videoPoster || '',
+          views: '100K vues'
+        } : null,
+        specifications: parsedData.specifications || [],
+        factoryName: cleanCompany,
+        factoryCity: cleanCity,
+        tierPricing: tiers,
+        moq: detectedMoq,
+        suppliers: [
+          {
+            id: `sup-${Date.now()}`,
+            name: cleanCompany,
+            platform: (parsedData.url && parsedData.url.includes('pinduoduo')) ? 'pinduoduo' : 'alibaba',
+            city: cleanCity,
+            priceCny: priceCny,
+            priceFcfa: basePriceFcfa,
+            moq: detectedMoq,
+            priceTiers: tiers,
+            rating: 4.9,
+            badge: parsedData.badge || 'Verified Supplier',
+            years: parsedData.years || '4 ans d\'expérience',
+            isPreferred: true,
+            url: parsedData.url || parsedData.sourceUrl || '',
+            leadTime: '5 - 15 jours'
+          }
+        ],
+        basePriceCny: priceCny,
+        priceCny: priceCny,
+        priceFcfa: basePriceFcfa,
+        unit: parsedData.unit || 'Pièce (pc)',
+        sourceUrl: parsedData.url || parsedData.sourceUrl || ''
+      };
+    }
 
     setAllProductsByWs(prev => {
-      const currentList = prev[activeWorkspaceId] || [];
-      const filtered = currentList.filter(p => !newProduct.sourceUrl || p.sourceUrl !== newProduct.sourceUrl);
+      const list = prev[activeWorkspaceId] || [];
+      const withoutTarget = list.filter(p => p.id !== targetProduct.id && normalizeUrl(p.sourceUrl) !== cleanSourceUrl);
+      const updatedList = [targetProduct, ...withoutTarget];
+      saveAllProductsToDb(updatedList, activeWorkspaceId);
       return {
         ...prev,
-        [activeWorkspaceId]: [newProduct, ...filtered]
+        [activeWorkspaceId]: updatedList
       };
     });
 
-    setSelectedProduct(newProduct);
-    showToast(`🎉 « ${newProduct.titleFr.slice(0, 40)}... » importé avec succès dans votre espace !`);
+    // ⚡ Sauvegarde directe Supabase Cloud
+    saveProductToDb(targetProduct, activeWorkspaceId);
+
+    // ⚡ Basculer immédiatement sur l'onglet Magasin d'Arrivage > Articles en Attente
+    setCurrentTab('catalog');
+    setSelectedCategory('inbox');
+    setInboxSubTab('products');
+    setSearchQuery('');
+    setSelectedProduct(targetProduct);
+    showToast(`🎉 « ${targetProduct.titleFr.slice(0, 35)}... » placé dans vos « Articles en Attente » !`);
     return true;
   };
 
