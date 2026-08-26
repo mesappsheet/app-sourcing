@@ -167,13 +167,13 @@ export function ProductCard({
             )}
           </div>
 
-          {/* Poignée de Glissement (Drag Handle) Top Right */}
+          {/* Poignée de Glissement (Drag Handle) Positionnée en haut à droite avec espacement propre */}
           <div 
             className="product-drag-handle"
             style={{
               position: 'absolute',
               top: 10,
-              right: 10,
+              right: product?.videos && product.videos.length > 0 ? '62px' : '10px',
               background: 'rgba(15, 23, 42, 0.88)',
               backdropFilter: 'blur(8px)',
               border: '1px solid rgba(255, 255, 255, 0.25)',

@@ -288,3 +288,52 @@ export async function loadProductsFromServerDisk() {
   }
   return null;
 }
+
+
+// 💾 Sauvegarde atomique d'un produit individuel dans Supabase Cloud & IndexedDB
+export async function saveProductToDb(product, workspaceId = 'ws_quincaillerie') {
+  if (!product) return;
+
+  // 1. Sauvegarde Cloud Supabase
+  if (supabase && isSupabaseConfigured) {
+    try {
+      const productVideos = parseProductVideos(product.videoDemo, product.videos);
+      const row = {
+        id: product.id,
+        workspace_id: product.workspaceId || workspaceId,
+        sku: product.sku || 'SKU-001',
+        title_fr: product.titleFr || 'Article',
+        title_cn: product.titleCn || '',
+        category: product.category || 'inbox',
+        material: product.material || '',
+        dimensions: product.dimensions || '',
+        images: product.images || [],
+        video_demo: productVideos.length > 0 ? JSON.stringify(productVideos) : null,
+        specifications: product.specifications || [],
+        factory_name: product.factoryName || '',
+        factory_city: product.factoryCity || '',
+        tier_pricing: product.tierPricing || [],
+        moq: String(product.moq || '1 pièce'),
+        suppliers: product.suppliers || [],
+        price_cny: parseFloat(product.priceCny) || 0,
+        unit: product.unit || 'Pièce (pc)',
+        source_url: product.sourceUrl || ''
+      };
+
+      await supabase.from('products').upsert(row);
+      console.log('✅ Produit synchronisé avec succès dans Supabase Cloud !');
+    } catch (sbErr) {
+      console.warn('Erreur synchronisation Supabase produit unique:', sbErr);
+    }
+  }
+
+  // 2. Sauvegarde locale IndexedDB
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction([STORE_PRODUCTS], 'readwrite');
+    const store = tx.objectStore(STORE_PRODUCTS);
+    store.put(product);
+  } catch (err) {
+    console.warn('Erreur sauvegarde IndexedDB produit unique:', err);
+  }
+}
