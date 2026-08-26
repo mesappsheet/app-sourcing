@@ -1124,7 +1124,14 @@ export function App() {
 
   // Total & Inbox Counts
   const totalCount = products.length;
-  const inboxCount = products.filter(p => p.category === 'inbox' || !p.category).length;
+  // Articles non classés dans un rayon spécifique -> Magasin d'Arrivage
+  const inboxCount = useMemo(() => {
+    if (!Array.isArray(products)) return 0;
+    const validSubIds = categoriesTree
+      .filter(m => m.id !== 'inbox' && m.id !== 'all')
+      .flatMap(m => [m.id, ...(m.subCategories || []).map(s => s.id)]);
+    return products.filter(p => !p.category || p.category === 'inbox' || p.category === 'all' || !validSubIds.includes(p.category)).length;
+  }, [products, categoriesTree]);
 
   // Calcul des compteurs par catégorie et sous-catégorie
   const categoryCounts = useMemo(() => {
@@ -1195,7 +1202,10 @@ export function App() {
       if (selectedCategory === 'all') {
         matchCat = true;
       } else if (selectedCategory === 'inbox') {
-        matchCat = (prod.category === 'inbox' || !prod.category);
+        const validSubIds = categoriesTree
+          .filter(m => m.id !== 'inbox' && m.id !== 'all')
+          .flatMap(m => [m.id, ...(m.subCategories || []).map(s => s.id)]);
+        matchCat = (!prod.category || prod.category === 'inbox' || prod.category === 'all' || !validSubIds.includes(prod.category));
       } else {
         const mainCatMatch = categoriesTree.find(m => m.id === selectedCategory);
         if (mainCatMatch && Array.isArray(mainCatMatch.subCategories) && mainCatMatch.subCategories.length > 0) {

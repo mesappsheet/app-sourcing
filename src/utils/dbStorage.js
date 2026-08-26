@@ -135,7 +135,7 @@ export async function loadAllProductsFromDb(workspaceId = 'ws_quincaillerie') {
             sku: r.sku,
             titleFr: r.title_fr,
             titleCn: r.title_cn,
-            category: r.category,
+            category: (r.category && r.category !== 'all') ? r.category : 'inbox',
             material: r.material,
             dimensions: r.dimensions,
             images: r.images || [],
