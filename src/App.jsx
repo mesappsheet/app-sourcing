@@ -1607,8 +1607,28 @@ export function App() {
                 }}
                 onClick={async () => {
                   try {
-                    showToast("⏳ Synchronisation Cloud en cours...");
-                    // 1. Recharger depuis Supabase Cloud
+                    // 1. Priorité 1 : Vérifier le dernier import en direct dans LocalStorage
+                    const rawSaved = localStorage.getItem('quin_source_latest_import');
+                    if (rawSaved) {
+                      try {
+                        const saved = JSON.parse(rawSaved);
+                        if (saved && (saved.titleFr || saved.title || saved.sku)) {
+                          handleImportFromExtension(saved);
+                          return;
+                        }
+                      } catch (e) {}
+                    }
+
+                    // 2. Priorité 2 : Vérifier le presse-papier copié par l'extension
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      if (text && (text.includes('titleFr') || text.includes('alibaba.com') || text.includes('specifications') || text.includes('IMP-') || text.includes('title'))) {
+                        if (handleImportFromExtension(text)) return;
+                      }
+                    } catch (e) {}
+
+                    // 3. Priorité 3 : Synchronisation Cloud Supabase
+                    showToast("⏳ Synchronisation Supabase Cloud...");
                     const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
                     if (cloudProducts && cloudProducts.length > 0) {
                       setAllProductsByWs(prev => ({
@@ -1619,14 +1639,9 @@ export function App() {
                       return;
                     }
 
-                    // 2. Presse-papier
-                    const text = await navigator.clipboard.readText();
-                    if (text && handleImportFromExtension(text)) {
-                      return;
-                    }
-                    showToast("💡 Sur Alibaba, ouvrez l'extension et cliquez sur « ⚡ Importer ce Produit » !");
+                    showToast("💡 Sur Alibaba, ouvrez l'extension et cliquez sur « 📥 ENVOYER AU MAGASIN D'ARRIVAGE » !");
                   } catch (e) {
-                    showToast("💡 Sur Alibaba, ouvrez l'extension et cliquez sur « ⚡ Importer ce Produit » !");
+                    showToast("💡 Sur Alibaba, ouvrez l'extension et cliquez sur « 📥 ENVOYER AU MAGASIN D'ARRIVAGE » !");
                   }
                 }}
                 title="Réceptionner ou synchroniser le catalogue Cloud Supabase (1-Clic)"

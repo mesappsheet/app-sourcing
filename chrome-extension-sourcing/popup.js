@@ -825,35 +825,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     try {
-      // 1. Diffusion directe aux onglets actifs de l'application (Localhost & Netlify)
+      // 1. Copie automatique dans le presse-papier pour synchronisation universelle instantanée
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(cleanProductPayload));
+      } catch (clipErr) {}
+
+      // 2. Diffusion directe à tous les onglets ouverts de l'application (Localhost, IP Locale & Netlify)
       const allTabs = await chrome.tabs.query({});
       let dispatched = false;
 
       for (const t of allTabs) {
-        if (t.url && (t.url.includes('localhost') || t.url.includes('127.0.0.1') || t.url.includes('quin-source') || t.url.includes('netlify.app'))) {
+        if (t.url && (t.url.includes('localhost') || t.url.includes('127.0.0.1') || t.url.includes('192.168.') || t.url.includes('quin-source') || t.url.includes('netlify.app') || t.url.includes('sourcing'))) {
           try {
             await chrome.scripting.executeScript({
               target: { tabId: t.id },
               func: (productPayload, enrichMode, targetProdId) => {
-                // 1. Envoi EXCLUSIF de la Fiche Produit (Articles en Attente)
                 const importEventPayload = (enrichMode && targetProdId)
                   ? { ...productPayload, importMode: 'enrich', targetProductId: targetProdId }
                   : productPayload;
 
-                window.postMessage({
-                  type: 'EXTENSION_DIRECT_IMPORT',
-                  payload: importEventPayload
-                }, '*');
-
-                window.dispatchEvent(new CustomEvent('EXTENSION_IMPORT_EVENT', { detail: importEventPayload }));
-
-                // 2. Enregistrement LocalStorage Dernier Import (Anti-doublon & Polling)
+                // Enregistrement LocalStorage prioritaire
                 try {
                   localStorage.setItem('quin_source_latest_import', JSON.stringify({
                     ...importEventPayload,
                     timestamp: Date.now()
                   }));
                 } catch (e) {}
+
+                // Envoi direct aux écouteurs de l'application
+                window.postMessage({
+                  type: 'EXTENSION_DIRECT_IMPORT',
+                  payload: importEventPayload
+                }, '*');
+
+                window.dispatchEvent(new CustomEvent('EXTENSION_IMPORT_EVENT', { detail: importEventPayload }));
               },
               args: [cleanProductPayload, isEnrichMode, targetId]
             });

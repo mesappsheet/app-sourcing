@@ -41,6 +41,64 @@
       "sourceUrl": "https://alibaba.com/test"
     },
     {
+      "id": "prod-003",
+      "workspaceId": "ws_quincaillerie",
+      "sku": "OUT-GAB-003",
+      "titleFr": "Gabarit de Perçage Rapide & Précision pour Charnières 35mm en Aluminium",
+      "titleCn": "全铝合金 35mm 铰链开孔定位神器 (带快速夹紧)",
+      "category": "outillage",
+      "material": "Corps Aluminium CNC Massif Anodisé & Mèche Carbure Tungstène",
+      "dimensions": "Entraxe réglable 3mm, 4mm, 5mm, 6mm",
+      "images": [
+        "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800&q=80",
+        "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&q=80",
+        "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=800&q=80"
+      ],
+      "videos": [
+        "https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-and-drilling-wood-41226-large.mp4"
+      ],
+      "videoDemo": "https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-and-drilling-wood-41226-large.mp4",
+      "specifications": [
+        {
+          "label": "Précision d'alignement",
+          "value": "Usinage CNC ±0.05 mm"
+        },
+        {
+          "label": "Type de serrage",
+          "value": "Presse rapide intégrée avec patin caoutchouc"
+        },
+        {
+          "label": "Contrôle de profondeur",
+          "value": "Bague d'arrêt réglable 10mm à 15mm"
+        },
+        {
+          "label": "Poids de l'outil",
+          "value": "620 g (Ultra-robuste)"
+        }
+      ],
+      "factoryName": "",
+      "factoryCity": "",
+      "tierPricing": [],
+      "moq": "1 pièce",
+      "suppliers": [
+        {
+          "id": "sup-jinhua-05",
+          "moq": 10,
+          "city": "Yongkang (Zhejiang)",
+          "name": "Yongkang Precision Woodworking Tools",
+          "badge": "Usine Outillage Bois (10 ans)",
+          "rating": 5,
+          "url1688": "https://detail.1688.com/offer/556789123.html",
+          "leadTime": "2 jours",
+          "priceCny": 28,
+          "isPreferred": true
+        }
+      ],
+      "priceCny": 0,
+      "unit": "Pièce (pc)",
+      "sourceUrl": ""
+    },
+    {
       "id": "prod-002",
       "workspaceId": "ws_quincaillerie",
       "sku": "QUIN-ANG-002",
@@ -108,12 +166,206 @@
       "sourceUrl": ""
     },
     {
+      "id": "prod-1787619478292",
+      "workspaceId": "ws_quincaillerie",
+      "sku": "IMP-8292",
+      "titleFr": "Cuisinière à riz électrique intelligente de style moderne 3L, accessoire de spatule, mini appareil de cuisine numérique, vente en gros d'usine pour usage domestique",
+      "titleCn": "",
+      "category": "inbox",
+      "material": "Standard Qualité Usine",
+      "dimensions": "Standard Pro Export",
+      "images": [
+        "https://s.alicdn.com/@sc04/kf/He4bdec1798954c0e9867311353c7cf2cs.jpg_720x720q50.jpg",
+        "https://sc04.alicdn.com/kf/He4bdec1798954c0e9867311353c7cf2cs.jpg",
+        "https://sc04.alicdn.com/kf/H9f1d649399c74c6ba5a693ef012cea87y.jpg",
+        "https://sc04.alicdn.com/kf/H9671f0119f5e476380f9e43ae2c8de985.jpg",
+        "https://sc04.alicdn.com/kf/H16404e19bf1c4f5890122f2a9c259150R.jpg",
+        "https://sc04.alicdn.com/kf/H8c71e2245a91477ca55a887a279639b2d.jpg",
+        "https://sc04.alicdn.com/kf/H65a28d2c41c14c05b68b1a8e83fd93a13.jpg",
+        "https://s.alicdn.com/@img/imgextra/i2/O1CN01ov9YlZ1Hr1jSSwf6O_!!6000000000810-2-tps-60-61.png",
+        "https://s.alicdn.com/@img/imgextra/i4/O1CN01ldH0751g9qyJ91Vag_!!6000000004100-2-tps-48-48.png",
+        "https://s.alicdn.com/@sc01/kf/Hfddaf74a86174ede9cc528d9da95f789D.png"
+      ],
+      "videos": [
+        "https://gv.videocdn.alibaba.com/icbu_vod_video/video_target/gv9a-805e3d9c-8bd1e1ce-99e5e708-3716/trans/aidc/hjph7i-h264-hd.mp4"
+      ],
+      "videoDemo": "https://gv.videocdn.alibaba.com/icbu_vod_video/video_target/gv9a-805e3d9c-8bd1e1ce-99e5e708-3716/trans/aidc/hjph7i-h264-hd.mp4",
+      "specifications": [
+        {
+          "label": "Numéro de modèle",
+          "value": "TT-987-3L TT-987-3L",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Capacité",
+          "value": "3L (6 tasses de riz sont disponibles)",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Puissance",
+          "value": "500 W",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Tension",
+          "value": "220 V ~ 240 V/50-60 Hz",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Matériel",
+          "value": "PP",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Panneau",
+          "value": "Écran tactile IMD",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Pot intérieur",
+          "value": "Pot en aluminium avec revêtement antiadhésif de 300 g",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Poids de la plaque chauffante",
+          "value": "300 g",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Prise",
+          "value": "Cordon d'alimentation en cuivre pur de 1 m avec prise.",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Accessoires",
+          "value": "Cuiseur vapeur SS304 (1pc) + Cuillère à riz (1pc) + Tasse à mesurer (1pc) + Manuel (1pc)",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Fonction",
+          "value": "Riz à faible teneur en sucre/ Cuisson rapide/ Cuisson lente/ Bouillie/ Vapeur/ Réchauffer/ Soupe/ Ragoût/ Yaourt/ Gâteau/ Préréglé/ Garder au chaud",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Taille de l'emballage",
+          "value": "330x280x260 millimètres",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Qté/CTN",
+          "value": "1 pièce/Mousse de polystyrène/Ctn",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "20 pieds/40 pieds/40 pieds HC",
+          "value": "1200/2484/2910 pièces",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "MOQ/Personnalisé",
+          "value": "1X40HQ / Personnalisé",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "3L",
+          "value": "Capacité",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Hôtel, Commercial, Ménage",
+          "value": "Domaine dapplication",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Chauffage du bâti",
+          "value": "Mode de chauffage",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Alliage d’aluminium",
+          "value": "Matériau de la cuve intérieure",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "500W",
+          "value": "Puissance (W)",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Cuiseur à riz électrique",
+          "value": "Type",
+          "category": "Spécifications Techniques"
+        },
+        {
+          "label": "Port d'expédition",
+          "value": "e d'où ils viennent.",
+          "category": "Emballage & Logistique"
+        }
+      ],
+      "factoryName": "Foshan City Crestline Life Products Company Limited",
+      "factoryCity": "Foshan, Chine",
+      "tierPricing": [
+        {
+          "minQty": "1-999 pièce",
+          "priceCny": 129.69,
+          "priceFcfa": 11024
+        },
+        {
+          "minQty": "1000-2999 pièce",
+          "priceCny": 122.8,
+          "priceFcfa": 10438
+        },
+        {
+          "minQty": "≥3000 pièce",
+          "priceCny": 115.89,
+          "priceFcfa": 9851
+        }
+      ],
+      "moq": "1-999 pièce",
+      "suppliers": [
+        {
+          "id": "sup-1787619478292",
+          "moq": "1-999 pièce",
+          "url": "https://www.alibaba.com/product-detail/Modern-Style-3L-Smart-Electric-Rice_1601627854949.html?spm=a2706.products_search.topad_classic.5.264367afzUuAg2&priceId=20f11e5f5d1246c7b03162a2337bf987",
+          "city": "Foshan, Chine",
+          "name": "Foshan City Crestline Life Products Company Limited",
+          "badge": "Verified Supplier",
+          "years": "4 ans d'expérience",
+          "rating": 4.9,
+          "leadTime": "5 - 15 jours",
+          "platform": "alibaba",
+          "priceCny": 129.69,
+          "priceTiers": [
+            {
+              "minQty": "1-999 pièce",
+              "priceCny": 129.69,
+              "priceFcfa": 11024
+            },
+            {
+              "minQty": "1000-2999 pièce",
+              "priceCny": 122.8,
+              "priceFcfa": 10438
+            },
+            {
+              "minQty": "≥3000 pièce",
+              "priceCny": 115.89,
+              "priceFcfa": 9851
+            }
+          ],
+          "isPreferred": true
+        }
+      ],
+      "priceCny": 129.69,
+      "unit": "Pièce (pc)",
+      "sourceUrl": "https://www.alibaba.com/product-detail/Modern-Style-3L-Smart-Electric-Rice_1601627854949.html?spm=a2706.products_search.topad_classic.5.264367afzUuAg2&priceId=20f11e5f5d1246c7b03162a2337bf987"
+    },
+    {
       "id": "prod-1787620161038",
       "workspaceId": "ws_quincaillerie",
       "sku": "IMP-1038",
       "titleFr": "Cuisinière à riz électrique intelligente de style moderne 3L, accessoire de spatule, mini appareil de cuisine numérique, vente en gros d'usine pour usage domestique",
       "titleCn": "",
-      "category": "all",
+      "category": "inbox",
       "material": "Standard Qualité Usine",
       "dimensions": "Standard Pro Export",
       "images": [
@@ -1134,7 +1386,7 @@
       "sku": "IMP-9802",
       "titleFr": "Cuisinière à riz électrique intelligente de style moderne 3L, accessoire de spatule, mini appareil de cuisine numérique, vente en gros d'usine pour usage domestique",
       "titleCn": "",
-      "category": "all",
+      "category": "inbox",
       "material": "Standard Qualité Usine",
       "dimensions": "Standard Pro Export",
       "images": [
@@ -1323,64 +1575,6 @@
       "sourceUrl": "https://www.alibaba.com/product-detail/Modern-Style-3L-Smart-Electric-Rice_1601627854949.html?spm=a2706.products_search.topad_classic.5.264367afzUuAg2&priceId=20f11e5f5d1246c7b03162a2337bf987"
     },
     {
-      "id": "prod-003",
-      "workspaceId": "ws_quincaillerie",
-      "sku": "OUT-GAB-003",
-      "titleFr": "Gabarit de Perçage Rapide & Précision pour Charnières 35mm en Aluminium",
-      "titleCn": "全铝合金 35mm 铰链开孔定位神器 (带快速夹紧)",
-      "category": "outillage",
-      "material": "Corps Aluminium CNC Massif Anodisé & Mèche Carbure Tungstène",
-      "dimensions": "Entraxe réglable 3mm, 4mm, 5mm, 6mm",
-      "images": [
-        "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800&q=80",
-        "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&q=80",
-        "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=800&q=80"
-      ],
-      "videos": [
-        "https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-and-drilling-wood-41226-large.mp4"
-      ],
-      "videoDemo": "https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-and-drilling-wood-41226-large.mp4",
-      "specifications": [
-        {
-          "label": "Précision d'alignement",
-          "value": "Usinage CNC ±0.05 mm"
-        },
-        {
-          "label": "Type de serrage",
-          "value": "Presse rapide intégrée avec patin caoutchouc"
-        },
-        {
-          "label": "Contrôle de profondeur",
-          "value": "Bague d'arrêt réglable 10mm à 15mm"
-        },
-        {
-          "label": "Poids de l'outil",
-          "value": "620 g (Ultra-robuste)"
-        }
-      ],
-      "factoryName": "",
-      "factoryCity": "",
-      "tierPricing": [],
-      "moq": "1 pièce",
-      "suppliers": [
-        {
-          "id": "sup-jinhua-05",
-          "moq": 10,
-          "city": "Yongkang (Zhejiang)",
-          "name": "Yongkang Precision Woodworking Tools",
-          "badge": "Usine Outillage Bois (10 ans)",
-          "rating": 5,
-          "url1688": "https://detail.1688.com/offer/556789123.html",
-          "leadTime": "2 jours",
-          "priceCny": 28,
-          "isPreferred": true
-        }
-      ],
-      "priceCny": 0,
-      "unit": "Pièce (pc)",
-      "sourceUrl": ""
-    },
-    {
       "id": "prod-1787611057901",
       "workspaceId": "ws_quincaillerie",
       "sku": "IMP-7901",
@@ -1502,200 +1696,6 @@
       "priceCny": 905.75,
       "unit": "Pièce (pc)",
       "sourceUrl": "https://www.alibaba.com/product-detail/DH010-65mm-Electric-Tools-0810-Demolition_62195136347.html?spm=a2706.products_search.normal_offer.7.2fc367afjH9qDa&priceId=95f398ef735148a480668ac17b47c20d"
-    },
-    {
-      "id": "prod-1787619478292",
-      "workspaceId": "ws_quincaillerie",
-      "sku": "IMP-8292",
-      "titleFr": "Cuisinière à riz électrique intelligente de style moderne 3L, accessoire de spatule, mini appareil de cuisine numérique, vente en gros d'usine pour usage domestique",
-      "titleCn": "",
-      "category": "inbox",
-      "material": "Standard Qualité Usine",
-      "dimensions": "Standard Pro Export",
-      "images": [
-        "https://s.alicdn.com/@sc04/kf/He4bdec1798954c0e9867311353c7cf2cs.jpg_720x720q50.jpg",
-        "https://sc04.alicdn.com/kf/He4bdec1798954c0e9867311353c7cf2cs.jpg",
-        "https://sc04.alicdn.com/kf/H9f1d649399c74c6ba5a693ef012cea87y.jpg",
-        "https://sc04.alicdn.com/kf/H9671f0119f5e476380f9e43ae2c8de985.jpg",
-        "https://sc04.alicdn.com/kf/H16404e19bf1c4f5890122f2a9c259150R.jpg",
-        "https://sc04.alicdn.com/kf/H8c71e2245a91477ca55a887a279639b2d.jpg",
-        "https://sc04.alicdn.com/kf/H65a28d2c41c14c05b68b1a8e83fd93a13.jpg",
-        "https://s.alicdn.com/@img/imgextra/i2/O1CN01ov9YlZ1Hr1jSSwf6O_!!6000000000810-2-tps-60-61.png",
-        "https://s.alicdn.com/@img/imgextra/i4/O1CN01ldH0751g9qyJ91Vag_!!6000000004100-2-tps-48-48.png",
-        "https://s.alicdn.com/@sc01/kf/Hfddaf74a86174ede9cc528d9da95f789D.png"
-      ],
-      "videos": [
-        "https://gv.videocdn.alibaba.com/icbu_vod_video/video_target/gv9a-805e3d9c-8bd1e1ce-99e5e708-3716/trans/aidc/hjph7i-h264-hd.mp4"
-      ],
-      "videoDemo": "https://gv.videocdn.alibaba.com/icbu_vod_video/video_target/gv9a-805e3d9c-8bd1e1ce-99e5e708-3716/trans/aidc/hjph7i-h264-hd.mp4",
-      "specifications": [
-        {
-          "label": "Numéro de modèle",
-          "value": "TT-987-3L TT-987-3L",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Capacité",
-          "value": "3L (6 tasses de riz sont disponibles)",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Puissance",
-          "value": "500 W",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Tension",
-          "value": "220 V ~ 240 V/50-60 Hz",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Matériel",
-          "value": "PP",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Panneau",
-          "value": "Écran tactile IMD",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Pot intérieur",
-          "value": "Pot en aluminium avec revêtement antiadhésif de 300 g",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Poids de la plaque chauffante",
-          "value": "300 g",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Prise",
-          "value": "Cordon d'alimentation en cuivre pur de 1 m avec prise.",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Accessoires",
-          "value": "Cuiseur vapeur SS304 (1pc) + Cuillère à riz (1pc) + Tasse à mesurer (1pc) + Manuel (1pc)",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Fonction",
-          "value": "Riz à faible teneur en sucre/ Cuisson rapide/ Cuisson lente/ Bouillie/ Vapeur/ Réchauffer/ Soupe/ Ragoût/ Yaourt/ Gâteau/ Préréglé/ Garder au chaud",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Taille de l'emballage",
-          "value": "330x280x260 millimètres",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Qté/CTN",
-          "value": "1 pièce/Mousse de polystyrène/Ctn",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "20 pieds/40 pieds/40 pieds HC",
-          "value": "1200/2484/2910 pièces",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "MOQ/Personnalisé",
-          "value": "1X40HQ / Personnalisé",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "3L",
-          "value": "Capacité",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Hôtel, Commercial, Ménage",
-          "value": "Domaine dapplication",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Chauffage du bâti",
-          "value": "Mode de chauffage",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Alliage d’aluminium",
-          "value": "Matériau de la cuve intérieure",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "500W",
-          "value": "Puissance (W)",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Cuiseur à riz électrique",
-          "value": "Type",
-          "category": "Spécifications Techniques"
-        },
-        {
-          "label": "Port d'expédition",
-          "value": "e d'où ils viennent.",
-          "category": "Emballage & Logistique"
-        }
-      ],
-      "factoryName": "Foshan City Crestline Life Products Company Limited",
-      "factoryCity": "Foshan, Chine",
-      "tierPricing": [
-        {
-          "minQty": "1-999 pièce",
-          "priceCny": 129.69,
-          "priceFcfa": 11024
-        },
-        {
-          "minQty": "1000-2999 pièce",
-          "priceCny": 122.8,
-          "priceFcfa": 10438
-        },
-        {
-          "minQty": "≥3000 pièce",
-          "priceCny": 115.89,
-          "priceFcfa": 9851
-        }
-      ],
-      "moq": "1-999 pièce",
-      "suppliers": [
-        {
-          "id": "sup-1787619478292",
-          "moq": "1-999 pièce",
-          "url": "https://www.alibaba.com/product-detail/Modern-Style-3L-Smart-Electric-Rice_1601627854949.html?spm=a2706.products_search.topad_classic.5.264367afzUuAg2&priceId=20f11e5f5d1246c7b03162a2337bf987",
-          "city": "Foshan, Chine",
-          "name": "Foshan City Crestline Life Products Company Limited",
-          "badge": "Verified Supplier",
-          "years": "4 ans d'expérience",
-          "rating": 4.9,
-          "leadTime": "5 - 15 jours",
-          "platform": "alibaba",
-          "priceCny": 129.69,
-          "priceTiers": [
-            {
-              "minQty": "1-999 pièce",
-              "priceCny": 129.69,
-              "priceFcfa": 11024
-            },
-            {
-              "minQty": "1000-2999 pièce",
-              "priceCny": 122.8,
-              "priceFcfa": 10438
-            },
-            {
-              "minQty": "≥3000 pièce",
-              "priceCny": 115.89,
-              "priceFcfa": 9851
-            }
-          ],
-          "isPreferred": true
-        }
-      ],
-      "priceCny": 129.69,
-      "unit": "Pièce (pc)",
-      "sourceUrl": "https://www.alibaba.com/product-detail/Modern-Style-3L-Smart-Electric-Rice_1601627854949.html?spm=a2706.products_search.topad_classic.5.264367afzUuAg2&priceId=20f11e5f5d1246c7b03162a2337bf987"
     },
     {
       "id": "prod-vis-001",
@@ -2491,7 +2491,7 @@
       "sku": "IMP-8709",
       "titleFr": "Cuisinière à riz électrique intelligente de style moderne 3L, accessoire de spatule, mini appareil de cuisine numérique, vente en gros d'usine pour usage domestique",
       "titleCn": "",
-      "category": "all",
+      "category": "inbox",
       "material": "Standard Qualité Usine",
       "dimensions": "Standard Pro Export",
       "images": [
@@ -2681,7 +2681,7 @@
       "sku": "IMP-1697",
       "titleFr": "Cuisinière à riz électrique intelligente de style moderne 3L, accessoire de spatule, mini appareil de cuisine numérique, vente en gros d'usine pour usage domestique",
       "titleCn": "",
-      "category": "all",
+      "category": "inbox",
       "material": "Standard Qualité Usine",
       "dimensions": "Standard Pro Export",
       "images": [
