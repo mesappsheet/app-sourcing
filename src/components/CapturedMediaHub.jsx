@@ -448,8 +448,24 @@ export function CapturedMediaHub({
                     <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {media.title}
                     </h4>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                      {new Date(media.createdAt).toLocaleDateString('fr-FR')} • Clic droit pour assigner
+
+                    {/* Infos Prix Réel & Usine Extraits */}
+                    {(media.priceFcfa || media.productData?.priceFcfa) && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px', background: 'rgba(255,255,255,0.04)', padding: '3px 6px', borderRadius: '5px' }}>
+                        <span style={{ color: '#FCD34D', fontWeight: 800, fontSize: '0.78rem' }}>
+                          💰 {(media.priceFcfa || media.productData?.priceFcfa).toLocaleString()} FCFA
+                          <span style={{ color: '#94A3B8', fontSize: '0.68rem', marginLeft: '4px', fontWeight: 'normal' }}>
+                            ({media.priceCny || media.productData?.priceCny} ¥)
+                          </span>
+                        </span>
+                        <span style={{ color: '#93C5FD', fontSize: '0.68rem', fontWeight: 600 }}>
+                          {media.moq ? `MOQ: ${media.moq}` : (media.factoryCity || 'Chine')}
+                        </span>
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '3px' }}>
+                      {new Date(media.createdAt).toLocaleDateString('fr-FR')} • {media.factoryName || 'Magasin d\'Arrivage'}
                     </div>
                   </div>
 

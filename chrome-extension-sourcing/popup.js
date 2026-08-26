@@ -606,6 +606,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       createdAt: new Date().toISOString()
     };
 
+    const arrivalMediaItem = {
+      id: 'media-' + Date.now(),
+      type: 'image',
+      url: cleanProductPayload.mainImage || 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80',
+      poster: cleanProductPayload.mainImage || '',
+      title: cleanProductPayload.titleFr,
+      platform: cachedData.platform || 'Alibaba',
+      sourceUrl: tab.url,
+      priceFcfa: effectivePriceFcfa,
+      priceCny: effectivePriceCny,
+      tierPricing: cachedData.tierPricing || [],
+      specifications: cachedData.specifications || [],
+      factoryName: cleanProductPayload.factoryName,
+      factoryCity: cleanProductPayload.factoryCity,
+      moq: cleanProductPayload.moq,
+      productData: cleanProductPayload,
+      createdAt: new Date().toISOString()
+    };
+
     try {
       let dispatched = false;
       const allTabs = await chrome.tabs.query({});
@@ -615,31 +634,24 @@ document.addEventListener('DOMContentLoaded', async () => {
           try {
             await chrome.scripting.executeScript({
               target: { tabId: t.id },
-              func: (payload, isEnrich) => {
-                // 1. Envoi de l'événement direct à l'application
+              func: (mediaItem) => {
+                // 1. Envoi au Magasin d'Arrivage UNIQUEMENT
                 window.postMessage({ 
-                  type: isEnrich ? 'ENRICH_PRODUCT' : 'CAPTURE_PRODUCT', 
-                  payload 
+                  type: 'CAPTURE_MEDIA', 
+                  payload: mediaItem 
                 }, '*');
 
-                // 2. Synchronisation instantanée dans localStorage
+                // 2. Synchronisation dans le stockage du Magasin d'Arrivage
                 try {
-                  const inboxRaw = localStorage.getItem('quin_source_inbox');
-                  const inbox = inboxRaw ? JSON.parse(inboxRaw) : [];
-                  inbox.unshift(payload);
-                  localStorage.setItem('quin_source_inbox', JSON.stringify(inbox));
-
-                  if (!isEnrich) {
-                    const prodRaw = localStorage.getItem('quin_source_products');
-                    const prods = prodRaw ? JSON.parse(prodRaw) : [];
-                    if (!prods.some(p => p.id === payload.id || p.sourceUrl === payload.sourceUrl)) {
-                      prods.unshift(payload);
-                      localStorage.setItem('quin_source_products', JSON.stringify(prods));
-                    }
+                  const raw = localStorage.getItem('quin_source_captured_media');
+                  const arr = raw ? JSON.parse(raw) : [];
+                  if (!arr.some(m => m.id === mediaItem.id || (m.sourceUrl && m.sourceUrl === mediaItem.sourceUrl))) {
+                    arr.unshift(mediaItem);
+                    localStorage.setItem('quin_source_captured_media', JSON.stringify(arr));
                   }
                 } catch (e) {}
               },
-              args: [cleanProductPayload, isEnrichMode]
+              args: [arrivalMediaItem]
             });
             dispatched = true;
           } catch (e) {}
@@ -647,12 +659,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       msgBox.className = 'msg msg-success';
-      msgBox.innerHTML = `🎉 <strong>Article Traité & Injecté !</strong> Fiche complète avec vrais prix et spécifications enregistrée dans votre Sourcing Hub.`;
+      msgBox.innerHTML = `🎉 <strong>Envoyé au Magasin d'Arrivage !</strong> L'article est en attente dans votre Magasin d'Arrivage avec tous ses vrais prix et spécifications, prêt pour transfert.`;
       msgBox.style.display = 'block';
-      btnImportText.innerText = "✅ Article Injecté avec Succès !";
+      btnImportText.innerText = "✅ Placé dans le Magasin d'Arrivage !";
     } catch (err) {
       msgBox.className = 'msg msg-error';
-      msgBox.innerHTML = '⚠️ Erreur lors de l\'injection : ' + err.message;
+      msgBox.innerHTML = '⚠️ Erreur lors de l\'envoi : ' + err.message;
       msgBox.style.display = 'block';
     } finally {
       setTimeout(() => {
