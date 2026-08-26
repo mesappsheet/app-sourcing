@@ -88,19 +88,17 @@ function extractPageData() {
   // -------------------------------------------------------------------------
   // 2. 💰 EXTRACTION HAUTE PRÉCISION DU VRAI PRIX & DU MOQ RÉEL
   // -------------------------------------------------------------------------
-  // -------------------------------------------------------------------------
   // 2. 💰 EXTRACTION DU VRAI PRIX & DU MOQ RÉEL (ALIBABA / 1688 / TAOBAO)
   // -------------------------------------------------------------------------
   let formattedDisplayPrice = '';
 
-  // 🎯 ÉTAPE A : RECHERCHE DES PALIERS DE PRIX DÉGRESSIFS (LADDER PRICING)
-  // 1. Scan direct des conteneurs DOM de paliers
-  const tierElements = document.querySelectorAll(
+  // 🎯 ÉTAPE 1 : PALIERS DÉGRESSIFS (LADDER PRICING)
+  const ladderCandidates = document.querySelectorAll(
     '[class*="ladder-price"], [class*="tier-item"], [class*="price-item"], [class*="step-price"], [class*="od-ladder-price"], .ladder-price-item, .price-ladder, .quality-price-item, [class*="ladderPrice"]'
   );
 
-  tierElements.forEach(el => {
-    const isBad = el.closest('header, footer, nav, [class*="recommend"], [class*="coupon"], [class*="banner"], [class*="similar"]');
+  ladderCandidates.forEach(el => {
+    const isBad = el.closest('footer, nav, [class*="recommend"], [class*="coupon"], [class*="similar"]');
     if (isBad) return;
 
     const text = el.innerText ? el.innerText.replace(/[\t\r\n]/g, ' ').replace(/\s+/g, ' ').trim() : '';
@@ -108,7 +106,7 @@ function extractPageData() {
 
     const priceM = text.match(/(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF|\$|¥|￥|USD)/i);
     const qtyM = text.match(/((?:≥|>|=|\d+)[-\s\d]*(?:pièce|pièces|piece|pieces|pcs|pc|paires|paire|pairs|pair|mètre|mètres|kg|carton|lot|unités|unité)[s]?)/i) ||
-                 text.match(/(\d+\s*[-–]\s*\d+\s*(?:pcs|paires|pièces|pièce)?)/i) ||
+                 text.match(/(\d+\s*[-–—~−]\s*\d+\s*(?:pcs|paires|pièces|pièce)?)/i) ||
                  text.match(/(≥\s*\d+[\s\w]*)/i);
 
     if (priceM && qtyM) {
@@ -135,82 +133,17 @@ function extractPageData() {
     }
   });
 
-  // 2. Scan Regex global si les conteneurs DOM ont des structures éclatées (ex: Prix au-dessus de la quantité)
-  if (tierPricing.length === 0) {
-    // Motif 1 : Prix suivi de la Quantité
-    const ladderPattern1 = /(\d[\d\s.,]{1,8})\s*(FCFA|CFA|XOF|\$|¥|￥|USD)[\s\r\n\t]*((?:≥|>|=|\d+)[-\s\d]*(?:pièce|pièces|piece|pieces|pcs|pc|paires|paire|pairs|pair|mètre|mètres|kg|carton|lot|unités|unité)[s]?)/gi;
-    const matches1 = Array.from(rawText.matchAll(ladderPattern1));
-    for (const m of matches1) {
-      const rawP = m[1];
-      const curr = m[2].toUpperCase();
-      const qStr = m[3].trim();
-      let pFcfa = 0;
-      let pCny = 0;
-
-      if (curr === 'FCFA' || curr === 'CFA' || curr === 'XOF') {
-        pFcfa = parseInt(rawP.replace(/[\s\u00a0.,]/g, ''), 10);
-        pCny = parseFloat((pFcfa / 85).toFixed(2));
-      } else if (curr === '$' || curr === 'USD') {
-        const u = parseFloat(rawP.replace(',', '.'));
-        pFcfa = Math.round(u * 650);
-        pCny = parseFloat((u * 7.25).toFixed(2));
-      } else if (curr === '¥' || curr === '￥' || curr === 'CNY') {
-        pCny = parseFloat(rawP.replace(',', '.'));
-        pFcfa = Math.round(pCny * 85);
-      }
-
-      if (pFcfa > 50 && pFcfa < 50000000 && !tierPricing.some(t => t.minQty === qStr || t.priceFcfa === pFcfa)) {
-        tierPricing.push({ minQty: qStr, priceFcfa: pFcfa, priceCny: pCny });
-      }
-    }
-
-    // Motif 2 : Quantité suivie du Prix
-    if (tierPricing.length === 0) {
-      const ladderPattern2 = /((?:≥|>|=|\d+)[-\s\d]*(?:pièce|pièces|piece|pieces|pcs|pc|paires|paire|pairs|pair|mètre|mètres|kg|carton|lot|unités|unité)[s]?)[\s\r\n\t]*(\d[\d\s.,]{1,8})\s*(FCFA|CFA|XOF|\$|¥|￥|USD)/gi;
-      const matches2 = Array.from(rawText.matchAll(ladderPattern2));
-      for (const m of matches2) {
-        const qStr = m[1].trim();
-        const rawP = m[2];
-        const curr = m[3].toUpperCase();
-        let pFcfa = 0;
-        let pCny = 0;
-
-        if (curr === 'FCFA' || curr === 'CFA' || curr === 'XOF') {
-          pFcfa = parseInt(rawP.replace(/[\s\u00a0.,]/g, ''), 10);
-          pCny = parseFloat((pFcfa / 85).toFixed(2));
-        } else if (curr === '$' || curr === 'USD') {
-          const u = parseFloat(rawP.replace(',', '.'));
-          pFcfa = Math.round(u * 650);
-          pCny = parseFloat((u * 7.25).toFixed(2));
-        } else if (curr === '¥' || curr === '￥' || curr === 'CNY') {
-          pCny = parseFloat(rawP.replace(',', '.'));
-          pFcfa = Math.round(pCny * 85);
-        }
-
-        if (pFcfa > 50 && pFcfa < 50000000 && !tierPricing.some(t => t.minQty === qStr || t.priceFcfa === pFcfa)) {
-          tierPricing.push({ minQty: qStr, priceFcfa: pFcfa, priceCny: pCny });
-        }
-      }
-    }
-  }
-
-  // 🎯 Si des paliers ont été détectés :
-  if (tierPricing.length > 0) {
+  // Si au moins 2 paliers ont été trouvés dans le DOM :
+  if (tierPricing.length >= 2) {
     const pricesList = tierPricing.map(t => t.priceFcfa);
     const minP = Math.min(...pricesList);
     const maxP = Math.max(...pricesList);
     basePriceFcfa = minP;
     basePriceCny = parseFloat((minP / 85).toFixed(2));
-    
-    if (minP !== maxP) {
-      const minCny = parseFloat((minP / 85).toFixed(2));
-      const maxCny = parseFloat((maxP / 85).toFixed(2));
-      formattedDisplayPrice = `${minP.toLocaleString()} - ${maxP.toLocaleString()} FCFA (${minCny} - ${maxCny} ¥)`;
-    } else {
-      formattedDisplayPrice = `${minP.toLocaleString()} FCFA (${basePriceCny} ¥)`;
-    }
+    const minCny = parseFloat((minP / 85).toFixed(2));
+    const maxCny = parseFloat((maxP / 85).toFixed(2));
+    formattedDisplayPrice = `${minP.toLocaleString()} - ${maxP.toLocaleString()} FCFA (${minCny} - ${maxCny} ¥)`;
 
-    // Le MOQ est la quantité du premier palier !
     const firstQty = tierPricing[0].minQty;
     const moqNumMatch = firstQty.match(/\d+/);
     if (moqNumMatch) {
@@ -218,119 +151,76 @@ function extractPageData() {
     } else {
       moq = firstQty;
     }
-  }
+  } else {
+    // 🎯 ÉTAPE 2 : SCAN DIRECT DE FOURCHETTE DE PRIX (ex: 1335-4660 FCFA ou $2.10 - $7.30)
+    const fcfaRangeMatch = rawText.match(/(\d[\d\s.,]{1,8})\s*[-–—~−]\s*(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF)/i);
+    const usdRangeMatch = rawText.match(/\$\s*(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
+    const cnyRangeMatch = rawText.match(/(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*(\d+(?:[.,]\d+)?)\s*(?:¥|￥|RMB|CNY)/i) ||
+                          rawText.match(/[¥￥]\s*(\d+(?:[.,]\d+)?)\s*[-–—~−]\s*[¥￥]?\s*(\d+(?:[.,]\d+)?)/i);
 
-  // 🎯 ÉTAPE B : SI AUCUN PALIER DÉTECTÉ ➔ RECHERCHE DE FOURCHETTE OU PRIX UNIQUE DANS L'EN-TÊTE
-  if (!formattedDisplayPrice) {
-    const mainPriceSelectors = [
-      '.product-price',
-      '.price-item',
-      '.module-price',
-      '[class*="price-item"]',
-      '[class*="price-wrap"]',
-      '[class*="price-content"]',
-      '[class*="price-range"]',
-      '.promotion-price',
-      '.detail-price',
-      '[data-e2e="product-price"]'
-    ];
-
-    let rawPriceSnippet = '';
-    for (const sel of mainPriceSelectors) {
-      const el = document.querySelector(sel);
-      if (el) {
-        const isBadZone = el.closest('header, footer, nav, [class*="recommend"], [class*="coupon"], [class*="banner"], [class*="activity"]');
-        if (!isBadZone && el.innerText && el.innerText.length < 120) {
-          const text = el.innerText.replace(/[\t\r\n]/g, ' ').replace(/\s+/g, ' ').trim();
-          if (text.match(/\d+/) && (text.includes('FCFA') || text.includes('CFA') || text.includes('$') || text.includes('¥') || text.includes('￥'))) {
-            rawPriceSnippet = text;
-            break;
-          }
-        }
-      }
-    }
-
-    if (rawPriceSnippet) {
-      const rangeFcfaMatch = rawPriceSnippet.match(/(\d[\d\s.,]*)\s*[-–~]\s*(\d[\d\s.,]*)\s*(?:FCFA|CFA|XOF)/i);
-      const rangeUsdMatch = rawPriceSnippet.match(/\$\s*(\d+(?:[.,]\d+)?)\s*[-–~]\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
-      const rangeCnyMatch = rawPriceSnippet.match(/(\d+(?:[.,]\d+)?)\s*[-–~]\s*(\d+(?:[.,]\d+)?)\s*(?:¥|￥|RMB|CNY)/i) ||
-                            rawPriceSnippet.match(/[¥￥]\s*(\d+(?:[.,]\d+)?)\s*[-–~]\s*[¥￥]?\s*(\d+(?:[.,]\d+)?)/i);
-
-      if (rangeFcfaMatch) {
-        const pMin = parseInt(rangeFcfaMatch[1].replace(/[\s\u00a0.,]/g, ''), 10);
-        const pMax = parseInt(rangeFcfaMatch[2].replace(/[\s\u00a0.,]/g, ''), 10);
-        if (pMin > 50 && pMax >= pMin) {
-          basePriceFcfa = pMin;
-          basePriceCny = parseFloat((pMin / 85).toFixed(2));
-          const maxCny = parseFloat((pMax / 85).toFixed(2));
-          formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} - ${maxCny} ¥)`;
-        }
-      } else if (rangeUsdMatch) {
-        const uMin = parseFloat(rangeUsdMatch[1].replace(',', '.'));
-        const uMax = parseFloat(rangeUsdMatch[2].replace(',', '.'));
-        if (uMin > 0) {
-          const pMin = Math.round(uMin * 650);
-          const pMax = Math.round(uMax * 650);
-          basePriceFcfa = pMin;
-          basePriceCny = parseFloat((uMin * 7.25).toFixed(2));
-          const maxCny = parseFloat((uMax * 7.25).toFixed(2));
-          formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} - ${maxCny} ¥)`;
-        }
-      } else if (rangeCnyMatch) {
-        const cMin = parseFloat(rangeCnyMatch[1].replace(',', '.'));
-        const cMax = parseFloat(rangeCnyMatch[2].replace(',', '.'));
-        if (cMin > 0) {
-          basePriceCny = cMin;
-          basePriceFcfa = Math.round(cMin * 85);
-          const maxFcfa = Math.round(cMax * 85);
-          formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} - ${maxFcfa.toLocaleString()} FCFA (${cMin} - ${cMax} ¥)`;
-        }
-      } else {
-        const singleFcfa = rawPriceSnippet.match(/(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF)/i);
-        const singleUsd = rawPriceSnippet.match(/\$\s*(\d+(?:[.,]\d{1,2})?)/i) || rawPriceSnippet.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:USD|\$)/i);
-        const singleCny = rawPriceSnippet.match(/[¥￥]\s*(\d+(?:[.,]\d{1,2})?)/i) || rawPriceSnippet.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:¥|￥|CNY)/i);
-
-        if (singleFcfa) {
-          const p = parseInt(singleFcfa[1].replace(/[\s\u00a0.,]/g, ''), 10);
-          if (p > 50 && p < 10000000) {
-            basePriceFcfa = p;
-            basePriceCny = parseFloat((p / 85).toFixed(2));
-            formattedDisplayPrice = `${p.toLocaleString()} FCFA (${basePriceCny} ¥)`;
-          }
-        } else if (singleUsd) {
-          const pUsd = parseFloat(singleUsd[1].replace(',', '.'));
-          if (pUsd > 0) {
-            basePriceFcfa = Math.round(pUsd * 650);
-            basePriceCny = parseFloat((pUsd * 7.25).toFixed(2));
-            formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} FCFA (${basePriceCny} ¥)`;
-          }
-        } else if (singleCny) {
-          const pCny = parseFloat(singleCny[1].replace(',', '.'));
-          if (pCny > 0) {
-            basePriceCny = pCny;
-            basePriceFcfa = Math.round(pCny * 85);
-            formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} FCFA (${pCny} ¥)`;
-          }
-        }
-      }
-    }
-  }
-
-  // 🎯 ÉTAPE C : SCAN GLOBAL DE SECOURS POUR LE PRIX SI TOUJOURS NON DÉTECTÉ
-  if (!formattedDisplayPrice || !basePriceFcfa || basePriceFcfa === 0) {
-    const rawRangeMatch = rawText.match(/(\d[\d\s.,]{1,8})\s*[-–~]\s*(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF)/i);
-    if (rawRangeMatch) {
-      const pMin = parseInt(rawRangeMatch[1].replace(/[\s\u00a0.,]/g, ''), 10);
-      const pMax = parseInt(rawRangeMatch[2].replace(/[\s\u00a0.,]/g, ''), 10);
-      if (pMin > 50 && pMax >= pMin && pMin < 10000000) {
+    if (fcfaRangeMatch) {
+      const pMin = parseInt(fcfaRangeMatch[1].replace(/[\s\u00a0.,]/g, ''), 10);
+      const pMax = parseInt(fcfaRangeMatch[2].replace(/[\s\u00a0.,]/g, ''), 10);
+      if (pMin > 50 && pMax >= pMin && pMin < 50000000) {
         basePriceFcfa = pMin;
         basePriceCny = parseFloat((pMin / 85).toFixed(2));
-        formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} ¥)`;
+        const maxCny = parseFloat((pMax / 85).toFixed(2));
+        formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} - ${maxCny} ¥)`;
+      }
+    } else if (usdRangeMatch) {
+      const uMin = parseFloat(usdRangeMatch[1].replace(',', '.'));
+      const uMax = parseFloat(usdRangeMatch[2].replace(',', '.'));
+      if (uMin > 0 && uMax >= uMin) {
+        const pMin = Math.round(uMin * 650);
+        const pMax = Math.round(uMax * 650);
+        basePriceFcfa = pMin;
+        basePriceCny = parseFloat((uMin * 7.25).toFixed(2));
+        const maxCny = parseFloat((uMax * 7.25).toFixed(2));
+        formattedDisplayPrice = `${pMin.toLocaleString()} - ${pMax.toLocaleString()} FCFA (${basePriceCny} - ${maxCny} ¥)`;
+      }
+    } else if (cnyRangeMatch) {
+      const cMin = parseFloat(cnyRangeMatch[1].replace(',', '.'));
+      const cMax = parseFloat(cnyRangeMatch[2].replace(',', '.'));
+      if (cMin > 0 && cMax >= cMin) {
+        basePriceCny = cMin;
+        basePriceFcfa = Math.round(cMin * 85);
+        const maxFcfa = Math.round(cMax * 85);
+        formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} - ${maxFcfa.toLocaleString()} FCFA (${cMin} - ${cMax} ¥)`;
+      }
+    }
+
+    // 🎯 ÉTAPE 3 : PRIX SIMPLE SI AUCUNE FOURCHETTE
+    if (!formattedDisplayPrice) {
+      const fcfaSingleMatch = rawText.match(/(\d[\d\s.,]{1,8})\s*(?:FCFA|CFA|XOF)/i);
+      const usdSingleMatch = rawText.match(/\$\s*(\d+(?:[.,]\d{1,2})?)/i);
+      const cnySingleMatch = rawText.match(/[¥￥]\s*(\d+(?:[.,]\d{1,2})?)/i);
+
+      if (fcfaSingleMatch) {
+        const p = parseInt(fcfaSingleMatch[1].replace(/[\s\u00a0.,]/g, ''), 10);
+        if (p > 50 && p < 50000000) {
+          basePriceFcfa = p;
+          basePriceCny = parseFloat((p / 85).toFixed(2));
+          formattedDisplayPrice = `${p.toLocaleString()} FCFA (${basePriceCny} ¥)`;
+        }
+      } else if (usdSingleMatch) {
+        const pUsd = parseFloat(usdSingleMatch[1].replace(',', '.'));
+        if (pUsd > 0) {
+          basePriceFcfa = Math.round(pUsd * 650);
+          basePriceCny = parseFloat((pUsd * 7.25).toFixed(2));
+          formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} FCFA (${basePriceCny} ¥)`;
+        }
+      } else if (cnySingleMatch) {
+        const pCny = parseFloat(cnySingleMatch[1].replace(',', '.'));
+        if (pCny > 0) {
+          basePriceCny = pCny;
+          basePriceFcfa = Math.round(pCny * 85);
+          formattedDisplayPrice = `${basePriceFcfa.toLocaleString()} FCFA (${pCny} ¥)`;
+        }
       }
     }
   }
 
-  // 🎯 ÉTAPE D : EXTRACTION CIBLÉE DU MOQ SI NON DÉTERMINÉ PAR LES PALIERS
+  // 🎯 ÉTAPE 4 : EXTRACTION CIBLÉE DU MOQ
   if (!moq || moq === '1 pièce') {
     const moqRegexes = [
       /Quantit[eé]\s*minimale\s*[:：]?\s*(\d+[\s\w\u00a0./-]*)/i,
