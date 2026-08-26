@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "App Sourcing - Importateur 1-Clic & M\u00e9dias",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Importez vos produits Alibaba, 1688, Taobao en 1 clic vers votre application Sourcing.",
   "permissions": [
     "activeTab",
@@ -20,11 +20,7 @@
   "content_scripts": [
     {
       "matches": [
-        "http://localhost/*",
-        "http://127.0.0.1/*",
-        "http://192.168.*/*",
-        "https://*.netlify.app/*",
-        "*://*/*"
+        "<all_urls>"
       ],
       "js": [
         "content_script.js"
