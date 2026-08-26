@@ -105,45 +105,9 @@ export function App() {
   // Articles & Rayons de l'espace actif
   const products = allProductsByWs[activeWorkspaceId] || [];
 
-  // ⚡ Synchronisation automatique avec Supabase Cloud et Nettoyage des Doublons
-  useEffect(() => {
-    async function syncCleanDb() {
-      try {
-        const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
-        if (cloudProducts && Array.isArray(cloudProducts)) {
-          setAllProductsByWs(prev => ({
-            ...prev,
-            [activeWorkspaceId]: cloudProducts
-          }));
-          localStorage.setItem(`ws_products_${activeWorkspaceId}`, JSON.stringify(cloudProducts));
-          if (activeWorkspaceId === 'ws_quincaillerie') {
-            localStorage.setItem('quin_source_products', JSON.stringify(cloudProducts));
-          }
-        }
-      } catch (e) {}
-    }
-    syncCleanDb();
-  }, [activeWorkspaceId]);
+  
 
-  // ⚡ Synchronisation automatique avec Supabase Cloud et Nettoyage des Doublons
-  useEffect(() => {
-    async function syncCleanDb() {
-      try {
-        const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
-        if (cloudProducts && Array.isArray(cloudProducts)) {
-          setAllProductsByWs(prev => ({
-            ...prev,
-            [activeWorkspaceId]: cloudProducts
-          }));
-          localStorage.setItem(`ws_products_${activeWorkspaceId}`, JSON.stringify(cloudProducts));
-          if (activeWorkspaceId === 'ws_quincaillerie') {
-            localStorage.setItem('quin_source_products', JSON.stringify(cloudProducts));
-          }
-        }
-      } catch (e) {}
-    }
-    syncCleanDb();
-  }, [activeWorkspaceId]);
+  
   const categories = allCategoriesByWs[activeWorkspaceId] || CATEGORIES;
 
   const [currentTab, setCurrentTab] = useState('catalog');
@@ -555,40 +519,8 @@ export function App() {
 
     loadDataFromHighCapacityStorage();
 
-    // 🔄 Écoute périodique toutes les 3s pour afficher immédiatement les produits sourcés via l'extension Mobile/Cloud
-    const interval = setInterval(async () => {
-      await refreshFromCloud();
-      try {
-        const liveProducts = await loadProductsFromServerDisk();
-        if (liveProducts && liveProducts.length > 0 && isMounted) {
-          setAllProductsByWs(prev => {
-            const current = prev.ws_quincaillerie || [];
-            if (liveProducts.length !== current.length || liveProducts[0]?.id !== current[0]?.id) {
-              return {
-                ...prev,
-                ws_quincaillerie: liveProducts
-              };
-            }
-            return prev;
-          });
-        }
-      } catch (e) {}
-    }, 3000);
-
-    // 👁️ Rechargement instantané dès que l'utilisateur revient sur l'onglet de l'application
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        refreshFromCloud();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', refreshFromCloud);
-
     return () => {
       isMounted = false;
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', refreshFromCloud);
     };
   }, [activeWorkspaceId]);
 
