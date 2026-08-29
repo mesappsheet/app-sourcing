@@ -1,24 +1,85 @@
-// Background Service Worker for App Sourcing Extension
-// Context Menus for Right-Click Capture (Multi-Platform Resilient)
+// ============================================================================
+// ⚡ BACKGROUND SERVICE WORKER (MANIFEST V3 ROBUSTNESS ARCHITECTURE)
+// Zéro état volatile en mémoire • chrome.storage.local • chrome.alarms • lastError
+// ============================================================================
 
+const SUPABASE_URL = 'https://xgaehsajhlxkhxzqgfhz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_zVzDkQ2gg7Whjg3sOKviNg_v2CvaQoV';
+
+// 1. Initialisation des menus contextuels et des alarmes au démarrage
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
-    // 1. Context Menu for Videos & Social Pages
     chrome.contextMenus.create({
       id: 'capture_video_menu',
       title: '🎬 Envoyer cette Vidéo vers App Sourcing',
       contexts: ['video', 'link', 'page', 'frame']
     });
 
-    // 2. Context Menu for Images
     chrome.contextMenus.create({
       id: 'capture_image_menu',
       title: '📷 Envoyer cette Photo vers App Sourcing',
       contexts: ['image', 'link', 'page']
     });
   });
+
+  // Alarme récurrente pour purger / rejouer les imports en attente (survit aux kills du worker)
+  chrome.alarms.create('checkPendingImports', { periodInMinutes: 1 });
 });
 
+// 2. Gestionnaire d'alarmes (Réveil automatique du Service Worker par Chrome)
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'checkPendingImports') {
+    await processPendingOfflineImports();
+  }
+});
+
+// 3. Traitement robuste des imports en attente dans chrome.storage.local
+async function processPendingOfflineImports() {
+  try {
+    const data = await chrome.storage.local.get(['quin_source_pending_imports']);
+    const pending = data.quin_source_pending_imports;
+    if (!pending || !Array.isArray(pending) || pending.length === 0) return;
+
+    const remaining = [];
+
+    for (const item of pending) {
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'resolution=merge-duplicates,return=representation'
+          },
+          body: JSON.stringify(item)
+        });
+
+        if (!response.ok) {
+          remaining.push(item);
+        }
+      } catch (err) {
+        remaining.push(item);
+      }
+    }
+
+    await chrome.storage.local.set({ quin_source_pending_imports: remaining });
+  } catch (e) {
+    console.warn('[SW] Erreur vérification imports en attente:', e);
+  }
+}
+
+// 4. Gestion de connexion pour surveiller la fermeture impromptue de la popup
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'popup_sync') {
+    port.onDisconnect.addListener(() => {
+      // Si la popup est fermée en plein vol, le service worker traite les données persistées
+      processPendingOfflineImports();
+    });
+  }
+});
+
+// 5. Menus contextuels (Clic Droit) avec extraction résiliente
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab || !tab.id) return;
   let mediaItem = null;
@@ -26,25 +87,21 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === 'capture_video_menu') {
     let videoUrl = info.srcUrl || '';
 
-    // Si clic droit sur overlay (TikTok / Instagram / Facebook), extraction via injection
     if (!videoUrl || videoUrl.startsWith('blob:')) {
       try {
         const results = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: () => {
-            // 1. Recherche balise video directe
             const videos = Array.from(document.querySelectorAll('video'));
             for (const v of videos) {
               const s = v.src || v.currentSrc;
               if (s && !s.startsWith('blob:')) return { url: s, poster: v.poster || '' };
             }
-            // 2. Recherche OpenGraph
             const og = document.querySelector('meta[property="og:video"], meta[property="og:video:url"], meta[property="og:video:secure_url"], meta[name="twitter:player:stream"]');
             if (og) {
               const c = og.getAttribute('content');
               if (c && c.startsWith('http')) return { url: c, poster: '' };
             }
-            // 3. YouTube ID
             const ytMatch = window.location.href.match(/(?:shorts\/|[?&]v=|embed\/)([a-zA-Z0-9_-]+)/);
             if (ytMatch) {
               return { 
@@ -52,7 +109,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 poster: `https://img.youtube.com/vi/${ytMatch[1]}/maxresdefault.jpg` 
               };
             }
-            // 4. Fallback sur premier flux vidéo
             if (videos[0]) {
               return { url: videos[0].src || videos[0].currentSrc || '', poster: videos[0].poster || '' };
             }
@@ -108,7 +164,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }
   }
 
-  // Transmission vers l'application
+  // Transmission sécurisée vers l'application ouverte
   if (mediaItem) {
     try {
       const allTabs = await chrome.tabs.query({});
@@ -129,7 +185,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
               },
               args: [mediaItem]
             });
-          } catch (e) {}
+          } catch (e) {
+            console.warn('[SW] Erreur injection média dans onglet:', e);
+          }
         }
       }
     } catch (e) {}

@@ -889,6 +889,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/^_|_$/g, '')
       .slice(0, 30);
 
+    const targetWs = workspaceId || 'ws_quincaillerie';
+
+    // 🛡️ Déduplication stricte (Section 5 de ROBUSTESSE_EXTENSION_CHROME)
+    const existing = ALL_CATEGORIES_DATA.find(c => 
+      c.workspaceId === targetWs && (c.id === slug || (c.rawName && c.rawName.toLowerCase() === cleanName.toLowerCase()))
+    );
+
+    if (existing) {
+      updateCategorySelection(`${existing.workspaceId}::${existing.id}`);
+      return existing;
+    }
+
     const wsLabels = {
       ws_quincaillerie: '🔩 Quincaillerie & Fixations',
       ws_cuisines: '🍳 Cuisines & Aménagement',
@@ -902,11 +914,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const newCatItem = {
       id: slug || ('cat_' + Date.now()),
-      workspaceId: workspaceId || 'ws_quincaillerie',
+      workspaceId: targetWs,
       name: `${cleanIcon} ${cleanName}`,
       rawName: cleanName,
       icon: cleanIcon,
-      group: wsLabels[workspaceId] || '🔩 Quincaillerie & Fixations',
+      group: wsLabels[targetWs] || '🔩 Quincaillerie & Fixations',
       isNewlyCreated: true
     };
 
@@ -948,11 +960,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (bestMatch && highestScore >= 2) {
-      return { type: 'match', category: bestMatch, score: highestScore };
+      const confidencePct = Math.min(98, Math.round(50 + (highestScore * 10)));
+      return { type: 'match', category: bestMatch, score: highestScore, confidence: confidencePct };
     }
 
     return null;
   }
+
+  // 🔌 Connexion persistante au Service Worker pour garantir la finalisation en cas de fermeture
+  let syncPort = null;
+  try {
+    syncPort = chrome.runtime.connect({ name: 'popup_sync' });
+  } catch (e) {}
+
+  // 🆔 Identifiant unique de session de scraping (Prévention des Race Conditions)
+  const currentScrapeRequestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
 
   // 🚀 Rendu immédiat des catégories (0ms)
   renderCategoryOptions();
@@ -964,13 +986,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (quickDetection && quickDetection.category) {
     updateCategorySelection(`${quickDetection.category.workspaceId}::${quickDetection.category.id}`);
     if (autoCategorySuggestionBox && autoCatSuggestionText) {
-      autoCatSuggestionText.innerHTML = `🎯 Rayon auto-détecté : <strong>${quickDetection.category.name}</strong>`;
-      btnApplyAutoCat.innerText = '✓ Sélectionné';
+      autoCatSuggestionText.innerHTML = `🎯 Suggéré : <strong>${quickDetection.category.name}</strong> (${quickDetection.confidence}% confiance)`;
+      if (btnApplyAutoCat) btnApplyAutoCat.innerText = '✓ Sélectionné';
       autoCategorySuggestionBox.style.display = 'flex';
     }
   }
 
-  // Écouteurs UI
+  // Écouteurs UI pour la recherche et création de rayons
   if (categorySearchInput) {
     categorySearchInput.addEventListener('input', (e) => {
       const q = e.target.value;
@@ -1019,6 +1041,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  if (btnApplyAutoCat) {
+    btnApplyAutoCat.addEventListener('click', () => {
+      if (quickDetection && quickDetection.category) {
+        updateCategorySelection(`${quickDetection.category.workspaceId}::${quickDetection.category.id}`);
+      }
+    });
+  }
+
   // 1. EXTRACTION RICHE EN ARRIÈRE-PLAN (DEEP SCRAPE)
   try {
     const results = await chrome.scripting.executeScript({
@@ -1028,6 +1058,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (results && results[0] && results[0].result) {
       cachedData = results[0].result;
+      cachedData.requestId = currentScrapeRequestId;
 
       if (platformBadge) platformBadge.innerText = cachedData.platform || 'Alibaba';
       if (previewTitle) previewTitle.innerText = cachedData.title || initialTitle;
@@ -1070,97 +1101,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (refinedDetection && refinedDetection.category) {
         updateCategorySelection(`${refinedDetection.category.workspaceId}::${refinedDetection.category.id}`);
         if (autoCategorySuggestionBox && autoCatSuggestionText) {
-          autoCatSuggestionText.innerHTML = `🎯 Rayon auto-détecté : <strong>${refinedDetection.category.name}</strong>`;
-          btnApplyAutoCat.innerText = '✓ Sélectionné';
+          autoCatSuggestionText.innerHTML = `🎯 Suggéré : <strong>${refinedDetection.category.name}</strong> (${refinedDetection.confidence}% confiance)`;
+          if (btnApplyAutoCat) btnApplyAutoCat.innerText = '✓ Sélectionné';
           autoCategorySuggestionBox.style.display = 'flex';
         }
       }
     }
   } catch (e) {
-    console.warn('Scraping standard fallback:', e);
-  }
-          autoCategorySuggestionBox.style.display = 'flex';
-        }
-        if (newCatNameInput) newCatNameInput.value = currentAutoDetection.name;
-        if (newCatIconInput) newCatIconInput.value = currentAutoDetection.icon;
-        if (newCatWorkspaceSelect) newCatWorkspaceSelect.value = currentAutoDetection.workspaceId;
-      }
-    } else {
-      updateCategorySelection('ws_cuisines::inbox');
-    }
-  }
-
-  if (btnApplyAutoCat) {
-    btnApplyAutoCat.addEventListener('click', () => {
-      if (currentAutoDetection) {
-        if (currentAutoDetection.type === 'match') {
-          const cat = currentAutoDetection.category;
-          updateCategorySelection(`${cat.workspaceId}::${cat.id}`);
-        } else if (currentAutoDetection.type === 'suggest_new') {
-          addNewCategoryToExtension(currentAutoDetection.name, currentAutoDetection.icon, currentAutoDetection.workspaceId);
-          autoCategorySuggestionBox.style.display = 'none';
-        }
-      }
-    });
-  }
-
-  if (btnToggleCreateCat && createCategoryForm) {
-    btnToggleCreateCat.addEventListener('click', () => {
-      createCategoryForm.style.display = createCategoryForm.style.display === 'none' ? 'block' : 'none';
-      if (createCategoryForm.style.display === 'block' && newCatNameInput) {
-        newCatNameInput.focus();
-      }
-    });
-  }
-
-  if (btnCloseCreateCat && createCategoryForm) {
-    btnCloseCreateCat.addEventListener('click', () => {
-      createCategoryForm.style.display = 'none';
-    });
-  }
-
-  if (btnConfirmCreateCat) {
-    btnConfirmCreateCat.addEventListener('click', () => {
-      const name = newCatNameInput?.value;
-      const icon = newCatIconInput?.value || '📦';
-      const ws = newCatWorkspaceSelect?.value || 'ws_quincaillerie';
-      if (!name || !name.trim()) {
-        alert('Veuillez saisir un nom pour le nouveau rayon');
-        return;
-      }
-      addNewCategoryToExtension(name, icon, ws);
-      if (createCategoryForm) createCategoryForm.style.display = 'none';
-      if (autoCategorySuggestionBox) autoCategorySuggestionBox.style.display = 'none';
-    });
-  }
-
-  // 3. Écouteurs de recherche rapide
-  if (categorySearchInput) {
-    categorySearchInput.addEventListener('input', (e) => {
-      const q = e.target.value;
-      if (btnClearCatSearch) btnClearCatSearch.style.display = q ? 'block' : 'none';
-      renderCategoryOptions(q);
-      
-      if (categorySelect && categorySelect.options.length > 0 && !categorySelect.options[0].disabled) {
-        categorySelect.selectedIndex = 0;
-        updateCategorySelection(categorySelect.value);
-      }
-    });
-  }
-
-  if (btnClearCatSearch) {
-    btnClearCatSearch.addEventListener('click', () => {
-      categorySearchInput.value = '';
-      btnClearCatSearch.style.display = 'none';
-      renderCategoryOptions('');
-      categorySearchInput.focus();
-    });
-  }
-
-  if (categorySelect) {
-    categorySelect.addEventListener('change', (e) => {
-      updateCategorySelection(e.target.value);
-    });
+    console.warn('[EXT] Scraping standard fallback:', e);
   }
 
   // 3. 📥 ACTION PRINCIPALE : INJECTION DANS L'APPLICATION (DIRECTEMENT DANS LE RAYON OU L'ARRIVAGE)
@@ -1291,18 +1239,36 @@ document.addEventListener('DOMContentLoaded', async () => {
           city: cachedData.location || 'Guangdong, Chine',
           country: 'Chine',
           badge: cachedData.supplierBadge || 'Verified Supplier',
-          years: cachedData.supplierYears || '5      // 🌟 GÉNÉRATION DE L'IDENTIFIANT DE CORRÉLATION (TRACE_ID) & VERSION
-      const traceId = 'trc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-      const schemaVersion = '2.0';
+          years: cachedData.supplierYears || '5 ans d\'expérience',
+          rating: cachedData.supplierRating || '4.9/5',
+          responseRate: cachedData.supplierResponseRate || 'Taux de réponse > 95%'
+        }
+      ],
+      // 🏷️ Statut explicite de complétude (Section 4 de ROBUSTESSE_EXTENSION_CHROME)
+      status: (effectivePriceFcfa > 0 && (cachedData.images?.length > 0 || cachedData.mainImage)) ? 'complete' : 'incomplete',
+      completionDetails: {
+        hasPrice: effectivePriceFcfa > 0,
+        hasImages: Boolean(cachedData.images?.length > 0 || cachedData.mainImage),
+        hasSupplier: Boolean(cachedData.company),
+        hasTiers: Boolean(cachedData.tierPricing && cachedData.tierPricing.length > 0),
+        hasSpecs: Boolean(cachedData.specifications && cachedData.specifications.length > 0)
+      },
+      createdAt: new Date().toISOString(),
+      injectedAtFormatted: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
 
-      const importEventPayload = (isEnrichMode && targetId)
-        ? { ...cleanProductPayload, importMode: 'enrich', targetProductId: targetId, traceId, schemaVersion }
-        : { ...cleanProductPayload, traceId, schemaVersion };
+    // 🌟 GÉNÉRATION DE L'IDENTIFIANT DE CORRÉLATION (TRACE_ID) & VERSION
+    const traceId = 'trc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+    const schemaVersion = '2.0';
 
-      // 🌟 1. CANAL UNIQUE D'ÉCRITURE : SUPABASE CLOUD (SINGLE WRITER)
-      const SUPABASE_URL = 'https://xgaehsajhlxkhxzqgfhz.supabase.co';
-      const SUPABASE_KEY = 'sb_publishable_zVzDkQ2gg7Whjg3sOKviNg_v2CvaQoV';
-      let isCloudSuccess = false;
+    const importEventPayload = (isEnrichMode && targetId)
+      ? { ...cleanProductPayload, importMode: 'enrich', targetProductId: targetId, traceId, schemaVersion }
+      : { ...cleanProductPayload, traceId, schemaVersion };
+
+    // 🌟 1. CANAL UNIQUE D'ÉCRITURE : SUPABASE CLOUD (SINGLE WRITER)
+    const SUPABASE_URL = 'https://xgaehsajhlxkhxzqgfhz.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_zVzDkQ2gg7Whjg3sOKviNg_v2CvaQoV';
+    let isCloudSuccess = false;
 
       try {
         const productVideos = cleanProductPayload.videos || [];
