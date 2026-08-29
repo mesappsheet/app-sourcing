@@ -568,13 +568,15 @@ function deepScrapePageData() {
       const lowerL = cleanLabel.toLowerCase();
       const lowerV = cleanVal.toLowerCase();
 
-      // Ignorer strictement les boutons d'interface, navigation et actions
+      // Ignorer strictement les titres de section globaux, boutons d'interface et navigation
       const forbidden = [
         'trouver des produits', 'similar products', 'voir plus', 'afficher plus', 
         'see more', 'view more', 'contact', 'fournisseur', 'chat', 'avis', 'feedback', 
-        'review', 'alibaba', 'panier', 'cart', 'buy', 'commander', 'score', 'évaluation'
+        'review', 'alibaba', 'panier', 'cart', 'buy', 'commander', 'score', 'évaluation',
+        'caractéristiques', 'caracteristiques', 'key attributes', 'attributs clés',
+        'product attributes', 'spécifications', 'specifications', 'propriétés'
       ];
-      if (forbidden.some(f => lowerL.includes(f) || lowerV === f)) return;
+      if (forbidden.some(f => lowerL === f || lowerL.includes('trouver des') || lowerV === f)) return;
       if (seenLabels.has(lowerL)) return;
 
       seenLabels.add(lowerL);
