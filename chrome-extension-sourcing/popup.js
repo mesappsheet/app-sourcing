@@ -1287,12 +1287,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const moqNumber = parseInt(cachedData.moq?.match(/\d+/)?.[0] || '1', 10);
 
+    // 🎯 Génération d'une identité Déterministe basée sur l'URL source
+    function getDeterministicSkuAndId(url) {
+      if (!url) {
+        const r = Math.random().toString(36).substring(2, 8).toUpperCase();
+        return { sku: 'SKU-' + r, id: 'prod-' + r };
+      }
+      try {
+        const u = new URL(url);
+        const numMatch = u.pathname.match(/(\d{8,20})/);
+        if (numMatch) return { sku: 'SKU-' + numMatch[1], id: 'prod-' + numMatch[1] };
+        const searchId = u.searchParams.get('id') || u.searchParams.get('productId') || u.searchParams.get('itemId') || u.searchParams.get('item_id');
+        if (searchId && searchId.length >= 4) return { sku: 'SKU-' + searchId, id: 'prod-' + searchId };
+        let hash = 5381;
+        const cleanStr = (u.hostname + u.pathname).toLowerCase().replace(/[^a-z0-9]/g, '');
+        for (let i = 0; i < cleanStr.length; i++) {
+          hash = ((hash << 5) + hash) + cleanStr.charCodeAt(i);
+          hash |= 0;
+        }
+        const cleanHash = Math.abs(hash).toString(36).toUpperCase();
+        return { sku: 'SKU-' + cleanHash, id: 'prod-' + cleanHash };
+      } catch (e) {
+        return { sku: 'SKU-' + Date.now(), id: 'prod-' + Date.now() };
+      }
+    }
+
+    const deterministicIdentity = getDeterministicSkuAndId(tab.url);
+
     // Construction du Produit Structuré et Conforme à App Sourcing
     const cleanProductPayload = {
-      id: isEnrichMode ? targetId : ('prod-' + Date.now()),
+      id: isEnrichMode ? targetId : deterministicIdentity.id,
       workspaceId: targetWorkspace,
       targetWorkspaceId: targetWorkspace,
-      sku: 'IMP-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+      sku: deterministicIdentity.sku,
       titleFr: cachedData.title || tab.title || 'Nouvel Article Sourcing',
       titleCn: cachedData.titleCn || '',
       category: targetCategory,
