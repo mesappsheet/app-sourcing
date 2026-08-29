@@ -740,162 +740,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   const previewImagesCount = document.getElementById('previewImagesCount');
   const previewVideoBadge = document.getElementById('previewVideoBadge');
 
-  let isCompact = false;
-  const toggleCompactMode = () => {
-    isCompact = !isCompact;
-    if (isCompact) {
-      popupBody.classList.add('is-compact');
-      if (btnMinimizeToggle) btnMinimizeToggle.innerText = '▼';
-    } else {
-      popupBody.classList.remove('is-compact');
-      if (btnMinimizeToggle) btnMinimizeToggle.innerText = '↕';
-    }
-  };
-
-  if (btnMinimizeToggle) btnMinimizeToggle.addEventListener('click', toggleCompactMode);
+  const categorySearchInput = document.getElementById('categorySearchInput');
+  const categorySelect = document.getElementById('categorySelect');
+  const selectedCategoryBadge = document.getElementById('selectedCategoryBadge');
+  const btnClearCatSearch = document.getElementById('btnClearCatSearch');
+  const autoCategorySuggestionBox = document.getElementById('autoCategorySuggestionBox');
+  const autoCatSuggestionText = document.getElementById('autoCatSuggestionText');
+  const btnApplyAutoCat = document.getElementById('btnApplyAutoCat');
+  const btnToggleCreateCat = document.getElementById('btnToggleCreateCat');
+  const createCategoryForm = document.getElementById('createCategoryForm');
+  const btnCloseCreateCat = document.getElementById('btnCloseCreateCat');
+  const btnConfirmCreateCat = document.getElementById('btnConfirmCreateCat');
+  const newCatIconInput = document.getElementById('newCatIconInput');
+  const newCatNameInput = document.getElementById('newCatNameInput');
+  const newCatWorkspaceSelect = document.getElementById('newCatWorkspaceSelect');
 
   let currentMode = 'create';
   let cachedData = null;
   let availableProducts = [];
-
-  // Mode Selection Tabs
-  if (tabCreate && tabEnrich) {
-    tabCreate.addEventListener('click', () => {
-      currentMode = 'create';
-      tabCreate.classList.add('active');
-      tabEnrich.classList.remove('active');
-      targetProductBox.style.display = 'none';
-      btnImport.classList.remove('btn-enrich');
-      btnImportText.innerText = "📥 ENVOYER AU MAGASIN D'ARRIVAGE (EN ATTENTE)";
-    });
-
-    tabEnrich.addEventListener('click', () => {
-      currentMode = 'enrich';
-      tabEnrich.classList.add('active');
-      tabCreate.classList.remove('active');
-      targetProductBox.style.display = 'block';
-      btnImport.classList.add('btn-enrich');
-      btnImportText.innerText = "🏭 AJOUTER L'USINE À L'ARTICLE EXISTANT";
-    });
-  }
-
-  // 1. EXTRACTION DES DONNÉES DANS L'ONGLET ACTIF (DEEP SCRAPE)
-  try {
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: deepScrapePageData
-    });
-
-    if (results && results[0] && results[0].result) {
-      cachedData = results[0].result;
-
-      // Badge Plateforme
-      if (platformBadge) {
-        platformBadge.innerText = cachedData.platform || 'Alibaba';
-      }
-
-      // Titre
-      if (previewTitle) {
-        previewTitle.innerText = cachedData.title ? (cachedData.title.slice(0, 95) + (cachedData.title.length > 95 ? '...' : '')) : (tab.title || 'Article détecté');
-      }
-
-      // Prix
-      if (previewPrice) {
-        previewPrice.innerHTML = `<strong>${cachedData.formattedDisplayPrice}</strong>`;
-      }
-
-      // Prix Échantillon
-      if (cachedData.samplePriceFcfa && cachedData.samplePriceFcfa > 0 && previewSampleRow && previewSample) {
-        previewSample.innerText = `${cachedData.samplePriceFcfa.toLocaleString()} FCFA`;
-        previewSampleRow.style.display = 'flex';
-      } else if (previewSampleRow) {
-        previewSampleRow.style.display = 'none';
-      }
-
-      // Fournisseur
-      if (previewSupplier) {
-        previewSupplier.innerText = cachedData.company ? cachedData.company.slice(0, 45) : (cachedData.platform || 'Fournisseur Détecté');
-      }
-
-      // Origine
-      if (previewLocation) {
-        previewLocation.innerText = cachedData.location || 'Guangdong, Chine';
-      }
-
-      // MOQ
-      if (previewMoq) {
-        previewMoq.innerText = cachedData.moq || '1 pièce';
-      }
-
-      // Médias (Images)
-      if (previewMediaBar) {
-        if (previewImagesCount) previewImagesCount.innerText = `📷 ${cachedData.images?.length || 0} photo(s) HD`;
-        if (previewVideoBadge) {
-          previewVideoBadge.style.display = cachedData.videoUrl ? 'inline-block' : 'none';
-        }
-        previewMediaBar.style.display = 'flex';
-      }
-
-      // Paliers de Prix Réels
-      if (cachedData.tierPricing && cachedData.tierPricing.length > 0 && previewTiersBox && previewTiersList) {
-        previewTiersList.innerHTML = '';
-        cachedData.tierPricing.forEach(t => {
-          const row = document.createElement('div');
-          row.className = 'tier-row';
-          row.innerHTML = `<span style="color: #CBD5E1; font-weight: 600;">• ${t.minQty}</span> <strong style="color: #FCD34D;">${t.priceFcfa.toLocaleString()} FCFA <span style="color:#94A3B8; font-size:9.5px; font-weight:normal;">(${t.priceCny} ¥)</span></strong>`;
-          previewTiersList.appendChild(row);
-        });
-        previewTiersBox.style.display = 'block';
-      }
-
-      // Spécifications Techniques
-      if (cachedData.specifications && cachedData.specifications.length > 0 && previewSpecsBox && previewSpecsList) {
-        previewSpecsList.innerHTML = '';
-        if (previewSpecsCount) previewSpecsCount.innerText = `(${cachedData.specifications.length})`;
-        cachedData.specifications.slice(0, 25).forEach(s => {
-          const item = document.createElement('div');
-          item.className = 'spec-item';
-          item.innerHTML = `<span class="spec-label">${s.label} :</span><span class="spec-value">${s.value}</span>`;
-          previewSpecsList.appendChild(item);
-        });
-        previewSpecsBox.style.display = 'block';
-      }
-    }
-  } catch (e) {
-    console.error('Erreur exécution script:', e);
-    if (previewTitle) previewTitle.innerText = tab.title || 'Article actif';
-    if (previewPrice) previewPrice.innerText = 'Prix sur Demande (Usine)';
-    if (platformBadge) platformBadge.innerText = 'Web';
-  }
-
-  // 2. RÉCUPÉRATION DU CATALOGUE EXISTANT POUR LE MODE ENRICHIR / COMPLÉTER
-  try {
-    const allTabs = await chrome.tabs.query({});
-    for (const t of allTabs) {
-      if (t.url && (t.url.includes('localhost') || t.url.includes('127.0.0.1') || t.url.includes('quin-source') || t.url.includes('netlify.app'))) {
-        try {
-          const storageRes = await chrome.scripting.executeScript({
-            target: { tabId: t.id },
-            func: () => {
-              const raw = localStorage.getItem('quin_source_products');
-              return raw ? JSON.parse(raw) : [];
-            }
-          });
-          if (storageRes && storageRes[0]?.result?.length > 0) {
-            availableProducts = storageRes[0].result;
-            targetProductSelect.innerHTML = availableProducts.map(p => 
-              `<option value="${p.id}">${p.titleFr || p.title || p.name} (${p.category || 'Article'})</option>`
-            ).join('');
-            break;
-          }
-        } catch (e) {}
-      }
-    }
-  } catch (e) {}
-
-  if (availableProducts.length === 0 && targetProductSelect) {
-    targetProductSelect.innerHTML = '<option value="">Aucun article existant trouvé dans le catalogue</option>';
-  }
 
   // 🗂️ BASE COMPLÈTE DES RAYONS ET CATÉGORIES DE L'APPLICATION
   const ALL_CATEGORIES_DATA = [
@@ -903,7 +765,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     { id: 'inbox', workspaceId: 'ws_cuisines', name: "📥 Magasin d'Arrivage (Articles en Attente)", group: "⭐ ACCUEIL ARRIVAGE", isInbox: true },
 
     // 2. CUISINES & AMÉNAGEMENT
-    { id: 'vaisselle', workspaceId: 'ws_cuisines', name: "🍽️ Assiettes, Vaisselle & Céramique", group: "🍳 Cuisines & Aménagement", keywords: ['assiette', 'plat', 'vaisselle', 'céramique', 'porcelaine', 'bol', 'tasse', 'verre', 'couvert', 'fourchette', 'couteau', 'ceramic', 'dish', 'plate'] },
+    { id: 'vaisselle', workspaceId: 'ws_cuisines', name: "🍽️ Assiettes, Vaisselle & Céramique", group: "🍳 Cuisines & Aménagement", keywords: ['assiette', 'plat', 'vaisselle', 'céramique', 'porcelaine', 'bol', 'tasse', 'verre', 'couvert', 'fourchette', 'couteau', 'ceramic', 'dish', 'plate', 'bone china', 'dinnerware', 'dinner set'] },
     { id: 'eviers', workspaceId: 'ws_cuisines', name: "🚰 Éviers Cuves & Cascades Inox", group: "🍳 Cuisines & Aménagement", keywords: ['evier', 'cuve', 'cascade', 'inox', 'bac', 'eviers', 'sink'] },
     { id: 'robinetterie', workspaceId: 'ws_cuisines', name: "🚿 Robinetterie Douchette 360°", group: "🍳 Cuisines & Aménagement", keywords: ['robinet', 'douchette', 'mitigeur', 'robinetterie', 'faucet'] },
     { id: 'electro', workspaceId: 'ws_cuisines', name: "🍳 Hottes & Plaques Induction / Cuisson", group: "🍳 Cuisines & Aménagement", keywords: ['hotte', 'plaque', 'induction', 'cuiseur', 'poele', 'casserole', 'friteuse', 'cuisson'] },
@@ -947,11 +809,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     { id: 'deco', workspaceId: 'ws_mobilier', name: "🏺 Vases, Décoration & Miroirs", group: "🪑 Mobilier & Décoration", keywords: ['vase', 'miroir', 'tapis', 'deco', 'sculpture'] }
   ];
 
-  const categorySearchInput = document.getElementById('categorySearchInput');
-  const categorySelect = document.getElementById('categorySelect');
-  const selectedCategoryBadge = document.getElementById('selectedCategoryBadge');
-  const btnClearCatSearch = document.getElementById('btnClearCatSearch');
-
   let selectedCategoryItem = ALL_CATEGORIES_DATA[0];
 
   function renderCategoryOptions(query = '') {
@@ -971,13 +828,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filtered.length === 0) {
       const opt = document.createElement('option');
       opt.value = "";
-      opt.innerText = "❌ Aucun rayon trouvé pour cette recherche";
+      opt.innerText = "❌ Aucun rayon trouvé";
       opt.disabled = true;
       categorySelect.appendChild(opt);
       return;
     }
 
-    // Regroupement par espace / catégorie mère
     const groups = {};
     filtered.forEach(item => {
       if (!groups[item.group]) groups[item.group] = [];
@@ -1021,7 +877,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // ➕ Fonction d'ajout dynamique d'un nouveau rayon dans l'extension
   function addNewCategoryToExtension(name, icon, workspaceId) {
     if (!name || !name.trim()) return null;
     const cleanName = name.trim();
@@ -1061,7 +916,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return newCatItem;
   }
 
-  // 🧭 FONCTION INTELLIGENTE D'ORIENTATION & DÉTECTION DE RAYON (Breadcrumbs + Titre + Keywords)
   function detectBestCategory(data) {
     if (!data) return null;
     const combinedText = [
@@ -1093,91 +947,138 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
-    if (bestMatch && highestScore >= 4) {
+    if (bestMatch && highestScore >= 2) {
       return { type: 'match', category: bestMatch, score: highestScore };
     }
 
-    // Déduire un nouveau rayon potentiel
-    let suggestedName = '';
-    let suggestedIcon = '📦';
-    let suggestedWs = 'ws_quincaillerie';
-
-    if (data.breadcrumbs && data.breadcrumbs.length > 0) {
-      suggestedName = data.breadcrumbs[data.breadcrumbs.length - 1];
-    } else {
-      const cleanTitle = (data.title || '')
-        .replace(/^(haut de gamme|nouveau|professionnel|usine|vente en gros|chine|direct usine)\s+/i, '')
-        .trim();
-      const words = cleanTitle.split(/\s+/).slice(0, 3).join(' ');
-      suggestedName = words ? (words.charAt(0).toUpperCase() + words.slice(1)) : 'Nouvel Arrivage Sourcing';
-    }
-
-    if (combinedText.includes('serrure') || combinedText.includes('lock') || combinedText.includes('verrou') || combinedText.includes('cadenas')) {
-      suggestedIcon = '🔒';
-      suggestedWs = 'ws_quincaillerie';
-    } else if (combinedText.includes('cuisine') || combinedText.includes('evier') || combinedText.includes('robinet') || combinedText.includes('plat') || combinedText.includes('assiette') || combinedText.includes('tiroir')) {
-      suggestedIcon = '🍳';
-      suggestedWs = 'ws_cuisines';
-    } else if (combinedText.includes('charniere') || combinedText.includes('verin') || combinedText.includes('relevable') || combinedText.includes('slide') || combinedText.includes('rail') || combinedText.includes('pied') || combinedText.includes('poignee')) {
-      suggestedIcon = '🚪';
-      suggestedWs = 'ws_quincaillerie';
-    } else if (combinedText.includes('perceuse') || combinedText.includes('visseuse') || combinedText.includes('foret') || combinedText.includes('outil') || combinedText.includes('gabarit') || combinedText.includes('laser')) {
-      suggestedIcon = '🛠️';
-      suggestedWs = 'ws_outillage';
-    } else if (combinedText.includes('vetement') || combinedText.includes('t-shirt') || combinedText.includes('pantalon') || combinedText.includes('robe') || combinedText.includes('hoodie')) {
-      suggestedIcon = '👗';
-      suggestedWs = 'ws_vetements';
-    } else if (combinedText.includes('chaussure') || combinedText.includes('sneaker') || combinedText.includes('basket') || combinedText.includes('mocassin')) {
-      suggestedIcon = '👟';
-      suggestedWs = 'ws_chaussures';
-    } else if (combinedText.includes('ecouteur') || combinedText.includes('tws') || combinedText.includes('bluetooth') || combinedText.includes('cable') || combinedText.includes('chargeur') || combinedText.includes('montre')) {
-      suggestedIcon = '📱';
-      suggestedWs = 'ws_electronique';
-    } else if (combinedText.includes('chaise') || combinedText.includes('table') || combinedText.includes('canape') || combinedText.includes('meuble')) {
-      suggestedIcon = '🪑';
-      suggestedWs = 'ws_mobilier';
-    }
-
-    return {
-      type: 'suggest_new',
-      name: suggestedName,
-      icon: suggestedIcon,
-      workspaceId: suggestedWs
-    };
+    return null;
   }
 
-  // 1. Initialiser le rendu des catégories
+  // 🚀 Rendu immédiat des catégories (0ms)
   renderCategoryOptions();
 
-  // 2. Détection intelligente automatique et suggestions IA
-  const autoCategorySuggestionBox = document.getElementById('autoCategorySuggestionBox');
-  const autoCatSuggestionText = document.getElementById('autoCatSuggestionText');
-  const btnApplyAutoCat = document.getElementById('btnApplyAutoCat');
-  const btnToggleCreateCat = document.getElementById('btnToggleCreateCat');
-  const createCategoryForm = document.getElementById('createCategoryForm');
-  const btnCloseCreateCat = document.getElementById('btnCloseCreateCat');
-  const btnConfirmCreateCat = document.getElementById('btnConfirmCreateCat');
-  const newCatIconInput = document.getElementById('newCatIconInput');
-  const newCatNameInput = document.getElementById('newCatNameInput');
-  const newCatWorkspaceSelect = document.getElementById('newCatWorkspaceSelect');
+  // 🚀 Pré-détection immédiate basée sur le titre de l'onglet
+  const initialTitle = (tab.title || 'Article Détecté').replace(/[\-|–].*Alibaba.*$/i, '').trim();
+  if (previewTitle) previewTitle.innerText = initialTitle;
+  const quickDetection = detectBestCategory({ title: initialTitle, breadcrumbs: [] });
+  if (quickDetection && quickDetection.category) {
+    updateCategorySelection(`${quickDetection.category.workspaceId}::${quickDetection.category.id}`);
+    if (autoCategorySuggestionBox && autoCatSuggestionText) {
+      autoCatSuggestionText.innerHTML = `🎯 Rayon auto-détecté : <strong>${quickDetection.category.name}</strong>`;
+      btnApplyAutoCat.innerText = '✓ Sélectionné';
+      autoCategorySuggestionBox.style.display = 'flex';
+    }
+  }
 
-  let currentAutoDetection = null;
+  // Écouteurs UI
+  if (categorySearchInput) {
+    categorySearchInput.addEventListener('input', (e) => {
+      const q = e.target.value;
+      if (btnClearCatSearch) btnClearCatSearch.style.display = q ? 'block' : 'none';
+      renderCategoryOptions(q);
+    });
+  }
 
-  if (cachedData) {
-    currentAutoDetection = detectBestCategory(cachedData);
-    if (currentAutoDetection) {
-      if (currentAutoDetection.type === 'match') {
-        const cat = currentAutoDetection.category;
-        updateCategorySelection(`${cat.workspaceId}::${cat.id}`);
+  if (btnClearCatSearch) {
+    btnClearCatSearch.addEventListener('click', () => {
+      categorySearchInput.value = '';
+      btnClearCatSearch.style.display = 'none';
+      renderCategoryOptions('');
+      categorySearchInput.focus();
+    });
+  }
+
+  if (categorySelect) {
+    categorySelect.addEventListener('change', (e) => {
+      updateCategorySelection(e.target.value);
+    });
+  }
+
+  if (btnToggleCreateCat && createCategoryForm) {
+    btnToggleCreateCat.addEventListener('click', () => {
+      createCategoryForm.style.display = createCategoryForm.style.display === 'none' ? 'block' : 'none';
+      if (createCategoryForm.style.display === 'block' && newCatNameInput) newCatNameInput.focus();
+    });
+  }
+
+  if (btnCloseCreateCat && createCategoryForm) {
+    btnCloseCreateCat.addEventListener('click', () => {
+      createCategoryForm.style.display = 'none';
+    });
+  }
+
+  if (btnConfirmCreateCat) {
+    btnConfirmCreateCat.addEventListener('click', () => {
+      const name = newCatNameInput?.value;
+      const icon = newCatIconInput?.value || '📦';
+      const ws = newCatWorkspaceSelect?.value || 'ws_cuisines';
+      if (!name || !name.trim()) return;
+      addNewCategoryToExtension(name, icon, ws);
+      if (createCategoryForm) createCategoryForm.style.display = 'none';
+      if (autoCategorySuggestionBox) autoCategorySuggestionBox.style.display = 'none';
+    });
+  }
+
+  // 1. EXTRACTION RICHE EN ARRIÈRE-PLAN (DEEP SCRAPE)
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: deepScrapePageData
+    });
+
+    if (results && results[0] && results[0].result) {
+      cachedData = results[0].result;
+
+      if (platformBadge) platformBadge.innerText = cachedData.platform || 'Alibaba';
+      if (previewTitle) previewTitle.innerText = cachedData.title || initialTitle;
+      if (previewPrice) previewPrice.innerHTML = `<strong>${cachedData.formattedDisplayPrice}</strong>`;
+      if (previewSupplier) previewSupplier.innerText = cachedData.company || 'Fournisseur Direct';
+      if (previewLocation) previewLocation.innerText = cachedData.location || 'Guangdong, Chine';
+      if (previewMoq) previewMoq.innerText = cachedData.moq || '1 pièce';
+
+      if (previewMediaBar) {
+        if (previewImagesCount) previewImagesCount.innerText = `📷 ${cachedData.images?.length || 0} photo(s) HD`;
+        if (previewVideoBadge) previewVideoBadge.style.display = cachedData.videoUrl ? 'inline-block' : 'none';
+        previewMediaBar.style.display = 'flex';
+      }
+
+      if (cachedData.tierPricing && cachedData.tierPricing.length > 0 && previewTiersBox && previewTiersList) {
+        previewTiersList.innerHTML = '';
+        cachedData.tierPricing.forEach(t => {
+          const row = document.createElement('div');
+          row.className = 'tier-row';
+          row.innerHTML = `<span style="color: #CBD5E1; font-weight: 600;">• ${t.minQty}</span> <strong style="color: #FCD34D;">${t.priceFcfa.toLocaleString()} FCFA <span style="color:#94A3B8; font-size:9.5px; font-weight:normal;">(${t.priceCny} ¥)</span></strong>`;
+          previewTiersList.appendChild(row);
+        });
+        previewTiersBox.style.display = 'block';
+      }
+
+      if (cachedData.specifications && cachedData.specifications.length > 0 && previewSpecsBox && previewSpecsList) {
+        previewSpecsList.innerHTML = '';
+        if (previewSpecsCount) previewSpecsCount.innerText = `(${cachedData.specifications.length})`;
+        cachedData.specifications.slice(0, 25).forEach(s => {
+          const item = document.createElement('div');
+          item.className = 'spec-item';
+          item.innerHTML = `<span class="spec-label">${s.label} :</span><span class="spec-value">${s.value}</span>`;
+          previewSpecsList.appendChild(item);
+        });
+        previewSpecsBox.style.display = 'block';
+      }
+
+      // Re-détection fine avec breadcrumbs et specs complètes
+      const refinedDetection = detectBestCategory(cachedData);
+      if (refinedDetection && refinedDetection.category) {
+        updateCategorySelection(`${refinedDetection.category.workspaceId}::${refinedDetection.category.id}`);
         if (autoCategorySuggestionBox && autoCatSuggestionText) {
-          autoCatSuggestionText.innerHTML = `🎯 Rayon auto-détecté : <strong>${cat.name}</strong>`;
+          autoCatSuggestionText.innerHTML = `🎯 Rayon auto-détecté : <strong>${refinedDetection.category.name}</strong>`;
           btnApplyAutoCat.innerText = '✓ Sélectionné';
           autoCategorySuggestionBox.style.display = 'flex';
         }
-      } else if (currentAutoDetection.type === 'suggest_new') {
-        if (autoCategorySuggestionBox && autoCatSuggestionText) {
-          autoCatSuggestionText.innerHTML = `✨ Rayon suggéré : <strong>${currentAutoDetection.icon} ${currentAutoDetection.name}</strong>`;
-          btnApplyAutoCat.innerText = '+ Créer ce rayon';
+      }
+    }
+  } catch (e) {
+    console.warn('Scraping standard fallback:', e);
+  }
           autoCategorySuggestionBox.style.display = 'flex';
         }
         if (newCatNameInput) newCatNameInput.value = currentAutoDetection.name;
@@ -1264,7 +1165,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 3. 📥 ACTION PRINCIPALE : INJECTION DANS L'APPLICATION (DIRECTEMENT DANS LE RAYON OU L'ARRIVAGE)
   btnImport.addEventListener('click', async () => {
-    if (!cachedData) return;
+    if (!cachedData) {
+      cachedData = {
+        title: (tab.title || 'Nouvel Article Sourcing').replace(/[\-|–].*Alibaba.*$/i, '').trim(),
+        titleCn: '',
+        platform: 'Alibaba',
+        basePriceFcfa: 0,
+        basePriceCny: 0,
+        moq: '1 pièce',
+        images: [],
+        videos: [],
+        tierPricing: [],
+        specifications: [],
+        company: 'Fournisseur Vérifié',
+        location: 'Guangdong, Chine',
+        sourceUrl: tab.url
+      };
+    }
 
     btnImport.disabled = true;
     const origText = btnImportText.innerText;
