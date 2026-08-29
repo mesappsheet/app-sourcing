@@ -1374,31 +1374,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           city: cachedData.location || 'Guangdong, Chine',
           country: 'Chine',
           badge: cachedData.supplierBadge || 'Verified Supplier',
-          years: cachedData.supplierYears || '5 ans d\'expérience',
-          rating: 4.9,
-          priceCny: effectivePriceCny,
-          priceFcfa: effectivePriceFcfa,
-          moq: moqNumber,
-          url: tab.url,
-          platform: cachedData.platform?.toLowerCase() || 'alibaba',
-          isPreferred: true,
-          priceTiers: cachedData.tierPricing || []
-        }
-      ],
-      createdAt: new Date().toISOString(),
-      injectedAt: new Date().toISOString(),
-      injectedAtFormatted: new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      timestamp: Date.now()
-    };
+          years: cachedData.supplierYears || '5      // 🌟 GÉNÉRATION DE L'IDENTIFIANT DE CORRÉLATION (TRACE_ID) & VERSION
+      const traceId = 'trc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+      const schemaVersion = '2.0';
 
-    try {
       const importEventPayload = (isEnrichMode && targetId)
-        ? { ...cleanProductPayload, importMode: 'enrich', targetProductId: targetId }
-        : cleanProductPayload;
+        ? { ...cleanProductPayload, importMode: 'enrich', targetProductId: targetId, traceId, schemaVersion }
+        : { ...cleanProductPayload, traceId, schemaVersion };
 
-      // 🌟 1. INJECTION DIRECTE CLOUD SUPABASE (GARANTIE 100% SANS ÉCHEC)
+      // 🌟 1. CANAL UNIQUE D'ÉCRITURE : SUPABASE CLOUD (SINGLE WRITER)
       const SUPABASE_URL = 'https://xgaehsajhlxkhxzqgfhz.supabase.co';
       const SUPABASE_KEY = 'sb_publishable_zVzDkQ2gg7Whjg3sOKviNg_v2CvaQoV';
+      let isCloudSuccess = false;
 
       try {
         const productVideos = cleanProductPayload.videos || [];
@@ -1423,6 +1410,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           unit: cleanProductPayload.unit || 'Pièce (pc)',
           source_url: cleanProductPayload.sourceUrl || '',
           source: 'extension',
+          last_modified_by: 'extension',
+          trace_id: traceId,
           created_at: cleanProductPayload.createdAt
         };
 
@@ -1438,50 +1427,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         if (sbRes.ok) {
-          console.log('[EXT][Canal1-Supabase] Produit injecté/mis à jour avec succès:', cleanProductPayload.sku);
+          isCloudSuccess = true;
+          console.log(`[EXT][Canal1-Supabase] ✅ Écriture réussie (trace_id: ${traceId}, SKU: ${cleanProductPayload.sku})`);
+          
+          // Traçabilité dans la table product_events
+          try {
+            await fetch(`${SUPABASE_URL}/rest/v1/product_events`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                product_sku: cleanProductPayload.sku,
+                workspace_id: targetWorkspace,
+                action: 'insert',
+                source: 'extension',
+                trace_id: traceId,
+                payload: { titleFr: cleanProductPayload.titleFr, category: targetCategory, priceCny: cleanProductPayload.priceCny }
+              })
+            });
+          } catch (eAudit) {}
         }
       } catch (sbErr) {
-        console.warn('[EXT][Canal1-Supabase] Erreur injection Supabase:', sbErr);
+        console.warn('[EXT][Canal1-Supabase] ⚠️ Erreur réseau vers Cloud:', sbErr);
       }
 
-      // 2. Enregistrement sécurisé dans le stockage local de l'extension avec UUID unique
-      const uniqueImportId = 'imp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      // 🌟 2. CANAL 3 : TAMPON HORS-LIGNE LOCALSTORAGE (ACTIVÉ UNIQUEMENT SUR ÉCHEC DU CANAL 1)
       const taggedPayload = {
         ...importEventPayload,
-        importId: uniqueImportId,
+        _syncing: !isCloudSuccess,
         timestamp: Date.now()
       };
 
-      try {
-        chrome.storage?.local?.set({ 'quin_source_latest_import': taggedPayload });
-        console.log('[EXT][Canal3-Storage] Tampon local mis à jour avec importId:', uniqueImportId);
-      } catch (stErr) {}
+      if (!isCloudSuccess) {
+        try {
+          chrome.storage?.local?.set({ 'quin_source_latest_import': taggedPayload });
+          console.log(`[EXT][Canal3-Storage] 📥 Stocké en tampon de secours hors-ligne (trace_id: ${traceId})`);
+        } catch (stErr) {}
+      } else {
+        try {
+          chrome.storage?.local?.remove('quin_source_latest_import');
+          console.log(`[EXT][Canal3-Storage] 🧹 Tampon de secours nettoyé`);
+        } catch (stErr) {}
+      }
 
-      // 3. Copie automatique dans le presse-papier
+      // 🌟 3. CANAL 2 : NOTIFICATION OPTIMISTE DE L'INTERFACE UTILISATEUR (SANS ÉCRITURE)
       try {
         await navigator.clipboard.writeText(JSON.stringify(taggedPayload));
       } catch (clipErr) {}
 
-      // 4. Synchronisation directe via l'API du serveur local Vite
-      const postPayload = JSON.stringify(taggedPayload);
-
-      try {
-        await fetch('http://localhost:5173/api/import-live', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: postPayload
-        });
-      } catch (e) {
-        try {
-          await fetch('http://127.0.0.1:5173/api/import-live', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: postPayload
-          });
-        } catch (e2) {}
-      }
-
-      // 5. Diffusion multi-canaux vers tous les onglets ouverts de l'application
       try {
         const allTabs = await chrome.tabs.query({});
         for (const t of allTabs) {
@@ -1489,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
               chrome.tabs.sendMessage(t.id, {
                 type: 'EXTENSION_DIRECT_IMPORT',
-                payload: importEventPayload
+                payload: taggedPayload
               });
             } catch (e) {}
 
@@ -1497,13 +1493,6 @@ document.addEventListener('DOMContentLoaded', async () => {
               await chrome.scripting.executeScript({
                 target: { tabId: t.id },
                 func: (payload) => {
-                  try {
-                    localStorage.setItem('quin_source_latest_import', JSON.stringify({
-                      ...payload,
-                      timestamp: Date.now()
-                    }));
-                  } catch (e) {}
-
                   window.postMessage({
                     type: 'EXTENSION_DIRECT_IMPORT',
                     payload: payload
@@ -1511,7 +1500,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                   window.dispatchEvent(new CustomEvent('EXTENSION_IMPORT_EVENT', { detail: payload }));
                 },
-                args: [importEventPayload]
+                args: [taggedPayload]
               });
             } catch (e) {}
           }
