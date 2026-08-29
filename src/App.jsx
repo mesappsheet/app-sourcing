@@ -1012,56 +1012,70 @@ export function App() {
         }
       } catch (e) {}
 
-      // Supabase Cloud live inbox check
+      // Supabase Cloud live check (Tous les rayons et workspaces)
       if (supabase && isSupabaseConfigured) {
         try {
           const { data, error } = await supabase
             .from('products')
             .select('*')
-            .eq('workspace_id', activeWorkspaceId)
-            .eq('category', 'inbox');
+            .order('created_at', { ascending: false });
 
           if (!error && data && Array.isArray(data) && data.length > 0) {
             setAllProductsByWs(prev => {
-              const currentList = prev[activeWorkspaceId] || [];
-              const currentIds = new Set(currentList.map(p => p.id));
-              const newItems = data.filter(d => !currentIds.has(d.id)).map(r => ({
-                id: r.id,
-                workspaceId: r.workspace_id,
-                sku: r.sku,
-                titleFr: r.title_fr,
-                titleCn: r.title_cn,
-                category: 'inbox',
-                categoryName: 'Magasin d\'Arrivage',
-                categoryIcon: '📥',
-                material: r.material || 'Standard Qualité Usine',
-                dimensions: r.dimensions || '',
-                images: r.images || [],
-                videos: typeof r.video_demo === 'string' && r.video_demo.startsWith('[') ? JSON.parse(r.video_demo) : [],
-                specifications: r.specifications || [],
-                factoryName: r.factory_name,
-                factoryCity: r.factory_city,
-                tierPricing: r.tier_pricing || [],
-                moq: r.moq,
-                suppliers: r.suppliers || [],
-                priceCny: r.price_cny,
-                priceFcfa: Math.round((r.price_cny || 0) * 85),
-                unit: r.unit || 'Pièce (pc)',
-                sourceUrl: r.source_url,
-                createdAt: r.created_at,
-                injectedAt: r.created_at,
-                injectedAtFormatted: r.created_at ? new Date(r.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null
-              }));
+              let hasChanges = false;
+              const nextState = { ...prev };
+              let lastNewItem = null;
 
-              if (newItems.length > 0) {
-                setSelectedCategory('inbox');
-                setInboxSubTab('products');
-                setSelectedProduct(newItems[0]);
-                showToast(`🎉 « ${newItems[0].titleFr.slice(0, 30)}... » réceptionné dans le Magasin d'Arrivage !`);
-                return {
-                  ...prev,
-                  [activeWorkspaceId]: [...newItems, ...currentList]
-                };
+              data.forEach(r => {
+                const wsId = r.workspace_id || 'ws_cuisines';
+                const currentList = nextState[wsId] || [];
+                const exists = currentList.some(p => p.id === r.id || (p.sku && p.sku === r.sku));
+
+                if (!exists) {
+                  hasChanges = true;
+                  const item = {
+                    id: r.id,
+                    workspaceId: wsId,
+                    sku: r.sku,
+                    titleFr: r.title_fr,
+                    titleCn: r.title_cn,
+                    category: r.category || 'inbox',
+                    categoryName: r.category === 'inbox' ? "Magasin d'Arrivage" : r.category,
+                    categoryIcon: r.category === 'inbox' ? '📥' : '📦',
+                    material: r.material || 'Standard Qualité Usine',
+                    dimensions: r.dimensions || '',
+                    images: r.images || [],
+                    videos: typeof r.video_demo === 'string' && r.video_demo.startsWith('[') ? JSON.parse(r.video_demo) : [],
+                    specifications: r.specifications || [],
+                    factoryName: r.factory_name,
+                    factoryCity: r.factory_city,
+                    tierPricing: r.tier_pricing || [],
+                    moq: r.moq,
+                    suppliers: r.suppliers || [],
+                    priceCny: r.price_cny,
+                    priceFcfa: Math.round((r.price_cny || 0) * 85),
+                    unit: r.unit || 'Pièce (pc)',
+                    sourceUrl: r.source_url,
+                    createdAt: r.created_at,
+                    injectedAt: r.created_at,
+                    injectedAtFormatted: r.created_at ? new Date(r.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null
+                  };
+                  nextState[wsId] = [item, ...currentList];
+                  lastNewItem = item;
+                }
+              });
+
+              if (hasChanges && lastNewItem) {
+                if (lastNewItem.workspaceId !== activeWorkspaceId) {
+                  setActiveWorkspaceId(lastNewItem.workspaceId);
+                }
+                setSelectedCategory(lastNewItem.category || 'inbox');
+                if (lastNewItem.category === 'inbox') {
+                  setInboxSubTab('products');
+                }
+                setSelectedProduct(lastNewItem);
+                showToast(`🎉 « ${lastNewItem.titleFr.slice(0, 30)}... » synchronisé avec succès !`);
+                return nextState;
               }
               return prev;
             });
