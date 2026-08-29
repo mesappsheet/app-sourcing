@@ -1150,27 +1150,28 @@ async function initPopup() {
 
   // 3. 📥 ACTION PRINCIPALE : INJECTION DANS L'APPLICATION (DIRECTEMENT DANS LE RAYON OU L'ARRIVAGE)
   btnImport.addEventListener('click', async () => {
-    if (!cachedData) {
-      cachedData = {
-        title: (tab.title || 'Nouvel Article Sourcing').replace(/[\-|–].*Alibaba.*$/i, '').trim(),
-        titleCn: '',
-        platform: 'Alibaba',
-        basePriceFcfa: 0,
-        basePriceCny: 0,
-        moq: '1 pièce',
-        images: [],
-        videos: [],
-        tierPricing: [],
-        specifications: [],
-        company: 'Fournisseur Vérifié',
-        location: 'Guangdong, Chine',
-        sourceUrl: tab.url
-      };
-    }
+    try {
+      if (!cachedData) {
+        cachedData = {
+          title: (tab.title || 'Nouvel Article Sourcing').replace(/[\-|–].*Alibaba.*$/i, '').trim(),
+          titleCn: '',
+          platform: 'Alibaba',
+          basePriceFcfa: 0,
+          basePriceCny: 0,
+          moq: '1 pièce',
+          images: [],
+          videos: [],
+          tierPricing: [],
+          specifications: [],
+          company: 'Fournisseur Vérifié',
+          location: 'Guangdong, Chine',
+          sourceUrl: tab.url
+        };
+      }
 
-    btnImport.disabled = true;
-    const origText = btnImportText.innerText;
-    btnImportText.innerText = "⏳ Injection Cloud en cours...";
+      btnImport.disabled = true;
+      const origText = btnImportText.innerText;
+      btnImportText.innerText = "⏳ Injection Cloud en cours...";
 
     const isEnrichMode = currentMode === 'enrich';
     const targetId = isEnrichMode ? targetProductSelect.value : null;
