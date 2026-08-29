@@ -3,6 +3,7 @@
  * Téléchargement et mise en cache automatique des images et vidéos du catalogue
  */
 import { useState, useEffect } from 'react';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 const DB_NAME = 'AppSourcingMediaDB';
 const DB_VERSION = 2;
@@ -132,6 +133,20 @@ export async function cacheMediaUrl(url) {
       tx.oncomplete = () => resolve(true);
       tx.onerror = () => resolve(false);
     });
+
+    // ☁️ Téléversement miroir permanent vers Supabase Storage (Bucket product-media)
+    if (supabase && isSupabaseConfigured && !url.includes('supabase.co/storage')) {
+      try {
+        const isVideo = url.includes('.mp4') || (blob.type && blob.type.includes('video'));
+        const folder = isVideo ? 'videos' : 'images';
+        const ext = isVideo ? 'mp4' : 'jpg';
+        const filePath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        supabase.storage.from('product-media').upload(filePath, blob, {
+          contentType: blob.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
+          upsert: true
+        }).catch(() => {});
+      } catch (cloudErr) {}
+    }
 
     return localBlobUrl;
   } catch (err) {
