@@ -1331,7 +1331,6 @@ async function initPopup() {
           unit: cleanProductPayload.unit || 'Pièce (pc)',
           source_url: cleanProductPayload.sourceUrl || '',
           source: 'extension',
-          last_modified_by: 'extension',
           trace_id: traceId,
           created_at: cleanProductPayload.createdAt
         };
