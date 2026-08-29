@@ -21,16 +21,7 @@
   "content_scripts": [
     {
       "matches": [
-        "http://localhost/*",
-        "http://127.0.0.1/*",
-        "https://*.netlify.app/*",
-        "https://*.vercel.app/*",
-        "*://*.alibaba.com/*",
-        "*://*.1688.com/*",
-        "*://*.taobao.com/*",
-        "*://*.tmall.com/*",
-        "*://*.aliexpress.com/*",
-        "*://*.made-in-china.com/*"
+        "<all_urls>"
       ],
       "js": [
         "content_script.js"
