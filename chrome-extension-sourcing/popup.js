@@ -1063,7 +1063,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // 1. EXTRACTION RICHE EN ARRIÈRE-PLAN (DEEP SCRAPE)
+  // 1. VÉRIFICATION DU TYPE D'ONGLET
+  if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:') || tab.url.startsWith('chrome-extension://')) {
+    if (previewTitle) previewTitle.innerHTML = "💡 <strong>Ouvrez une fiche produit sur Alibaba.com ou 1688.com</strong> pour prévisualiser et importer en 1 clic !";
+    if (previewPrice) previewPrice.innerHTML = '<span style="color:#94A3B8; font-size:11px;">En attente de page produit</span>';
+    if (previewSupplier) previewSupplier.innerText = 'Fournisseur E-Commerce';
+    return;
+  }
+
+  // 2. EXTRACTION RICHE EN ARRIÈRE-PLAN (DEEP SCRAPE)
   try {
     const results = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
