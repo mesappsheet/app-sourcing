@@ -709,7 +709,7 @@ function deepScrapePageData() {
 }
 
 // 🌐 INITIALISATION DE L'INTERFACE DU POPUP
-document.addEventListener('DOMContentLoaded', async () => {
+async function initPopup() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.id) return;
 
@@ -1501,4 +1501,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       }, 4000);
     }
   });
-});
+}
+
+// 🚀 Exécution immédiate (que DOMContentLoaded ait déjà eu lieu ou non)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPopup);
+} else {
+  initPopup();
+}
