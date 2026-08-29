@@ -1125,12 +1125,19 @@ export function App() {
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
-    // 2. Gestion de session Supabase Auth
+    // 2. Gestion de session Supabase Auth & Synchronisation sécurisée avec l'Extension
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           setUser(session.user);
           localStorage.setItem('quin_source_auth_user', JSON.stringify(session.user));
+          if (session.access_token) {
+            window.postMessage({
+              type: 'APP_SOURCING_SESSION_SYNC',
+              token: session.access_token,
+              userId: session.user.id
+            }, window.location.origin);
+          }
         }
       });
 
@@ -1138,9 +1145,21 @@ export function App() {
         if (session?.user) {
           setUser(session.user);
           localStorage.setItem('quin_source_auth_user', JSON.stringify(session.user));
+          if (session.access_token) {
+            window.postMessage({
+              type: 'APP_SOURCING_SESSION_SYNC',
+              token: session.access_token,
+              userId: session.user.id
+            }, window.location.origin);
+          }
         } else if (_event === 'SIGNED_OUT') {
           setUser(null);
           localStorage.removeItem('quin_source_auth_user');
+          window.postMessage({
+            type: 'APP_SOURCING_SESSION_SYNC',
+            token: null,
+            userId: null
+          }, window.location.origin);
         }
       });
 

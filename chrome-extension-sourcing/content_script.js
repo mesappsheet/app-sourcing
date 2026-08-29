@@ -6,7 +6,7 @@
       window.postMessage({
         type: 'EXTENSION_DIRECT_IMPORT',
         payload: request.payload
-      }, '*');
+      }, window.location.origin);
 
       window.dispatchEvent(new CustomEvent('EXTENSION_IMPORT_EVENT', {
         detail: request.payload
@@ -20,6 +20,21 @@
       } catch (e) {}
 
       sendResponse({ status: 'ok', received: true });
+    }
+  });
+
+  // 🔐 Synchronisation sécurisée de la session JWT utilisateur (Origine vérifiée)
+  window.addEventListener('message', (event) => {
+    // 🛡️ Rejeter tout message ne provenant pas exactement de l'origine de l'application
+    if (event.origin !== window.location.origin) return;
+
+    if (event.data && event.data.type === 'APP_SOURCING_SESSION_SYNC' && event.data.token) {
+      chrome.storage?.local?.set({
+        quin_source_auth_jwt: event.data.token,
+        quin_source_auth_user_id: event.data.userId || null,
+        quin_source_auth_updated_at: Date.now()
+      });
+      console.log('[ContentScript] 🔐 Session utilisateur synchronisée avec l\'extension.');
     }
   });
 

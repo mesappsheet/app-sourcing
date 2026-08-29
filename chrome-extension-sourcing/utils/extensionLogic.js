@@ -32,13 +32,15 @@ export function computeBackoffDelay(retryCount, baseDelayMs = 60000) {
 
 /**
  * Détermine si une réponse HTTP représente une erreur client définitive (4xx)
- * Les erreurs 4xx permanentes (400, 401, 403, 404, 422) ne doivent PAS être rejouées indéfiniment
- * Exception : 429 (Too Many Requests / Rate limit) qui doit être réessayée avec backoff
+ * Les erreurs structurelles (400, 403, 404, 422) ne doivent PAS être rejouées indéfiniment.
+ * Exceptions critiques (rejouables) :
+ * - 401 : Token JWT expiré (nécessite un rafraîchissement de session, pas un rejet DLQ)
+ * - 429 : Rate Limit / Too Many Requests (doit être réessayé avec backoff)
  */
 export function isPermanentClientError(statusCode) {
   const code = parseInt(statusCode, 10);
   if (isNaN(code)) return false;
-  return code >= 400 && code < 500 && code !== 429;
+  return code >= 400 && code < 500 && code !== 401 && code !== 429;
 }
 
 /**
