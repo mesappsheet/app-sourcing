@@ -553,64 +553,129 @@ function deepScrapePageData() {
     }
 
     // -------------------------------------------------------------------------
-    // 6. 📐 DEEP SCRAPE TOUTES LES SPÉCIFICATIONS TECHNIQUES
+    // 6. 📐 DEEP SCRAPE INTELLIGENT DE TOUTES LES VRAIES CARACTÉRISTIQUES (TABLEAU USINE RÉEL)
     // -------------------------------------------------------------------------
     const seenLabels = new Set();
-    const specRows = document.querySelectorAll(
-      'tr, dl.do-entry-item, .do-entry-item, .product-prop, .attribute-item, .spec-item, [class*="attribute"], [class*="specification"] tr, [class*="prop-item"], [class*="attr-item"], .attr-item, [data-spm*="spec"] dl, [data-spm*="spec"] div, #J-rich-text-description tr, .detail-desc-decorate tr, [class*="attribute-layout"] div, [class*="params-item"], .feature-item'
-    );
 
-    specRows.forEach(row => {
-      let label = '';
-      let value = '';
+    const addSpecItem = (category, label, value) => {
+      if (!label || !value) return;
+      const cleanLabel = decodeHtml(label).replace(/[\t\r\n:]+/g, ' ').trim();
+      let cleanVal = decodeHtml(value).replace(/[\t\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!cleanLabel || !cleanVal) return;
+      if (cleanLabel.length < 2 || cleanLabel.length > 75) return;
+      if (cleanVal.length < 1 || cleanVal.length > 350) return;
 
-      if (row.tagName === 'TR') {
-        const th = row.querySelector('th, td:first-child');
-        const td = row.querySelector('td:last-child');
-        if (th && td && th !== td) {
-          label = decodeHtml(th.innerText.replace(/[\t\r\n:]/g, ' ').trim());
-          value = decodeHtml(td.innerText.replace(/[\t\r\n]/g, ' ').trim());
+      const lowerL = cleanLabel.toLowerCase();
+      const lowerV = cleanVal.toLowerCase();
+
+      // Ignorer strictement les boutons d'interface, navigation et actions
+      const forbidden = [
+        'trouver des produits', 'similar products', 'voir plus', 'afficher plus', 
+        'see more', 'view more', 'contact', 'fournisseur', 'chat', 'avis', 'feedback', 
+        'review', 'alibaba', 'panier', 'cart', 'buy', 'commander', 'score', 'évaluation'
+      ];
+      if (forbidden.some(f => lowerL.includes(f) || lowerV === f)) return;
+      if (seenLabels.has(lowerL)) return;
+
+      seenLabels.add(lowerL);
+
+      let catName = category || 'Caractéristiques';
+      if (lowerL.includes('emballage') || lowerL.includes('livraison') || lowerL.includes('délai') || lowerL.includes('packaging') || lowerL.includes('delivery') || lowerL.includes('lead time') || lowerL.includes('port')) {
+        catName = 'Emballage & Logistique';
+      } else if (lowerL.includes('personnalis') || lowerL.includes('custom') || lowerL.includes('logo') || lowerL.includes('oem')) {
+        catName = 'Personnalisation Usine';
+      } else if (lowerL.includes('certif') || lowerL.includes('norme') || lowerL.includes('grade') || lowerL.includes('food') || lowerL.includes('standard') || lowerL.includes('acier') || lowerL.includes('matière') || lowerL.includes('material')) {
+        catName = 'Caractéristiques Techniques';
+      }
+
+      allSpecifications.push({ category: catName, label: cleanLabel, value: cleanVal });
+    };
+
+    // A. Priorité 1 : Détection directe de la grille "Caractéristiques" / "Key Attributes"
+    try {
+      const headings = Array.from(document.querySelectorAll('h2, h3, h4, div, span')).filter(el => {
+        const t = (el.innerText || '').trim().toLowerCase();
+        return (t === 'caractéristiques' || t === 'caracteristiques' || t === 'key attributes' || t === 'attributs clés' || t === 'product attributes' || t === 'spécifications' || t === 'specifications');
+      });
+
+      headings.forEach(h => {
+        let container = h.closest('[class*="attribute"], [class*="spec"], section, .module-item, .detail-item') || h.parentElement;
+        if (container) {
+          const cards = container.querySelectorAll('[class*="item"], [class*="prop"], [class*="attr"], [class*="spec"], dl, tr, div > div');
+          cards.forEach(card => {
+            if (card.children.length === 2) {
+              const lText = (card.children[0].innerText || '').trim();
+              const vText = (card.children[1].innerText || '').trim();
+              if (lText && vText && lText !== vText && !lText.includes('\n') && lText.length < 50) {
+                addSpecItem('Caractéristiques', lText, vText);
+              }
+            } else if (card.children.length >= 2) {
+              const textNodes = Array.from(card.children).map(c => (c.innerText || '').trim()).filter(t => t.length > 0);
+              if (textNodes.length === 2 && textNodes[0].length < 50) {
+                addSpecItem('Caractéristiques', textNodes[0], textNodes[1]);
+              }
+            }
+          });
         }
-      } else if (row.tagName === 'DL') {
-        const dt = row.querySelector('dt');
-        const dd = row.querySelector('dd');
-        if (dt && dd) {
-          label = decodeHtml(dt.innerText.replace(/[\t\r\n:]/g, ' ').trim());
-          value = decodeHtml(dd.innerText.replace(/[\t\r\n]/g, ' ').trim());
-        }
-      } else {
-        const spanLabel = row.querySelector('.label, .name, [class*="label"], [class*="name"], [class*="key"], [class*="title"], dt, span:first-child');
-        const spanVal = row.querySelector('.value, [class*="value"], [class*="val"], dd, span:last-child');
-        if (spanLabel && spanVal && spanLabel !== spanVal) {
-          label = decodeHtml(spanLabel.innerText.replace(/[\t\r\n:]/g, ' ').trim());
-          value = decodeHtml(spanVal.innerText.replace(/[\t\r\n]/g, ' ').trim());
-        } else if (row.innerText && row.innerText.includes(':')) {
-          const parts = row.innerText.split(':');
+      });
+    } catch (e) {}
+
+    // B. Priorité 2 : Scan des tableaux TR/TD, listes DL/DT/DD & balises de propriétés
+    try {
+      const rows = document.querySelectorAll(
+        'tr, dl.do-entry-item, .do-entry-item, .product-prop, .attribute-item, .spec-item, [class*="attribute"] > div, [class*="attr-item"], .attr-item, [class*="property-item"], [data-spm*="spec"] div, [data-spm*="attr"] div, [class*="params-item"], .feature-item'
+      );
+
+      rows.forEach(r => {
+        if (r.tagName === 'TR') {
+          const th = r.querySelector('th, td:first-child');
+          const td = r.querySelector('td:last-child');
+          if (th && td && th !== td) {
+            addSpecItem('Spécifications', th.innerText, td.innerText);
+          }
+        } else if (r.tagName === 'DL') {
+          const dt = r.querySelector('dt');
+          const dd = r.querySelector('dd');
+          if (dt && dd) {
+            addSpecItem('Spécifications', dt.innerText, dd.innerText);
+          }
+        } else if (r.children.length === 2) {
+          const l = (r.children[0].innerText || '').trim();
+          const v = (r.children[1].innerText || '').trim();
+          if (l && v && !l.includes('\n') && l.length < 50 && v.length < 250) {
+            addSpecItem('Spécifications', l, v);
+          }
+        } else if (r.innerText && r.innerText.includes(':')) {
+          const parts = r.innerText.split(':');
           if (parts.length === 2) {
-            label = decodeHtml(parts[0].trim());
-            value = decodeHtml(parts[1].trim());
+            addSpecItem('Spécifications', parts[0], parts[1]);
+          }
+        }
+      });
+    } catch (e) {}
+
+    // C. Priorité 3 : Scan des données JSON officielles intégrées dans la page (Alibaba / 1688)
+    try {
+      const scripts = document.querySelectorAll('script');
+      for (const sc of scripts) {
+        const content = sc.innerText || sc.textContent || '';
+        if (!content || content.length < 50) continue;
+
+        if (content.includes('productAttributes') || content.includes('keyAttributes') || content.includes('propertyValues') || content.includes('specifications')) {
+          const attrMatches = content.match(/"(?:attrName|propName|name|key|label)"\s*:\s*"([^"]+)"\s*,\s*"(?:attrValue|propValue|value|val)"\s*:\s*"([^"]+)"/g) ||
+                              content.match(/"(?:name|key|label)"\s*:\s*"([^"]+)"\s*,\s*"(?:value|val)"\s*:\s*"([^"]+)"/g);
+          if (attrMatches) {
+            attrMatches.forEach(m => {
+              const parsedName = m.match(/"(?:attrName|propName|name|key|label)"\s*:\s*"([^"]+)"/i) || m.match(/"(?:name|key|label)"\s*:\s*"([^"]+)"/i);
+              const parsedVal = m.match(/"(?:attrValue|propValue|value|val)"\s*:\s*"([^"]+)"/i) || m.match(/"(?:value|val)"\s*:\s*"([^"]+)"/i);
+              if (parsedName && parsedVal) {
+                addSpecItem('Caractéristiques', parsedName[1], parsedVal[1]);
+              }
+            });
           }
         }
       }
-
-      if (label && value && label.length > 1 && label.length < 75 && value.length > 0 && value.length < 250) {
-        const lowerL = label.toLowerCase();
-        if (!seenLabels.has(lowerL) && !lowerL.includes('view') && !lowerL.includes('voir') && !lowerL.includes('afficher') && !lowerL.includes('feedback') && !lowerL.includes('review') && !lowerL.includes('score')) {
-          seenLabels.add(lowerL);
-          
-          let categoryName = 'Spécifications Techniques';
-          if (lowerL.includes('emballage') || lowerL.includes('livraison') || lowerL.includes('délai') || lowerL.includes('packaging') || lowerL.includes('delivery') || lowerL.includes('lead time') || lowerL.includes('port')) {
-            categoryName = 'Emballage & Logistique';
-          } else if (lowerL.includes('personnalis') || lowerL.includes('custom') || lowerL.includes('logo') || lowerL.includes('package')) {
-            categoryName = 'Personnalisation Usine';
-          } else if (lowerL.includes('certif') || lowerL.includes('norme') || lowerL.includes('grade') || lowerL.includes('food') || lowerL.includes('bpa')) {
-            categoryName = 'Normes & Certifications';
-          }
-
-          allSpecifications.push({ category: categoryName, label, value });
-        }
-      }
-    });
+    } catch (e) {}
 
     // -------------------------------------------------------------------------
     // 7. 🎬 EXTRACTION STRICTE DE LA VIDÉO DU PRODUIT (AUCUNE INVENTION)
