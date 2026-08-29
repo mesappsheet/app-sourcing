@@ -9,30 +9,50 @@ const SUPABASE_URL = 'https://xgaehsajhlxkhxzqgfhz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_zVzDkQ2gg7Whjg3sOKviNg_v2CvaQoV';
 
 /**
- * Récupère un token JWT valide avec rafraîchissement autonome si expiré
+ * Récupère un token JWT valide avec rafraîchissement autonome et rotation stricte
  * Fonctionne même si l'onglet de l'application est fermé
  */
 async function getValidAuthToken() {
-  const data = await chrome.storage.local.get(['quin_source_auth_jwt', 'quin_source_auth_refresh_token']);
+  const data = await chrome.storage.local.get(['quin_source_auth_jwt', 'quin_source_auth_refresh_token', 'quin_source_auth_status']);
   let token = data.quin_source_auth_jwt;
   const refreshToken = data.quin_source_auth_refresh_token;
+
+  if (data.quin_source_auth_status === 'relogin_required') {
+    return { token: null, isRevoked: true };
+  }
 
   if (!token || isJwtExpired(token)) {
     if (refreshToken) {
       const refreshRes = await refreshSupabaseSession(refreshToken, SUPABASE_URL, SUPABASE_ANON_KEY);
       if (refreshRes.success && refreshRes.accessToken) {
         token = refreshRes.accessToken;
+        // 🔄 Rotation stricte : écraser l'ancien refresh_token par le nouveau
         await chrome.storage.local.set({
           quin_source_auth_jwt: token,
           quin_source_auth_refresh_token: refreshRes.refreshToken || refreshToken,
+          quin_source_auth_status: 'authenticated',
           quin_source_auth_updated_at: Date.now()
         });
-        console.log('[SW] 🔄 Token de session rafraîchi de manière autonome avec succès.');
+        chrome.action.setBadgeText({ text: '' });
+        console.log('[SW] 🔄 Token de session rafraîchi avec rotation stricte du refresh_token.');
+      } else {
+        // 🛑 Token révoqué ou expiré : stopper les retries et alerter
+        console.warn('[SW] ⚠️ Échec critique refresh_token (révoqué ou expiré) :', refreshRes.error);
+        await chrome.storage.local.set({
+          quin_source_auth_status: 'relogin_required',
+          quin_source_auth_jwt: null,
+          quin_source_auth_refresh_token: null
+        });
+        chrome.action.setBadgeText({ text: 'LOG' });
+        chrome.action.setBadgeBackgroundColor({ color: '#EF4444' });
+        return { token: null, isRevoked: true };
       }
+    } else {
+      return { token: null, isRevoked: true };
     }
   }
 
-  return token || SUPABASE_ANON_KEY;
+  return { token: token || SUPABASE_ANON_KEY, isRevoked: false };
 }
 
 // 1. Initialisation des menus contextuels et des alarmes au démarrage
@@ -99,7 +119,14 @@ async function processPendingOfflineImports() {
       }
 
       try {
-        let currentAuthToken = await getValidAuthToken();
+        const authInfo = await getValidAuthToken();
+        if (authInfo.isRevoked) {
+          // Session révoquée / expirée : garder l'item en attente sans tenter de fetch réseau
+          remaining.push(item);
+          continue;
+        }
+
+        let currentAuthToken = authInfo.token;
         
         let response = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
           method: 'POST',
@@ -112,7 +139,7 @@ async function processPendingOfflineImports() {
           body: JSON.stringify(item)
         });
 
-        // 🔄 Si 401 (token expiré entretemps), tenter un refresh immédiat et réessayer
+        // 🔄 Si 401 (token expiré entretemps), tenter un refresh immédiat avec rotation stricte
         if (response.status === 401 && data.quin_source_auth_refresh_token) {
           console.warn('[SW] 401 reçu : tentative de rafraîchissement immédiat du refresh_token...');
           const refreshRes = await refreshSupabaseSession(data.quin_source_auth_refresh_token, SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -120,7 +147,8 @@ async function processPendingOfflineImports() {
             currentAuthToken = refreshRes.accessToken;
             await chrome.storage.local.set({
               quin_source_auth_jwt: currentAuthToken,
-              quin_source_auth_refresh_token: refreshRes.refreshToken || data.quin_source_auth_refresh_token,
+              quin_source_auth_refresh_token: refreshRes.refreshToken,
+              quin_source_auth_status: 'authenticated',
               quin_source_auth_updated_at: Date.now()
             });
 
@@ -135,6 +163,17 @@ async function processPendingOfflineImports() {
               },
               body: JSON.stringify(item)
             });
+          } else {
+            // Échec du refresh -> marquer la session révoquée
+            await chrome.storage.local.set({
+              quin_source_auth_status: 'relogin_required',
+              quin_source_auth_jwt: null,
+              quin_source_auth_refresh_token: null
+            });
+            chrome.action.setBadgeText({ text: 'LOG' });
+            chrome.action.setBadgeBackgroundColor({ color: '#EF4444' });
+            remaining.push(item);
+            continue;
           }
         }
 
