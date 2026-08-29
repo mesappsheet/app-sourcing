@@ -143,7 +143,7 @@ export async function loadAllProductsFromDb(workspaceId = 'ws_quincaillerie') {
         .select('*')
         .eq('workspace_id', workspaceId);
 
-      if (!error && data && Array.isArray(data) && data.length > 0) {
+      if (!error && Array.isArray(data)) {
         return data
           .filter(r => !deletedSet.has(r.id))
           .map(r => {
