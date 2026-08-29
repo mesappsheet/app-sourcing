@@ -969,9 +969,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 🔌 Connexion persistante au Service Worker pour garantir la finalisation en cas de fermeture
   let syncPort = null;
+  let isPortConnected = false;
   try {
     syncPort = chrome.runtime.connect({ name: 'popup_sync' });
-  } catch (e) {}
+    isPortConnected = true;
+    syncPort.onDisconnect.addListener(() => {
+      isPortConnected = false;
+      syncPort = null;
+      if (chrome.runtime.lastError) {
+        console.log('[EXT] Port popup_sync déconnecté:', chrome.runtime.lastError.message);
+      }
+    });
+  } catch (e) {
+    isPortConnected = false;
+  }
 
   // 🆔 Identifiant unique de session de scraping (Prévention des Race Conditions)
   const currentScrapeRequestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
@@ -1346,8 +1357,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (!isCloudSuccess) {
         try {
-          chrome.storage?.local?.set({ 'quin_source_latest_import': taggedPayload });
-          console.log(`[EXT][Canal3-Storage] 📥 Stocké en tampon de secours hors-ligne (trace_id: ${traceId})`);
+          const stored = await chrome.storage.local.get(['quin_source_pending_imports']);
+          const queue = stored.quin_source_pending_imports || [];
+          queue.push({
+            ...sbRow,
+            retryCount: 0,
+            lastRetryAt: Date.now()
+          });
+          await chrome.storage.local.set({ 
+            quin_source_pending_imports: queue,
+            quin_source_latest_import: taggedPayload 
+          });
+          console.log(`[EXT][Canal3-Storage] 📥 Stocké dans la file d'attente service worker pour retry (trace_id: ${traceId})`);
         } catch (stErr) {}
       } else {
         try {
@@ -1369,6 +1390,11 @@ document.addEventListener('DOMContentLoaded', async () => {
               chrome.tabs.sendMessage(t.id, {
                 type: 'EXTENSION_DIRECT_IMPORT',
                 payload: taggedPayload
+              }, () => {
+                if (chrome.runtime.lastError) {
+                  // Catch sans exception silencieuse
+                  console.log('[EXT] Notification tab sendMessage ignorée:', chrome.runtime.lastError.message);
+                }
               });
             } catch (e) {}
 

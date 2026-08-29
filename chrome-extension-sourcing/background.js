@@ -33,16 +33,43 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
-// 3. Traitement robuste des imports en attente dans chrome.storage.local
+// 3. Traitement robuste des imports avec Backoff Exponentiel & Limite Max (Dead Letter Queue)
+const MAX_IMPORT_RETRIES = 5;
+const BASE_RETRY_DELAY_MS = 60 * 1000; // 1 minute de base
+
 async function processPendingOfflineImports() {
   try {
-    const data = await chrome.storage.local.get(['quin_source_pending_imports']);
+    const data = await chrome.storage.local.get(['quin_source_pending_imports', 'quin_source_dead_letter_imports']);
     const pending = data.quin_source_pending_imports;
     if (!pending || !Array.isArray(pending) || pending.length === 0) return;
 
+    const deadLetter = data.quin_source_dead_letter_imports || [];
     const remaining = [];
+    const now = Date.now();
 
     for (const item of pending) {
+      const currentRetries = item.retryCount || 0;
+      const lastRetryAt = item.lastRetryAt || 0;
+
+      // ⏱️ Backoff Exponentiel : 1 min, 2 min, 4 min, 8 min, 16 min
+      const requiredDelay = Math.min(16 * BASE_RETRY_DELAY_MS, BASE_RETRY_DELAY_MS * Math.pow(2, currentRetries));
+      if (now - lastRetryAt < requiredDelay && lastRetryAt > 0) {
+        // Pas encore le moment de rejouer selon le backoff
+        remaining.push(item);
+        continue;
+      }
+
+      // 🛑 Limite de 5 tentatives : déplacement en Dead Letter Queue pour ne pas boucler à l'infini
+      if (currentRetries >= MAX_IMPORT_RETRIES) {
+        console.warn(`[SW][DLQ] ⚠️ Import abandonné après ${MAX_IMPORT_RETRIES} échecs (trace_id: ${item.trace_id || item.sku}):`, item);
+        deadLetter.push({
+          ...item,
+          abandonedAt: new Date().toISOString(),
+          reason: 'max_retries_exceeded'
+        });
+        continue;
+      }
+
       try {
         const response = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
           method: 'POST',
@@ -55,25 +82,53 @@ async function processPendingOfflineImports() {
           body: JSON.stringify(item)
         });
 
-        if (!response.ok) {
-          remaining.push(item);
+        if (response.ok) {
+          console.log(`[SW][Retry] ✅ Import réussi en tâche de fond (trace_id: ${item.trace_id || item.sku})`);
+        } else {
+          // Si erreur 4xx permanente (sauf 429 Too Many Requests), pas de retry infini inutile
+          if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+            console.error(`[SW][DLQ] ❌ Erreur permanente ${response.status} sur produit ${item.sku}. Déplacé en DLQ.`);
+            deadLetter.push({
+              ...item,
+              abandonedAt: new Date().toISOString(),
+              reason: `http_client_error_${response.status}`
+            });
+          } else {
+            // Erreur serveur 5xx ou réseau temporaire -> Retry avec incrément
+            remaining.push({
+              ...item,
+              retryCount: currentRetries + 1,
+              lastRetryAt: now
+            });
+          }
         }
       } catch (err) {
-        remaining.push(item);
+        // Erreur réseau (coupure) -> Retry avec incrément
+        remaining.push({
+          ...item,
+          retryCount: currentRetries + 1,
+          lastRetryAt: now
+        });
       }
     }
 
-    await chrome.storage.local.set({ quin_source_pending_imports: remaining });
+    await chrome.storage.local.set({ 
+      quin_source_pending_imports: remaining,
+      quin_source_dead_letter_imports: deadLetter.slice(-50) // Garder les 50 derniers échecs max
+    });
   } catch (e) {
     console.warn('[SW] Erreur vérification imports en attente:', e);
   }
 }
 
-// 4. Gestion de connexion pour surveiller la fermeture impromptue de la popup
+// 4. Gestion de connexion persistante avec surveillance de déconnexion et lastError
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'popup_sync') {
     port.onDisconnect.addListener(() => {
-      // Si la popup est fermée en plein vol, le service worker traite les données persistées
+      if (chrome.runtime.lastError) {
+        // Géré proprement pour éviter toute exception silencieuse non catchée
+        console.log('[SW] Port popup_sync déconnecté:', chrome.runtime.lastError.message);
+      }
       processPendingOfflineImports();
     });
   }
