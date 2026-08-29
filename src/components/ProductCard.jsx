@@ -1,5 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Camera, Video, Maximize2, Sparkles, Play, Pause, Factory, GripVertical, Tag, Layers, CornerDownRight, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Camera, Video, Maximize2, Sparkles, Play, Pause, Factory, GripVertical, Tag, Layers, CornerDownRight, AlertTriangle, ImageOff, Loader2 } from 'lucide-react';
+import { useCachedMedia, cacheProductImagesAndVideos } from '../utils/indexedMediaDB';
+
+export function formatImportDate(product) {
+  if (!product) return 'Récemment';
+  if (product.injectedAtFormatted) return product.injectedAtFormatted;
+  
+  let rawDate = product.injectedAt || product.createdAt || product.created_at || product.injected_at || product.timestamp;
+  
+  if (!rawDate && product.id && typeof product.id === 'string' && product.id.startsWith('prod-')) {
+    const ts = parseInt(product.id.replace('prod-', ''), 10);
+    if (!isNaN(ts) && ts > 1600000000000) {
+      rawDate = ts;
+    }
+  }
+
+  if (!rawDate) return 'Aujourd\'hui';
+
+  try {
+    const d = new Date(rawDate);
+    if (isNaN(d.getTime())) return String(rawDate);
+    return d.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    return 'Récemment';
+  }
+}
 
 export function ProductCard({ 
   product, 
@@ -12,40 +44,62 @@ export function ProductCard({
   onOpenContextMenu,
   isDuplicate = false
 }) {
+  const cardRef = useRef(null);
+  const [isInView, setIsInView] = useState(false);
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isAutoScrollActive, setIsAutoScrollActive] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [failedImages, setFailedImages] = useState({});
+  const [imgLoading, setImgLoading] = useState(true);
 
-  const images = product.images && product.images.length > 0 ? product.images : [
-    'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=85',
-    'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=800&q=85'
-  ];
-
-  // 🔄 DÉFILEMENT AUTOMATIQUE DES PHOTOS (AUTO-SCROLL)
+  // ⚡ LAZY LOADING VIA INTERSECTION OBSERVER (0% de charge CPU/RAM hors écran)
   useEffect(() => {
-    if (!isAutoScrollActive || isHovered || images.length <= 1) return;
+    if (!cardRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { rootMargin: '250px' } // Précharge 250px avant l'apparition
+    );
 
-    const interval = setInterval(() => {
-      setCurrentImgIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-    }, 3500); // Change photo every 3.5 seconds
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [images.length, isHovered, isAutoScrollActive]);
+  const images = Array.isArray(product.images) && product.images.length > 0 ? product.images : [];
+
+  // Résolution automatique depuis le cache IndexedDB local (seulement si la carte est visible)
+  const currentImgSrc = useCachedMedia((isInView && images.length > 0) ? images[currentImgIdx] : null);
+
+  // Téléchargement automatique en arrière-plan des photos et vidéos uniquement quand visible
+  useEffect(() => {
+    if (isInView && images.length > 0) {
+      cacheProductImagesAndVideos(product);
+    }
+  }, [isInView, product, images.length]);
+
+  // Reset loading on currentImgIdx change
+  useEffect(() => {
+    setImgLoading(true);
+  }, [currentImgIdx]);
 
   const handlePrev = (e) => {
     e.stopPropagation();
+    if (images.length <= 1) return;
+    setImgLoading(true);
     setCurrentImgIdx((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
   const handleNext = (e) => {
     e.stopPropagation();
+    if (images.length <= 1) return;
+    setImgLoading(true);
     setCurrentImgIdx((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
   const handleImageClick = (e) => {
     e.stopPropagation();
-    if (onOpenImageViewer) {
+    if (images.length > 0 && onOpenImageViewer) {
       onOpenImageViewer(product, currentImgIdx);
     } else {
       onSelect(product);
@@ -70,6 +124,7 @@ export function ProductCard({
 
   return (
     <div 
+      ref={cardRef}
       className={`product-item-card ${isSelected ? 'selected' : ''} ${isDragging ? 'is-dragging' : ''}`}
       onClick={() => onSelect(product)}
       onContextMenu={(e) => {
@@ -106,26 +161,139 @@ export function ProductCard({
             overflow: 'hidden',
             borderRadius: '14px',
             height: '240px',
-            background: '#070C14',
+            background: 'radial-gradient(circle at center, #111827 0%, #070C14 100%)',
             border: '1px solid rgba(255, 255, 255, 0.06)',
-            cursor: 'zoom-in'
+            cursor: images.length > 0 ? 'zoom-in' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
-          title="Cliquez pour agrandir en plein écran HD"
+          title={images.length > 0 ? "Cliquez pour agrandir en plein écran HD" : "Cliquez pour voir la fiche"}
         >
-          {/* Main Photo with smooth crossfade and subtle zoom */}
-          <img 
-            key={currentImgIdx}
-            src={images[currentImgIdx]} 
-            alt={`${product.titleFr} - photo ${currentImgIdx + 1}`}
-            style={{ 
-              width: '100%', 
-              height: '100%', 
-              objectFit: 'cover',
-              transform: isHovered ? 'scale(1.06)' : 'scale(1)',
-              transition: 'transform 0.35s ease, opacity 0.3s ease',
-              animation: 'fadeIn 0.4s ease'
-            }}
-          />
+          {images.length === 0 ? (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.45rem',
+              background: 'radial-gradient(circle at center, #1E293B 0%, #070C14 100%)',
+              padding: '1rem',
+              textAlign: 'center'
+            }}>
+              <Camera size={32} color="#60A5FA" opacity={0.6} />
+              <span style={{ fontSize: '0.78rem', color: '#E2E8F0', fontWeight: 700 }}>
+                Prêt pour nouvelles photos
+              </span>
+              <span style={{ fontSize: '0.65rem', color: '#94A3B8' }}>
+                Importez depuis l'extension Chrome
+              </span>
+            </div>
+          ) : (
+            <>
+              {/* Skeleton / Loading Indicator */}
+              {imgLoading && !failedImages[currentImgIdx] && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(11, 17, 32, 0.85)',
+                  zIndex: 3
+                }}>
+                  <Loader2 size={24} color="#3B82F6" style={{ animation: 'spin 1s linear infinite' }} />
+                </div>
+              )}
+
+              {/* Failed Image Fallback */}
+              {failedImages[currentImgIdx] ? (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  background: 'radial-gradient(circle at center, #1E293B 0%, #070C14 100%)',
+                  padding: '1rem',
+                  textAlign: 'center',
+                  zIndex: 2
+                }}>
+                  <ImageOff size={28} color="#64748B" />
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 600 }}>
+                    Photo non disponible
+                  </span>
+                </div>
+              ) : (
+                <img 
+                  key={currentImgIdx}
+                  src={currentImgSrc} 
+                  alt={`${product.titleFr} - photo ${currentImgIdx + 1}`}
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={() => setImgLoading(false)}
+                  onError={() => {
+                    setImgLoading(false);
+                    setFailedImages(prev => ({ ...prev, [currentImgIdx]: true }));
+                  }}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover',
+                    transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+                    transition: 'transform 0.35s ease, opacity 0.3s ease',
+                    opacity: imgLoading ? 0 : 1,
+                    animation: 'fadeIn 0.4s ease'
+                  }}
+                />
+              )}
+            </>
+          )}
+
+          {/* 🎬 POSTER VIDÉO INTERACTIF SUR SURVOL */}
+          {product?.videos && product.videos.length > 0 && isHovered && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(product);
+              }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.45)',
+                backdropFilter: 'blur(2px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 8,
+                cursor: 'pointer',
+                animation: 'fadeIn 0.2s ease'
+              }}
+              title="Cliquez pour lancer la vidéo démonstration"
+            >
+              <div style={{
+                background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                color: '#0F172A',
+                padding: '0.5rem 1rem',
+                borderRadius: '30px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                fontWeight: 900,
+                fontSize: '0.78rem',
+                boxShadow: '0 4px 20px rgba(245, 158, 11, 0.6)',
+                transform: 'scale(1.05)'
+              }}>
+                <Play size={16} fill="#0F172A" />
+                <span>Voir Démo Vidéo</span>
+              </div>
+            </div>
+          )}
 
           {/* Platform Origin Badge (Alibaba / Pinduoduo) Top Left */}
           <div style={{
@@ -167,32 +335,79 @@ export function ProductCard({
             )}
           </div>
 
-          {/* Poignée de Glissement (Drag Handle) Positionnée en haut à droite avec espacement propre */}
-          <div 
-            className="product-drag-handle"
-            style={{
-              position: 'absolute',
-              top: 10,
-              right: product?.videos && product.videos.length > 0 ? '62px' : '10px',
-              background: 'rgba(15, 23, 42, 0.88)',
+          {/* Top Right Controls & Badges (Drag Handle + Videos + Photos Counter) */}
+          <div style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            zIndex: 6
+          }}>
+            {/* Poignée de Glissement (Drag Handle) */}
+            <div 
+              className="product-drag-handle"
+              style={{
+                background: 'rgba(15, 23, 42, 0.9)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.22)',
+                padding: '0.2rem 0.45rem',
+                borderRadius: '6px',
+                fontSize: '0.66rem',
+                fontWeight: 700,
+                color: '#93C5FD',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.2rem',
+                cursor: 'grab',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+              }}
+              title="Glissez-déposez cet article sur un rayon à gauche pour le reclasser"
+            >
+              <GripVertical size={13} />
+              <span>Glisser</span>
+            </div>
+
+            {/* Badge Vidéo */}
+            {product?.videos && product.videos.length > 0 && (
+              <div style={{
+                background: 'rgba(245, 158, 11, 0.92)',
+                backdropFilter: 'blur(8px)',
+                padding: '0.2rem 0.45rem',
+                borderRadius: '6px',
+                fontSize: '0.66rem',
+                fontWeight: 900,
+                color: '#0F172A',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.2rem',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+              }}
+              title={`${product.videos.length} vidéo(s) disponible(s)`}>
+                <Video size={12} />
+                <span>{product.videos.length > 1 ? `${product.videos.length} Vids` : 'Vid'}</span>
+              </div>
+            )}
+
+            {/* Compteur Photos */}
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.9)',
               backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
               padding: '0.2rem 0.5rem',
               borderRadius: '6px',
-              fontSize: '0.66rem',
-              fontWeight: 700,
-              color: '#93C5FD',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              color: 'white',
               display: 'flex',
               alignItems: 'center',
               gap: '0.25rem',
-              zIndex: 6,
-              cursor: 'grab',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
-            }}
-            title="Glissez-déposez cet article sur un rayon à gauche pour le reclasser"
-          >
-            <GripVertical size={13} />
-            <span>Glisser</span>
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <Camera size={12} />
+              <span>{currentImgIdx + 1}/{images.length}</span>
+            </div>
           </div>
 
           {/* ⬅️ PREV BUTTON */}
@@ -204,8 +419,8 @@ export function ProductCard({
                 left: 8,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                width: '36px',
-                height: '36px',
+                width: '34px',
+                height: '34px',
                 borderRadius: '50%',
                 background: 'rgba(15, 23, 42, 0.92)',
                 border: '1.5px solid rgba(255, 255, 255, 0.4)',
@@ -220,7 +435,7 @@ export function ProductCard({
               }}
               title="Photo précédente"
             >
-              <ChevronLeft size={22} />
+              <ChevronLeft size={20} />
             </button>
           )}
 
@@ -233,8 +448,8 @@ export function ProductCard({
                 right: 8,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                width: '36px',
-                height: '36px',
+                width: '34px',
+                height: '34px',
                 borderRadius: '50%',
                 background: 'rgba(15, 23, 42, 0.92)',
                 border: '1.5px solid rgba(255, 255, 255, 0.4)',
@@ -249,58 +464,9 @@ export function ProductCard({
               }}
               title="Photo suivante"
             >
-              <ChevronRight size={22} />
+              <ChevronRight size={20} />
             </button>
           )}
-
-          {/* Top Right: Photos & Videos Counter Badge */}
-          <div style={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            zIndex: 5
-          }}>
-            {product?.videos && product.videos.length > 0 && (
-              <div style={{
-                background: 'rgba(245, 158, 11, 0.92)',
-                backdropFilter: 'blur(8px)',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '8px',
-                fontSize: '0.7rem',
-                fontWeight: 900,
-                color: '#0F172A',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
-              }}
-              title={`${product.videos.length} vidéo(s) disponible(s)`}>
-                <Video size={12} />
-                <span>{product.videos.length > 1 ? `${product.videos.length} Vids` : 'Vid'}</span>
-              </div>
-            )}
-
-            <div style={{
-              background: 'rgba(15, 23, 42, 0.9)',
-              backdropFilter: 'blur(8px)',
-              padding: '0.25rem 0.6rem',
-              borderRadius: '8px',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <Camera size={13} />
-              <span>{currentImgIdx + 1}/{images.length}</span>
-            </div>
-          </div>
 
           {/* Bottom Center: Pagination Dots Indicator */}
           {images.length > 1 && (
@@ -322,16 +488,22 @@ export function ProductCard({
               {images.map((_, i) => (
                 <div 
                   key={i}
-                  onClick={(e) => { e.stopPropagation(); setCurrentImgIdx(i); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setImgLoading(true);
+                    setCurrentImgIdx(i); 
+                  }}
                   style={{
                     width: i === currentImgIdx ? '18px' : '6px',
                     height: '6px',
                     borderRadius: '3px',
-                    background: i === currentImgIdx ? 'var(--blue-light)' : 'rgba(255,255,255,0.4)',
+                    background: failedImages[i] 
+                      ? '#EF4444' 
+                      : (i === currentImgIdx ? 'var(--blue-light)' : 'rgba(255,255,255,0.4)'),
                     transition: 'all 0.3s ease',
                     cursor: 'pointer'
                   }}
-                  title={`Photo ${i + 1}`}
+                  title={failedImages[i] ? `Photo ${i + 1} (inaccessible)` : `Photo ${i + 1}`}
                 />
               ))}
             </div>
@@ -407,19 +579,58 @@ export function ProductCard({
           </div>
         </div>
 
-        <h3 className="product-title" style={{ fontSize: '0.98rem', fontWeight: 800, lineHeight: 1.35 }}>
+        <h3 className="product-title" style={{ fontSize: '0.98rem', fontWeight: 800, lineHeight: 1.35, margin: '0.2rem 0' }}>
           {product?.titleFr || 'Article sans titre'}
         </h3>
-        <p className="product-subtitle" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-          {product?.material || 'Matériau usine certifié'}
-        </p>
+
+        {/* Ligne Matériau + Date et Heure d'Importation (Emplacement Encadré) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: '0.25rem',
+          marginBottom: '0.35rem',
+          gap: '0.4rem'
+        }}>
+          <p className="product-subtitle" style={{
+            fontSize: '0.78rem',
+            color: 'var(--text-secondary)',
+            margin: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: '52%'
+          }}>
+            {product?.material || 'Standard Qualité Usine'}
+          </p>
+
+          {/* 🕒 Horodatage d'Importation / Date & Heure */}
+          <div style={{
+            fontSize: '0.68rem',
+            color: '#34D399',
+            fontWeight: 800,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            padding: '0.15rem 0.45rem',
+            borderRadius: '6px',
+            fontFamily: 'var(--font-mono, monospace)',
+            flexShrink: 0,
+            whiteSpace: 'nowrap'
+          }} title="Date et heure exactes d'importation de l'article">
+            <span style={{ fontSize: '0.72rem' }}>🕒</span>
+            <span>{formatImportDate(product)}</span>
+          </div>
+        </div>
 
         {/* Nom officiel de l'Usine / Fournisseur */}
         <div style={{
           fontSize: '0.72rem',
           color: '#FCD34D',
           fontWeight: 700,
-          marginTop: '0.4rem',
+          marginTop: '0.2rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.35rem',

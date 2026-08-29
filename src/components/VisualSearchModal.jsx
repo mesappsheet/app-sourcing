@@ -108,7 +108,7 @@ export function VisualSearchModal({ isOpen, onClose, onImportProduct, currency, 
       priceCny: 24.00,
       moq: 2,
       rating: 5.0,
-      image: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=600&q=80',
+      image: 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg',
       specs: 'Aluminium usiné CNC • Presse de serrage rapide • Perçage 3 secondes'
     },
 
@@ -126,7 +126,7 @@ export function VisualSearchModal({ isOpen, onClose, onImportProduct, currency, 
       priceCny: 14.80,
       moq: 20,
       rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=600&q=80',
+      image: 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg',
       specs: 'Acier galvanisé 1.5mm • 80 000 cycles • Réglage 3D rapide'
     },
     {
@@ -160,7 +160,7 @@ export function VisualSearchModal({ isOpen, onClose, onImportProduct, currency, 
       priceCny: 4.50,
       moq: 50,
       rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=600&q=80',
+      image: 'https://sc04.alicdn.com/kf/H75691060938f4d92982d61cb570eb947Y.jpg_960x960q80.jpg',
       specs: 'Ouverture sans déport • Piston hydraulique laiton • 80 000 cycles'
     },
     {
@@ -176,7 +176,7 @@ export function VisualSearchModal({ isOpen, onClose, onImportProduct, currency, 
       priceCny: 28.00,
       moq: 10,
       rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=600&q=80',
+      image: 'https://sc04.alicdn.com/kf/H75691060938f4d92982d61cb570eb947Y.jpg_960x960q80.jpg',
       specs: 'Capacité 60 kg / 2 charnières • Réglage hauteur/latéral/profondeur en façade'
     },
 
@@ -246,7 +246,7 @@ export function VisualSearchModal({ isOpen, onClose, onImportProduct, currency, 
       priceCny: 3.20,
       moq: 20,
       rating: 4.8,
-      image: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=600&q=80',
+      image: 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg',
       specs: 'Piston chromé renforcé • Huile aviation haute durabilité • 50 000 cycles'
     }
   ];
@@ -432,8 +432,8 @@ export function VisualSearchModal({ isOpen, onClose, onImportProduct, currency, 
       dimensions: 'Standard Usine Certifié',
       images: [
         item.image,
-        'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80',
-        'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=800&q=80'
+        'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg',
+        'https://sc04.alicdn.com/kf/H75691060938f4d92982d61cb570eb947Y.jpg_960x960q80.jpg'
       ],
       rating: item.rating,
       status: `Sourcé ${item.platform === 'pinduoduo' ? 'Pinduoduo' : 'Alibaba'}`,
@@ -790,7 +790,7 @@ export function VisualSearchModal({ isOpen, onClose, onImportProduct, currency, 
                       style={{ background: '#0B1120', border: '1px solid var(--border-subtle)', padding: '0.45rem 0.8rem', fontSize: '0.72rem' }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        executeScanAnimation('coulisse', 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=600&q=80');
+                        executeScanAnimation('coulisse', 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg');
                       }}
                     >
                       🗄️ Tester Photo Coulisse

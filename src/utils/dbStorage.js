@@ -55,37 +55,52 @@ export function parseProductVideos(videoDemo, videos) {
   return [];
 }
 
-// 💾 Sauvegarde dans Supabase Cloud + IndexedDB locale
+// 💾 Sauvegarde dans Supabase Cloud + IndexedDB locale + LocalStorage
 export async function saveAllProductsToDb(products, workspaceId = 'ws_quincaillerie') {
-  // 1. Sauvegarde Cloud Supabase
-  if (supabase && isSupabaseConfigured && Array.isArray(products) && products.length > 0) {
-    try {
-      const rows = products.map(p => {
-        const productVideos = parseProductVideos(p.videoDemo, p.videos);
-        return {
-          id: p.id,
-          workspace_id: p.workspaceId || workspaceId,
-          sku: p.sku || 'SKU-001',
-          title_fr: p.titleFr || 'Article',
-          title_cn: p.titleCn || '',
-          category: p.category || 'all',
-          material: p.material || '',
-          dimensions: p.dimensions || '',
-          images: p.images || [],
-          video_demo: productVideos.length > 0 ? JSON.stringify(productVideos) : null,
-          specifications: p.specifications || [],
-          factory_name: p.factoryName || '',
-          factory_city: p.factoryCity || '',
-          tier_pricing: p.tierPricing || [],
-          moq: p.moq || '1 pièce',
-          suppliers: p.suppliers || [],
-          price_cny: parseFloat(p.priceCny) || 0,
-          unit: p.unit || 'Pièce (pc)',
-          source_url: p.sourceUrl || ''
-        };
-      });
+  const safeList = Array.isArray(products) ? products : [];
 
-      await supabase.from('products').upsert(rows);
+  // 0. Sauvegarde synchrone immédiate dans LocalStorage
+  try {
+    localStorage.setItem(`ws_products_${workspaceId}`, JSON.stringify(safeList));
+    if (workspaceId === 'ws_quincaillerie') {
+      localStorage.setItem('quin_source_products', JSON.stringify(safeList));
+    }
+  } catch (e) {}
+
+  // 1. Sauvegarde Cloud Supabase
+  if (supabase && isSupabaseConfigured) {
+    try {
+      if (safeList.length === 0) {
+        await supabase.from('products').delete().eq('workspace_id', workspaceId);
+        console.log(`✅ Tous les produits de l'espace ${workspaceId} ont été purgés de Supabase`);
+      } else {
+        const rows = safeList.map(p => {
+          const productVideos = parseProductVideos(p.videoDemo, p.videos);
+          return {
+            id: p.id,
+            workspace_id: p.workspaceId || workspaceId,
+            sku: p.sku || 'SKU-001',
+            title_fr: p.titleFr || 'Article',
+            title_cn: p.titleCn || '',
+            category: p.category || 'all',
+            material: p.material || '',
+            dimensions: p.dimensions || '',
+            images: p.images || [],
+            video_demo: productVideos.length > 0 ? JSON.stringify(productVideos) : null,
+            specifications: p.specifications || [],
+            factory_name: p.factoryName || '',
+            factory_city: p.factoryCity || '',
+            tier_pricing: p.tierPricing || [],
+            moq: p.moq || '1 pièce',
+            suppliers: p.suppliers || [],
+            price_cny: parseFloat(p.priceCny) || 0,
+            unit: p.unit || 'Pièce (pc)',
+            source_url: p.sourceUrl || ''
+          };
+        });
+
+        await supabase.from('products').upsert(rows);
+      }
     } catch (sbErr) {
       console.warn('Erreur synchronisation Supabase:', sbErr);
     }
@@ -103,7 +118,7 @@ export async function saveAllProductsToDb(products, workspaceId = 'ws_quincaille
       clearReq.onerror = reject;
     });
 
-    for (const prod of products) {
+    for (const prod of safeList) {
       store.put(prod);
     }
 
@@ -118,6 +133,8 @@ export async function saveAllProductsToDb(products, workspaceId = 'ws_quincaille
 
 // 📥 Chargement depuis Supabase Cloud (Priorité absolue) ou IndexedDB locale
 export async function loadAllProductsFromDb(workspaceId = 'ws_quincaillerie') {
+  const deletedSet = getDeletedProductIds();
+
   // 1. Essai de chargement depuis Supabase Cloud
   if (supabase && isSupabaseConfigured) {
     try {
@@ -127,31 +144,37 @@ export async function loadAllProductsFromDb(workspaceId = 'ws_quincaillerie') {
         .eq('workspace_id', workspaceId);
 
       if (!error && data && Array.isArray(data) && data.length > 0) {
-        return data.map(r => {
-          const vids = parseProductVideos(r.video_demo, r.videos);
-          return {
-            id: r.id,
-            workspaceId: r.workspace_id,
-            sku: r.sku,
-            titleFr: r.title_fr,
-            titleCn: r.title_cn,
-            category: (r.category && r.category !== 'all') ? r.category : 'inbox',
-            material: r.material,
-            dimensions: r.dimensions,
-            images: r.images || [],
-            videos: vids,
-            videoDemo: vids[0] || (r.video_demo && typeof r.video_demo === 'string' && !r.video_demo.startsWith('[') ? r.video_demo : null),
-            specifications: r.specifications || [],
-            factoryName: r.factory_name,
-            factoryCity: r.factory_city,
-            tierPricing: r.tier_pricing || [],
-            moq: r.moq,
-            suppliers: r.suppliers || [],
-            priceCny: r.price_cny,
-            unit: r.unit,
-            sourceUrl: r.source_url
-          };
-        });
+        return data
+          .filter(r => !deletedSet.has(r.id))
+          .map(r => {
+            const vids = parseProductVideos(r.video_demo, r.videos);
+            return {
+              id: r.id,
+              workspaceId: r.workspace_id,
+              sku: r.sku,
+              titleFr: r.title_fr,
+              titleCn: r.title_cn,
+              category: (r.category && r.category !== 'all') ? r.category : 'inbox',
+              material: r.material,
+              dimensions: r.dimensions,
+              images: r.images || [],
+              videos: vids,
+              videoDemo: vids[0] || (r.video_demo && typeof r.video_demo === 'string' && !r.video_demo.startsWith('[') ? r.video_demo : null),
+              specifications: r.specifications || [],
+              factoryName: r.factory_name,
+              factoryCity: r.factory_city,
+              tierPricing: r.tier_pricing || [],
+              moq: r.moq,
+              suppliers: r.suppliers || [],
+              priceCny: r.price_cny,
+              unit: r.unit,
+              sourceUrl: r.source_url,
+              createdAt: r.created_at,
+              updatedAt: r.updated_at,
+              injectedAt: r.created_at,
+              injectedAtFormatted: r.created_at ? new Date(r.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null
+            };
+          });
       }
     } catch (sbErr) {
       console.warn('Erreur chargement Supabase:', sbErr);
@@ -166,7 +189,10 @@ export async function loadAllProductsFromDb(workspaceId = 'ws_quincaillerie') {
 
     return new Promise((resolve, reject) => {
       const request = store.getAll();
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => {
+        const items = request.result || [];
+        resolve(items.filter(item => !deletedSet.has(item.id)));
+      };
       request.onerror = () => reject(request.error);
     });
   } catch (err) {
@@ -234,15 +260,71 @@ export async function loadCategoriesFromDb(workspaceId = 'ws_quincaillerie') {
   return null;
 }
 
-// 🗑️ Suppression d'un produit dans Supabase Cloud & IndexedDB
-export async function deleteProductFromDb(productId) {
-  if (supabase && isSupabaseConfigured && productId) {
+// 🗑️ GESTION DU REGISTRE DES SUPPRESSIONS DÉFINITIVES (TOMBSTONES)
+export function getDeletedProductIds() {
+  try {
+    const raw = localStorage.getItem('quin_source_deleted_ids');
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch (e) {
+    return new Set();
+  }
+}
+
+export function markProductAsDeleted(productId) {
+  if (!productId) return;
+  try {
+    const raw = localStorage.getItem('quin_source_deleted_ids');
+    const list = raw ? JSON.parse(raw) : [];
+    if (!list.includes(productId)) {
+      list.push(productId);
+      localStorage.setItem('quin_source_deleted_ids', JSON.stringify(list));
+    }
+  } catch (e) {}
+}
+
+export function unmarkProductAsDeleted(productId) {
+  if (!productId) return;
+  try {
+    const raw = localStorage.getItem('quin_source_deleted_ids');
+    if (raw) {
+      const list = JSON.parse(raw);
+      const filtered = list.filter(id => id !== productId);
+      localStorage.setItem('quin_source_deleted_ids', JSON.stringify(filtered));
+    }
+  } catch (e) {}
+}
+
+// 🗑️ Suppression d'un produit dans Supabase Cloud & IndexedDB & Disque
+export async function deleteProductFromDb(productId, workspaceId = 'ws_quincaillerie') {
+  if (!productId) return;
+
+  // 1. Enregistrement immédiat dans la liste noire des suppressions
+  markProductAsDeleted(productId);
+
+  // 2. Suppression Cloud Supabase
+  if (supabase && isSupabaseConfigured) {
     try {
       await supabase.from('products').delete().eq('id', productId);
+      console.log('✅ Produit supprimé de Supabase Cloud:', productId);
     } catch (e) {
       console.warn('Erreur suppression Supabase:', e);
     }
   }
+
+  // 3. Suppression locale IndexedDB
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction([STORE_PRODUCTS], 'readwrite');
+    const store = tx.objectStore(STORE_PRODUCTS);
+    store.delete(productId);
+  } catch (err) {
+    console.warn('Erreur suppression IndexedDB:', err);
+  }
+
+  // 4. Suppression sur le disque serveur
+  try {
+    fetch(`/api/products-db?deleteId=${encodeURIComponent(productId)}`, { method: 'DELETE' }).catch(() => {});
+  } catch (e) {}
 }
 
 // 📦 Déplacement atomique d'un produit vers une catégorie / sous-catégorie

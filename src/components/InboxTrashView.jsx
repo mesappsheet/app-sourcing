@@ -208,8 +208,8 @@ export function InboxTrashView({
             const data = item.data || {};
             const isVideo = isProduct ? data.hasVideoDemo : (data.type === 'video');
             const thumbUrl = isProduct 
-              ? (data.images?.[0] || 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=600')
-              : (data.poster || data.url || 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=600');
+              ? (data.images?.[0] || 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg')
+              : (data.poster || data.url || 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg');
 
             const itemTitle = isProduct ? (data.titleFr || 'Article sans titre') : (data.title || 'Média sans titre');
 

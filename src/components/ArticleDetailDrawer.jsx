@@ -27,6 +27,7 @@ import {
 import { MultiSupplierComparator } from './MultiSupplierComparator';
 import { ProductGallery } from './ProductGallery';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { formatImportDate } from './ProductCard';
 
 export function ArticleDetailDrawer({ 
   product, 
@@ -374,6 +375,20 @@ export function ArticleDetailDrawer({
                 </span>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                   SKU: {product.sku}
+                </span>
+                <span style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  color: '#34D399',
+                  padding: '0.15rem 0.55rem',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem'
+                }} title="Date et heure exactes d'importation de l'article">
+                  🕒 Importé le {formatImportDate(product)}
                 </span>
                 {isDuplicate && (
                   <span className="duplicate-badge">

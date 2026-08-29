@@ -25,7 +25,7 @@ export function CrossSourcingStore({ factory, onImportProduct, formatPrice }) {
       category: 'coulisses',
       priceCny: 18.20,
       moq: 50,
-      image: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=600&q=80',
+      image: 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg',
       galleryCount: 5,
       material: 'Acier Galvanisé / Mécanisme Double Ressort',
       specs: 'Ouverture sans poignée + fermeture douce 2-en-1'
@@ -49,7 +49,7 @@ export function CrossSourcingStore({ factory, onImportProduct, formatPrice }) {
       category: 'charnieres',
       priceCny: 3.20,
       moq: 100,
-      image: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=600&q=80',
+      image: 'https://sc04.alicdn.com/kf/H75691060938f4d92982d61cb570eb947Y.jpg_960x960q80.jpg',
       galleryCount: 3,
       material: 'Corps Aluminium et Aimant Néodyme',
       specs: 'Course d\'éjection 45mm pour portes lourdes'
@@ -88,7 +88,7 @@ export function CrossSourcingStore({ factory, onImportProduct, formatPrice }) {
         weightCapacity: 'Standard Pro Usine',
         dimensions: 'Standards Fabricant',
         icon: '📦',
-        images: [item.image, 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80'],
+        images: [item.image, 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg'],
         rating: 4.9,
         status: 'Sourcé Cross-Boutique',
         hasVideoDemo: true,

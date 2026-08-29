@@ -7,7 +7,10 @@ import {
   FolderCog, 
   Layers, 
   Zap,
-  Inbox
+  Inbox,
+  Loader2,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 
 import { CATEGORIES, DEFAULT_CATEGORIES_TREE, INITIAL_PRODUCTS, DEFAULT_SETTINGS } from './data/catalogData';
@@ -36,8 +39,12 @@ import {
   saveCategoriesToDb,
   loadCategoriesFromDb,
   syncProductsToServerDisk, 
-  loadProductsFromServerDisk 
+  loadProductsFromServerDisk,
+  getDeletedProductIds,
+  markProductAsDeleted,
+  unmarkProductAsDeleted
 } from './utils/dbStorage';
+import { preloadAndCacheCatalog, cacheProductImagesAndVideos } from './utils/indexedMediaDB';
 import { supabase, isSupabaseConfigured } from './utils/supabaseClient';
 
 export function App() {
@@ -59,22 +66,34 @@ export function App() {
     return saved || 'ws_quincaillerie';
   });
 
-  // 📦 2. BASE DE DONNÉES DES ARTICLES PAR ESPACE (Isolation Totale)
+  // 🧹 PURGE AUTOMATIQUE DU VIEUX CACHE OBSOLÈTE (Base 100% Vierge & Zéro Résidu)
+  const APP_DATA_VERSION = 'v5.0_clean_empty_database_2026';
+  try {
+    if (localStorage.getItem('app_data_version') !== APP_DATA_VERSION) {
+      localStorage.removeItem('quin_source_products');
+      localStorage.removeItem('ws_products_ws_quincaillerie');
+      localStorage.removeItem('ws_products_ws_cuisines');
+      localStorage.removeItem('ws_products_ws_outillage');
+      localStorage.removeItem('ws_products_ws_electromenager');
+      localStorage.removeItem('ws_products_ws_vetements');
+      localStorage.removeItem('ws_products_ws_chaussures');
+      localStorage.removeItem('ws_products_ws_electronique');
+      localStorage.removeItem('ws_products_ws_mobilier');
+      localStorage.removeItem('quin_source_latest_import');
+      localStorage.setItem('app_data_version', APP_DATA_VERSION);
+      try {
+        indexedDB.deleteDatabase('QuinSourceDossiersDB');
+        indexedDB.deleteDatabase('AppSourcingMediaDB');
+      } catch (idbErr) {}
+    }
+  } catch (e) {}
+
+  // 📦 2. BASE DE DONNÉES DES ARTICLES PAR ESPACE (Démarrage 100% Vierge / Source Cloud Unifiée)
   const [allProductsByWs, setAllProductsByWs] = useState(() => {
     const map = {};
-    
-    // Charger le workspace Quincaillerie avec les données existantes (0 perte)
-    const savedQuin = localStorage.getItem('quin_source_products');
-    map.ws_quincaillerie = savedQuin ? JSON.parse(savedQuin) : INITIAL_PRODUCTS;
-
-    // Charger les autres workspaces
     INITIAL_WORKSPACES.forEach(ws => {
-      if (ws.id !== 'ws_quincaillerie') {
-        const savedWs = localStorage.getItem(`ws_products_${ws.id}`);
-        map[ws.id] = savedWs ? JSON.parse(savedWs) : [];
-      }
+      map[ws.id] = [];
     });
-
     return map;
   });
 
@@ -108,6 +127,13 @@ export function App() {
   
 
   
+  // 📥 Téléchargement & Mise en cache automatique des photos/vidéos dans IndexedDB
+  useEffect(() => {
+    if (products && products.length > 0) {
+      preloadAndCacheCatalog(products);
+    }
+  }, [activeWorkspaceId, products?.length]);
+
   const categories = allCategoriesByWs[activeWorkspaceId] || CATEGORIES;
 
   const [currentTab, setCurrentTab] = useState('catalog');
@@ -165,6 +191,8 @@ export function App() {
   // 🎬 Section Photos & Vidéos Capturées du Magasin d'Arrivage
   const [inboxSubTab, setInboxSubTab] = useState('products'); // 'products' | 'media'
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSyncingExtension, setIsSyncingExtension] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState(null); // null | 'success' | 'empty'
 
   const [capturedMedia, setCapturedMedia] = useState(() => {
     try {
@@ -285,13 +313,28 @@ export function App() {
       deletedAt: new Date().toISOString(),
       data: product
     };
-    setAllProductsByWs(prev => ({
-      ...prev,
-      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).filter(p => p.id !== product.id)
-    }));
+    
+    setAllProductsByWs(prev => {
+      const remaining = (prev[activeWorkspaceId] || []).filter(p => p.id !== product.id);
+      saveAllProductsToDb(remaining, activeWorkspaceId);
+      return {
+        ...prev,
+        [activeWorkspaceId]: remaining
+      };
+    });
+
+    // ⚡ Suppression immédiate dans Supabase Cloud & IndexedDB
+    deleteProductFromDb(product.id);
+
+    // 🧹 Nettoyage de tout cache d'import résiduel
+    try {
+      localStorage.removeItem('quin_source_latest_import');
+      fetch('/api/import-live?consume=true').catch(() => {});
+    } catch (e) {}
+
     setTrashedItems(prev => [trashEntry, ...prev]);
     if (selectedProduct?.id === product.id) setSelectedProduct(null);
-    showToast(`🗑️ Article « ${product.titleFr} » placé dans la Corbeille.`);
+    showToast(`🗑️ Article « ${product.titleFr} » supprimé (placé dans la Corbeille).`);
   };
 
   // Restauration d'un élément depuis la Corbeille
@@ -299,10 +342,21 @@ export function App() {
     if (trashEntry.itemType === 'media') {
       setCapturedMedia(prev => [trashEntry.data, ...prev]);
     } else if (trashEntry.itemType === 'product') {
-      setAllProductsByWs(prev => ({
-        ...prev,
-        [activeWorkspaceId]: [trashEntry.data, ...(prev[activeWorkspaceId] || [])]
-      }));
+      const restored = trashEntry.data;
+      if (restored && restored.id) {
+        unmarkProductAsDeleted(restored.id);
+      }
+      setAllProductsByWs(prev => {
+        const current = prev[activeWorkspaceId] || [];
+        const updated = [restored, ...current.filter(p => p.id !== restored.id)];
+        saveAllProductsToDb(updated, activeWorkspaceId);
+        return {
+          ...prev,
+          [activeWorkspaceId]: updated
+        };
+      });
+      // ⚡ Restauration dans Supabase Cloud
+      saveProductToDb(restored, activeWorkspaceId);
     }
     setTrashedItems(prev => prev.filter(i => i.trashId !== trashEntry.trashId));
     showToast(`♻️ « ${trashEntry.data?.titleFr || trashEntry.data?.title || 'Élément'} » restauré dans le Magasin d'Arrivage !`);
@@ -379,7 +433,7 @@ export function App() {
         categoryIcon: '📥',
         images: (Array.isArray(media.productData.images) && media.productData.images.length > 0)
           ? media.productData.images
-          : (media.poster ? [media.poster] : (media.url ? [media.url] : ['https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80'])),
+          : (media.poster ? [media.poster] : (media.url ? [media.url] : ['https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg'])),
         specifications: media.productData.specifications || media.specifications || [],
         tierPricing: media.productData.tierPricing || media.tierPricing || [],
         factoryName: media.productData.factoryName || media.factoryName || 'Fournisseur Vérifié Chine',
@@ -422,7 +476,7 @@ export function App() {
       priceFcfa: media.priceFcfa || 36,
       basePriceCny: media.priceCny || 0.42,
       moq: media.moq || 50000,
-      images: posterImg ? [posterImg] : ['https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800'],
+      images: posterImg ? [posterImg] : ['https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg'],
       videos: isVideo ? [media.url] : [],
       hasVideoDemo: isVideo,
       videoDemo: isVideo ? { 
@@ -482,7 +536,14 @@ export function App() {
       try {
         // 1. Essai de chargement prioritaire depuis Supabase Cloud
         const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
-        if (cloudProducts && cloudProducts.length > 0 && isMounted) {
+        if (cloudProducts && Array.isArray(cloudProducts) && isMounted) {
+          try {
+            localStorage.setItem(`ws_products_${activeWorkspaceId}`, JSON.stringify(cloudProducts));
+            if (activeWorkspaceId === 'ws_quincaillerie') {
+              localStorage.setItem('quin_source_products', JSON.stringify(cloudProducts));
+            }
+          } catch (e) {}
+
           setAllProductsByWs(prev => ({
             ...prev,
             [activeWorkspaceId]: cloudProducts
@@ -494,6 +555,10 @@ export function App() {
         // 2. Essai de chargement depuis le fichier disque serveur
         const serverProducts = await loadProductsFromServerDisk();
         if (serverProducts && serverProducts.length > 0 && isMounted) {
+          try {
+            localStorage.setItem('quin_source_products', JSON.stringify(serverProducts));
+          } catch (e) {}
+
           setAllProductsByWs(prev => ({
             ...prev,
             ws_quincaillerie: serverProducts
@@ -509,8 +574,6 @@ export function App() {
             ...prev,
             [activeWorkspaceId]: dbProducts
           }));
-        } else if (isMounted) {
-          saveAllProductsToDb(INITIAL_PRODUCTS, 'ws_quincaillerie');
         }
       } finally {
         if (isMounted) setIsInitialLoadDone(true);
@@ -683,13 +746,62 @@ export function App() {
 
     let targetProduct;
 
+    // 🌟 0. GESTION DE LA CRÉATION INSTANTANÉE D'UN NOUVEAU RAYON / SOUS-CATÉGORIE
+    const targetWs = parsedData.targetWorkspaceId || parsedData.workspaceId || activeWorkspaceId;
+    const effectiveCategory = (parsedData.category && parsedData.category !== 'inbox') ? parsedData.category : 'inbox';
+    const effectiveCatName = parsedData.categoryName || (effectiveCategory === 'inbox' ? "Magasin d'Arrivage" : effectiveCategory);
+    const effectiveCatIcon = parsedData.categoryIcon || (effectiveCategory === 'inbox' ? '📥' : '📦');
+
+    if (parsedData.newCategory && parsedData.newCategory.id && parsedData.newCategory.name) {
+      const newCat = parsedData.newCategory;
+
+      setAllCategoriesByWs(prevCats => {
+        const currentWsCats = prevCats[targetWs] || CATEGORIES;
+        const clonedTree = JSON.parse(JSON.stringify(currentWsCats));
+
+        let alreadyExists = false;
+        clonedTree.forEach(group => {
+          if (group.subCategories && group.subCategories.some(sub => sub.id === newCat.id)) {
+            alreadyExists = true;
+          }
+        });
+
+        if (!alreadyExists) {
+          const targetGroup = clonedTree.find(g => !g.isInbox && g.id !== 'inbox') || clonedTree[1] || clonedTree[0];
+          if (targetGroup) {
+            if (!targetGroup.subCategories) targetGroup.subCategories = [];
+            targetGroup.subCategories.push({
+              id: newCat.id,
+              name: newCat.name,
+              icon: newCat.icon || '📦'
+            });
+          }
+        }
+
+        try {
+          localStorage.setItem(`ws_categories_${targetWs}`, JSON.stringify(clonedTree));
+          if (targetWs === 'ws_quincaillerie') {
+            localStorage.setItem('quin_source_categories', JSON.stringify(clonedTree));
+          }
+        } catch (e) {}
+
+        return {
+          ...prevCats,
+          [targetWs]: clonedTree
+        };
+      });
+    }
+
     if (existingIndex >= 0) {
       // MISE À JOUR DE L'ARTICLE EXISTANT (Anti-Doublon Garanti)
       const oldProd = currentList[existingIndex];
       targetProduct = {
         ...oldProd,
+        workspaceId: targetWs,
         titleFr: rawTitle,
-        category: 'inbox',
+        category: effectiveCategory,
+        categoryName: effectiveCatName,
+        categoryIcon: effectiveCatIcon,
         priceFcfa: basePriceFcfa,
         priceCny: priceCny,
         basePriceFcfa: basePriceFcfa,
@@ -702,19 +814,25 @@ export function App() {
         factoryName: cleanCompany || oldProd.factoryName,
         factoryCity: cleanCity || oldProd.factoryCity,
         hasVideoDemo: hasRealVideo,
-        videos: hasRealVideo ? [parsedData.videoUrl] : []
+        videos: hasRealVideo ? [parsedData.videoUrl] : [],
+        updatedAt: new Date().toISOString(),
+        injectedAt: parsedData.injectedAt || new Date().toISOString(),
+        injectedAtFormatted: parsedData.injectedAtFormatted || new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
       };
     } else {
       // CRÉATION D'UN NOUVEL ARTICLE UNIQUE
+      const nowIso = new Date().toISOString();
+      const formattedDate = new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const sku = `IMP-${Date.now().toString().slice(-4)}`;
       targetProduct = {
         id: `prod-${Date.now()}`,
         sku,
+        workspaceId: targetWs,
         titleFr: rawTitle,
         titleCn: parsedData.titleCn || '',
-        category: 'inbox',
-        categoryName: 'Magasin d\'Arrivage',
-        categoryIcon: '📥',
+        category: effectiveCategory,
+        categoryName: effectiveCatName,
+        categoryIcon: effectiveCatIcon,
         material: parsedData.material || 'Standard Qualité Usine',
         dimensions: parsedData.dimensions || 'Standard Pro Export',
         images: finalImages,
@@ -754,31 +872,57 @@ export function App() {
         priceCny: priceCny,
         priceFcfa: basePriceFcfa,
         unit: parsedData.unit || 'Pièce (pc)',
-        sourceUrl: parsedData.url || parsedData.sourceUrl || ''
+        sourceUrl: parsedData.url || parsedData.sourceUrl || '',
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        injectedAt: parsedData.injectedAt || nowIso,
+        injectedAtFormatted: parsedData.injectedAtFormatted || formattedDate
       };
     }
 
     setAllProductsByWs(prev => {
-      const list = prev[activeWorkspaceId] || [];
+      const list = prev[targetWs] || [];
       const withoutTarget = list.filter(p => p.id !== targetProduct.id && normalizeUrl(p.sourceUrl) !== cleanSourceUrl);
       const updatedList = [targetProduct, ...withoutTarget];
-      saveAllProductsToDb(updatedList, activeWorkspaceId);
+      saveAllProductsToDb(updatedList, targetWs);
       return {
         ...prev,
-        [activeWorkspaceId]: updatedList
+        [targetWs]: updatedList
       };
     });
 
-    // ⚡ Sauvegarde directe Supabase Cloud
-    saveProductToDb(targetProduct, activeWorkspaceId);
+    if (targetWs !== activeWorkspaceId) {
+      setActiveWorkspaceId(targetWs);
+    }
 
-    // ⚡ Basculer immédiatement sur l'onglet Magasin d'Arrivage > Articles en Attente
+    // ⚡ Sauvegarde directe Supabase Cloud
+    saveProductToDb(targetProduct, targetWs);
+
+    // 📥 Téléchargement & Mise en cache locale automatique de toutes les photos & vidéos
+    cacheProductImagesAndVideos(targetProduct);
+
+    // 🧹 Nettoyage de la file d'attente pour éliminer les anciennes données
+    try {
+      localStorage.removeItem('quin_source_latest_import');
+      fetch('/api/import-live?consume=true').catch(() => {});
+    } catch (e) {}
+
+    // ⚡ Basculer sur le bon onglet et afficher la notification
     setCurrentTab('catalog');
-    setSelectedCategory('inbox');
-    setInboxSubTab('products');
+    setSelectedCategory(effectiveCategory);
+    if (effectiveCategory === 'inbox') {
+      setInboxSubTab('products');
+    }
     setSearchQuery('');
     setSelectedProduct(targetProduct);
-    showToast(`🎉 « ${targetProduct.titleFr.slice(0, 35)}... » placé dans vos « Articles en Attente » !`);
+
+    if (parsedData.newCategory) {
+      showToast(`✨ Nouveau rayon « ${effectiveCatName} » créé et « ${targetProduct.titleFr.slice(0, 26)}... » classé dedans !`);
+    } else if (effectiveCategory !== 'inbox') {
+      showToast(`🚀 « ${targetProduct.titleFr.slice(0, 26)}... » classé dans « ${effectiveCatName} » !`);
+    } else {
+      showToast(`🎉 « ${targetProduct.titleFr.slice(0, 26)}... » réceptionné dans le Magasin d'Arrivage !`);
+    }
     return true;
   };
 
@@ -804,7 +948,7 @@ export function App() {
 
   // ⚡ ÉCOUTEURS GLOBAUX EN DIRECT (Mémoire, CustomEvents, Polling & LocalStorage)
   useEffect(() => {
-    let lastSeen = Date.now() - 3000;
+    let lastSeen = Date.now();
 
     // 1. Écoute des messages directs envoyés dans l'onglet (Produits & Médias)
     const handleWindowMessage = (e) => {
@@ -867,7 +1011,64 @@ export function App() {
           }
         }
       } catch (e) {}
-    }, 1000);
+
+      // Supabase Cloud live inbox check
+      if (supabase && isSupabaseConfigured) {
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('workspace_id', activeWorkspaceId)
+            .eq('category', 'inbox');
+
+          if (!error && data && Array.isArray(data) && data.length > 0) {
+            setAllProductsByWs(prev => {
+              const currentList = prev[activeWorkspaceId] || [];
+              const currentIds = new Set(currentList.map(p => p.id));
+              const newItems = data.filter(d => !currentIds.has(d.id)).map(r => ({
+                id: r.id,
+                workspaceId: r.workspace_id,
+                sku: r.sku,
+                titleFr: r.title_fr,
+                titleCn: r.title_cn,
+                category: 'inbox',
+                categoryName: 'Magasin d\'Arrivage',
+                categoryIcon: '📥',
+                material: r.material || 'Standard Qualité Usine',
+                dimensions: r.dimensions || '',
+                images: r.images || [],
+                videos: typeof r.video_demo === 'string' && r.video_demo.startsWith('[') ? JSON.parse(r.video_demo) : [],
+                specifications: r.specifications || [],
+                factoryName: r.factory_name,
+                factoryCity: r.factory_city,
+                tierPricing: r.tier_pricing || [],
+                moq: r.moq,
+                suppliers: r.suppliers || [],
+                priceCny: r.price_cny,
+                priceFcfa: Math.round((r.price_cny || 0) * 85),
+                unit: r.unit || 'Pièce (pc)',
+                sourceUrl: r.source_url,
+                createdAt: r.created_at,
+                injectedAt: r.created_at,
+                injectedAtFormatted: r.created_at ? new Date(r.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null
+              }));
+
+              if (newItems.length > 0) {
+                setSelectedCategory('inbox');
+                setInboxSubTab('products');
+                setSelectedProduct(newItems[0]);
+                showToast(`🎉 « ${newItems[0].titleFr.slice(0, 30)}... » réceptionné dans le Magasin d'Arrivage !`);
+                return {
+                  ...prev,
+                  [activeWorkspaceId]: [...newItems, ...currentList]
+                };
+              }
+              return prev;
+            });
+          }
+        } catch (sbErr) {}
+      }
+    }, 1500);
 
     return () => {
       window.removeEventListener('message', handleWindowMessage);
@@ -876,24 +1077,6 @@ export function App() {
       clearInterval(interval);
     };
   }, [activeWorkspaceId]);
-
-  // 💾 SAUVEGARDE PERMANENTE DES ARTICLES PAR ESPACE (Actif seulement après chargement)
-  useEffect(() => {
-    if (!isInitialLoadDone || !allProductsByWs) return;
-
-    // Sauvegarder l'espace actif
-    const currentProds = allProductsByWs[activeWorkspaceId] || [];
-    try {
-      localStorage.setItem(`ws_products_${activeWorkspaceId}`, JSON.stringify(currentProds));
-      saveAllProductsToDb(currentProds, activeWorkspaceId);
-      if (activeWorkspaceId === 'ws_quincaillerie') {
-        localStorage.setItem('quin_source_products', JSON.stringify(currentProds));
-        syncProductsToServerDisk(currentProds);
-      }
-    } catch (e) {
-      console.warn('LocalStorage error:', e);
-    }
-  }, [allProductsByWs, activeWorkspaceId, isInitialLoadDone]);
 
   // 💾 SAUVEGARDE DES RAYONS PAR ESPACE
   useEffect(() => {
@@ -1318,6 +1501,24 @@ export function App() {
     showToast(`🗑️ « ${prod?.titleFr || 'L\'article'} » a été supprimé de la base.`);
   };
 
+  const handleWipeAllProducts = () => {
+    if (window.confirm("⚠️ Voulez-vous vraiment vider TOUT le catalogue (remettre la base à 0 article) ?")) {
+      setAllProductsByWs(prev => {
+        saveAllProductsToDb([], activeWorkspaceId);
+        return {
+          ...prev,
+          [activeWorkspaceId]: []
+        };
+      });
+      try {
+        localStorage.removeItem('quin_source_products');
+        localStorage.removeItem(`ws_products_${activeWorkspaceId}`);
+      } catch (e) {}
+      setSelectedProduct(null);
+      showToast("🧹 Le catalogue a été entièrement remis à zéro (0 article).");
+    }
+  };
+
   const handleOpenEditModal = (prod) => {
     setEditingProduct(prod);
     setIsEditModalOpen(true);
@@ -1502,6 +1703,7 @@ export function App() {
         setTheme={(th) => setSettings(s => ({ ...s, theme: th }))}
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onOpenSettingsModal={() => setIsSettingsOpen(true)}
+        onWipeAllProducts={handleWipeAllProducts}
         articlesCount={products.length}
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
@@ -1565,61 +1767,156 @@ export function App() {
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button 
                 className="nav-btn"
+                disabled={isSyncingExtension}
                 style={{
-                  background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(16, 185, 129, 0.2))',
-                  border: '1px solid #10B981',
-                  color: '#34D399',
-                  padding: '0.6rem 1rem',
+                  background: syncFeedback === 'success' 
+                    ? 'rgba(16, 185, 129, 0.25)' 
+                    : (syncFeedback === 'empty' 
+                      ? 'rgba(245, 158, 11, 0.2)' 
+                      : (isSyncingExtension ? 'rgba(59, 130, 246, 0.25)' : 'linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(16, 185, 129, 0.2))')),
+                  border: syncFeedback === 'success' 
+                    ? '1.5px solid #10B981' 
+                    : (syncFeedback === 'empty' 
+                      ? '1.5px solid #F59E0B' 
+                      : (isSyncingExtension ? '1.5px solid #3B82F6' : '1.5px solid #10B981')),
+                  color: syncFeedback === 'success' 
+                    ? '#6EE7B7' 
+                    : (syncFeedback === 'empty' 
+                      ? '#FCD34D' 
+                      : (isSyncingExtension ? '#93C5FD' : '#34D399')),
+                  padding: '0.6rem 1.1rem',
                   fontWeight: 800,
                   fontSize: '0.82rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.4rem',
-                  cursor: 'pointer'
+                  gap: '0.45rem',
+                  cursor: isSyncingExtension ? 'wait' : 'pointer',
+                  borderRadius: '8px',
+                  boxShadow: syncFeedback === 'success' ? '0 0 15px rgba(16, 185, 129, 0.4)' : (isSyncingExtension ? '0 0 15px rgba(59, 130, 246, 0.4)' : 'none'),
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  userSelect: 'none'
                 }}
                 onClick={async () => {
+                  if (isSyncingExtension) return;
+                  setIsSyncingExtension(true);
+                  setSyncFeedback(null);
+
                   try {
-                    // 1. Priorité 1 : Vérifier le dernier import en direct dans LocalStorage
+                    showToast("⏳ Interrogation en direct de Supabase Cloud & Extension...");
+
+                    // 1. Priorité 1 : Vérifier le serveur local /api/import-live avec Timeout de 600ms
+                    try {
+                      const controller = new AbortController();
+                      const timer = setTimeout(() => controller.abort(), 600);
+                      const res = await fetch('/api/import-live?consume=true', { signal: controller.signal });
+                      clearTimeout(timer);
+                      if (res.ok) {
+                        const liveData = await res.json();
+                        if (liveData && (liveData.titleFr || liveData.title || liveData.url)) {
+                          handleImportFromExtension(liveData);
+                          setSyncFeedback('success');
+                          setTimeout(() => setSyncFeedback(null), 3000);
+                          return;
+                        }
+                      }
+                    } catch (e) {}
+
+                    // 2. Priorité 2 : Vérifier le dernier import dans LocalStorage
                     const rawSaved = localStorage.getItem('quin_source_latest_import');
                     if (rawSaved) {
                       try {
                         const saved = JSON.parse(rawSaved);
                         if (saved && (saved.titleFr || saved.title || saved.sku)) {
+                          localStorage.removeItem('quin_source_latest_import');
                           handleImportFromExtension(saved);
+                          setSyncFeedback('success');
+                          setTimeout(() => setSyncFeedback(null), 3000);
                           return;
                         }
                       } catch (e) {}
                     }
 
-                    // 2. Priorité 2 : Vérifier le presse-papier copié par l'extension
-                    try {
-                      const text = await navigator.clipboard.readText();
-                      if (text && (text.includes('titleFr') || text.includes('alibaba.com') || text.includes('specifications') || text.includes('IMP-') || text.includes('title'))) {
-                        if (handleImportFromExtension(text)) return;
-                      }
-                    } catch (e) {}
-
-                    // 3. Priorité 3 : Synchronisation Cloud Supabase
-                    showToast("⏳ Synchronisation Supabase Cloud...");
+                    // 3. Priorité 3 : Interrogation Directe Supabase Cloud (Espace Actif & Global)
                     const cloudProducts = await loadAllProductsFromDb(activeWorkspaceId);
                     if (cloudProducts && cloudProducts.length > 0) {
                       setAllProductsByWs(prev => ({
                         ...prev,
                         [activeWorkspaceId]: cloudProducts
                       }));
-                      showToast(`✅ ${cloudProducts.length} articles synchronisés avec Supabase Cloud !`);
-                      return;
+                      
+                      const inboxItem = cloudProducts.find(p => p.category === 'inbox');
+                      if (inboxItem) {
+                        setSelectedCategory('inbox');
+                        setInboxSubTab('products');
+                        setSelectedProduct(inboxItem);
+                        showToast(`🎉 « ${inboxItem.titleFr.slice(0, 32)}... » synchronisé avec succès !`);
+                        setSyncFeedback('success');
+                        setTimeout(() => setSyncFeedback(null), 3000);
+                        return;
+                      } else {
+                        showToast(`✅ ${cloudProducts.length} articles synchronisés avec Supabase Cloud !`);
+                        setSyncFeedback('success');
+                        setTimeout(() => setSyncFeedback(null), 3000);
+                        return;
+                      }
                     }
 
-                    showToast("💡 Sur Alibaba, ouvrez l'extension et cliquez sur « 📥 ENVOYER AU MAGASIN D'ARRIVAGE » !");
+                    // 4. Priorité 4 : Vérifier si des articles sont arrivés dans d'autres espaces (ex: Cuisines vs Quincaillerie)
+                    if (supabase && isSupabaseConfigured) {
+                      try {
+                        const { data: anyInbox } = await supabase
+                          .from('products')
+                          .select('*')
+                          .eq('category', 'inbox');
+                        
+                        if (anyInbox && anyInbox.length > 0) {
+                          const targetWs = anyInbox[0].workspace_id;
+                          if (targetWs && targetWs !== activeWorkspaceId) {
+                            setActiveWorkspaceId(targetWs);
+                            localStorage.setItem('quin_source_active_ws', targetWs);
+                            showToast(`🔄 Bascule automatique vers l'espace « ${targetWs === 'ws_cuisines' ? 'Cuisines' : 'Quincaillerie'} » où l'article a été injecté !`);
+                            setSyncFeedback('success');
+                            setTimeout(() => setSyncFeedback(null), 3000);
+                            return;
+                          }
+                        }
+                      } catch (e) {}
+                    }
+
+                    setSyncFeedback('empty');
+                    showToast("💡 Ouvrez l'extension sur Alibaba et cliquez sur « 📥 ENVOYER AU MAGASIN D'ARRIVAGE » !");
+                    setTimeout(() => setSyncFeedback(null), 3500);
                   } catch (e) {
-                    showToast("💡 Sur Alibaba, ouvrez l'extension et cliquez sur « 📥 ENVOYER AU MAGASIN D'ARRIVAGE » !");
+                    setSyncFeedback('empty');
+                    showToast("💡 Ouvrez l'extension sur Alibaba et cliquez sur « 📥 ENVOYER AU MAGASIN D'ARRIVAGE » !");
+                    setTimeout(() => setSyncFeedback(null), 3500);
+                  } finally {
+                    setIsSyncingExtension(false);
                   }
                 }}
-                title="Réceptionner ou synchroniser le catalogue Cloud Supabase (1-Clic)"
+                title="Cliquer pour forcer la synchronisation avec l'extension et Supabase Cloud"
               >
-                <Zap size={16} color="#34D399" />
-                <span>⚡ Réceptionner Extension</span>
+                {isSyncingExtension ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" color="#93C5FD" />
+                    <span>⏳ Recherche Cloud...</span>
+                  </>
+                ) : syncFeedback === 'success' ? (
+                  <>
+                    <CheckCircle size={16} color="#10B981" />
+                    <span>✅ Article Réceptionné !</span>
+                  </>
+                ) : syncFeedback === 'empty' ? (
+                  <>
+                    <AlertCircle size={16} color="#F59E0B" />
+                    <span>ℹ️ 0 Article en Attente</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap size={16} color="#34D399" />
+                    <span>⚡ Réceptionner Extension</span>
+                  </>
+                )}
               </button>
 
               <button 

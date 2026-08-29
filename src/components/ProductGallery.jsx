@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { UniversalVideoPlayerModal } from './UniversalVideoPlayerModal';
 import { getPlayableVideoSrc } from '../utils/mediaUtils';
+import { useCachedMedia } from '../utils/indexedMediaDB';
 
 export function ProductGallery({ images = [], videos = [], videoDemo, title, onOpenFullscreen }) {
   const [activeMedia, setActiveMedia] = useState('photo'); // 'photo' | 'video'
@@ -35,11 +36,14 @@ export function ProductGallery({ images = [], videos = [], videoDemo, title, onO
   const thumbnailsRef = useRef(null);
 
   const safeImages = images.length > 0 ? images : [
-    'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=1200&q=90',
-    'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=1200&q=90',
+    'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg',
+    'https://sc04.alicdn.com/kf/H75691060938f4d92982d61cb570eb947Y.jpg_960x960q80.jpg',
     'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=1200&q=90',
     'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1200&q=90'
   ];
+
+  // Résolution automatique depuis le cache IndexedDB
+  const activeMainImgSrc = useCachedMedia(safeImages[currentImageIndex]);
 
   // Navigation main photo
   const handlePrevImage = (e) => {
@@ -213,6 +217,11 @@ export function ProductGallery({ images = [], videos = [], videoDemo, title, onO
                 <img 
                   src={imgUrl} 
                   alt={`Vignette ${idx + 1}`} 
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg';
+                  }}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                 />
               </div>
@@ -417,8 +426,13 @@ export function ProductGallery({ images = [], videos = [], videoDemo, title, onO
               onMouseLeave={handleMouseUp}
             >
               <img 
-                src={safeImages[currentImageIndex]} 
+                src={activeMainImgSrc} 
                 alt={title || 'Photo Quincaillerie HD'} 
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg';
+                }}
                 style={{
                   width: '100%',
                   height: '100%',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { detectCategory, generateTechnicalFrenchTitle, enrichProductMetadata } from '../server/productExtractor';
+import { uploadFileToSupabaseStorage, BUCKET_IMAGES, BUCKET_VIDEOS } from '../utils/supabaseStorage';
 import { 
   X, 
   Plus, 
@@ -26,7 +27,8 @@ import {
   Upload,
   Play,
   Film,
-  Camera
+  Camera,
+  Loader2
 } from 'lucide-react';
 
 export function getCategoryUnits(cat) {
@@ -595,8 +597,8 @@ export function AddArticleModal({ isOpen, onClose, onAddProduct, categories = []
         ]);
       } else {
         setImages([
-          'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80',
-          'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=800&q=80'
+          'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg',
+          'https://sc04.alicdn.com/kf/H75691060938f4d92982d61cb570eb947Y.jpg_960x960q80.jpg'
         ]);
       }
 
@@ -618,31 +620,90 @@ export function AddArticleModal({ isOpen, onClose, onAddProduct, categories = []
     }
   };
 
-  // 📁 Gestion de l'Upload de Fichiers Photos depuis l'ordinateur / téléphone
-  const handlePhotoFileUpload = (e) => {
+  // 📁 Gestion de l'Upload de Fichiers Photos vers Supabase Storage (Cloud Permanent)
+  const handlePhotoFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setImages(prev => [...prev, event.target.result]);
+    if (files.length === 0) return;
+
+    setIsUploadingMedia(true);
+    setExtractionStatus({
+      type: 'info',
+      title: '☁️ Téléversement Photos en cours...',
+      message: `Envoi de ${files.length} photo(s) vers votre Supabase Storage...`
+    });
+
+    for (const file of files) {
+      try {
+        const uploadRes = await uploadFileToSupabaseStorage(file, {
+          bucket: BUCKET_IMAGES,
+          folder: 'products/images'
+        });
+
+        if (uploadRes && uploadRes.success && uploadRes.publicUrl) {
+          setImages(prev => [...prev, uploadRes.publicUrl]);
+        } else {
+          // Fallback lecteur local
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            if (event.target?.result) {
+              setImages(prev => [...prev, event.target.result]);
+            }
+          };
+          reader.readAsDataURL(file);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Erreur upload photo Supabase:', err);
+      }
+    }
+
+    setIsUploadingMedia(false);
+    setExtractionStatus({
+      type: 'success',
+      title: '✅ Photos Enregistrées dans Supabase',
+      message: 'Vos photos sont stockées de façon permanente dans votre Cloud Supabase !'
     });
   };
 
-  // 🎥 Gestion de l'Upload de Fichier Vidéo depuis l'ordinateur / téléphone
-  const handleVideoFileUpload = (e) => {
+  // 🎥 Gestion de l'Upload de Fichier Vidéo vers Supabase Storage (Cloud Permanent)
+  const handleVideoFileUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setVideoUrl(event.target.result);
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setIsUploadingMedia(true);
+    setExtractionStatus({
+      type: 'info',
+      title: '☁️ Téléversement Vidéo en cours...',
+      message: `Envoi de la vidéo (${(file.size / (1024 * 1024)).toFixed(1)} Mo) vers votre Supabase Storage...`
+    });
+
+    try {
+      const uploadRes = await uploadFileToSupabaseStorage(file, {
+        bucket: BUCKET_VIDEOS,
+        folder: 'products/videos'
+      });
+
+      if (uploadRes && uploadRes.success && uploadRes.publicUrl) {
+        setVideoUrl(uploadRes.publicUrl);
+        setVideoSource('Vidéo Locale Uploadée sur Supabase');
+        setExtractionStatus({
+          type: 'success',
+          title: '🎉 Vidéo Sauvegardée sur Supabase Storage',
+          message: 'Votre vidéo est en ligne et accessible mondialement sur Netlify !'
+        });
+      } else {
+        // Fallback local
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setVideoUrl(event.target.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      console.error('Erreur upload vidéo Supabase:', err);
+    } finally {
+      setIsUploadingMedia(false);
     }
   };
 

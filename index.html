@@ -23,12 +23,20 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
+      // Désactiver et purger tout Service Worker obsolète pour garantir le temps réel
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(err => {
-            console.log('SW registration error:', err);
-          });
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (const registration of registrations) {
+            registration.unregister();
+          }
         });
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            for (const name of names) {
+              caches.delete(name);
+            }
+          });
+        }
       }
     </script>
   </body>

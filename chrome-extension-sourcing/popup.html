@@ -283,6 +283,77 @@
     <button type="button" id="tabEnrich" class="mode-tab">🏭 Compléter Fiche</button>
   </div>
 
+  <!-- 🎯 SÉLECTION RAPIDE DE RAYON / CATÉGORIE AVEC RECHERCHE RAPIDE -->
+  <div id="categoryPickerContainer" style="margin-bottom: 8px; background: #0F172A; border: 1px solid #334155; border-radius: 9px; padding: 7px 9px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+      <span style="color: #94A3B8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; display: flex; align-items: center; gap: 4px;">
+        <span>🎯 Rayon Cible :</span>
+      </span>
+      <span id="selectedCategoryBadge" style="background: rgba(56, 189, 248, 0.15); border: 1px solid #0284C7; color: #38BDF8; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 5px; max-width: 60%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+        📥 Magasin d'Arrivage
+      </span>
+    </div>
+
+    <!-- 🔍 Barre de Recherche Instantanée de Catégorie -->
+    <div style="position: relative; margin-bottom: 5px;">
+      <input 
+        type="text" 
+        id="categorySearchInput" 
+        placeholder="🔍 Rechercher une catégorie (ex: assiette, vis, évier...)" 
+        style="width: 100%; background: #1E293B; border: 1px solid #475569; border-radius: 6px; padding: 5px 22px 5px 24px; font-size: 10.5px; color: #FFFFFF; outline: none; transition: border-color 0.2s;"
+      />
+      <span style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); font-size: 10px; opacity: 0.6;">🔍</span>
+      <button type="button" id="btnClearCatSearch" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94A3B8; cursor: pointer; font-size: 10px; display: none;">✕</button>
+    </div>
+
+    <!-- 📋 Menu Déroulant / Liste Filtrée des Catégories -->
+    <select id="categorySelect" size="3" style="width: 100%; background: #0B1120; border: 1px solid #1E293B; border-radius: 6px; color: #F1F5F9; font-size: 10.5px; padding: 2px; outline: none; max-height: 80px; overflow-y: auto; scrollbar-width: thin;">
+    </select>
+
+    <!-- ✨ Suggestion IA Automatique de Rayon Détecté -->
+    <div id="autoCategorySuggestionBox" style="display: none; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 6px; padding: 5px 8px; margin-top: 6px; font-size: 10px; color: #93C5FD; align-items: center; justify-content: space-between;">
+      <span id="autoCatSuggestionText" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
+        ✨ Rayon suggéré : <strong>...</strong>
+      </span>
+      <button type="button" id="btnApplyAutoCat" style="background: #2563EB; border: none; color: #FFFFFF; font-weight: 800; font-size: 9.5px; padding: 2px 7px; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+        Sélectionner
+      </button>
+    </div>
+
+    <!-- ➕ Bouton & Formulaire de Création Rapide de Rayon -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+      <button type="button" id="btnToggleCreateCat" style="background: none; border: none; color: #38BDF8; font-size: 10px; font-weight: 700; cursor: pointer; padding: 2px 0; display: flex; align-items: center; gap: 3px;">
+        <span>➕ Créer un nouveau rayon</span>
+      </button>
+    </div>
+
+    <div id="createCategoryForm" style="display: none; margin-top: 6px; padding: 7px; background: #1E293B; border: 1px dashed #3B82F6; border-radius: 6px;">
+      <div style="font-size: 9.5px; color: #94A3B8; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; display: flex; justify-content: space-between;">
+        <span>Nouveau Rayon / Sous-catégorie</span>
+        <button type="button" id="btnCloseCreateCat" style="background:none; border:none; color:#94A3B8; cursor:pointer; font-size:10px;">✕</button>
+      </div>
+      <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+        <input type="text" id="newCatIconInput" value="📦" title="Emoji icône" style="width: 28px; text-align: center; background: #0F172A; border: 1px solid #334155; border-radius: 4px; color: #fff; font-size: 11px;" />
+        <input type="text" id="newCatNameInput" placeholder="Nom du rayon (ex: Pieds de Table)" style="flex: 1; background: #0F172A; border: 1px solid #334155; border-radius: 4px; color: #fff; font-size: 10.5px; padding: 3px 6px; outline:none;" />
+      </div>
+      <div style="display: flex; gap: 4px;">
+        <select id="newCatWorkspaceSelect" style="flex: 1; background: #0F172A; border: 1px solid #334155; border-radius: 4px; color: #CBD5E1; font-size: 10px; padding: 3px; outline:none;">
+          <option value="ws_quincaillerie">🔩 Quincaillerie & Menuiserie</option>
+          <option value="ws_cuisines">🍳 Cuisines & Aménagement</option>
+          <option value="ws_outillage">🛠️ Gabarits & Outillage Pro</option>
+          <option value="ws_electromenager">🔌 Électroménager & Cuisson</option>
+          <option value="ws_vetements">👗 Vêtements & Mode</option>
+          <option value="ws_chaussures">👟 Chaussures & Sneakers</option>
+          <option value="ws_electronique">📱 High-Tech & Électronique</option>
+          <option value="ws_mobilier">🪑 Mobilier & Décoration</option>
+        </select>
+        <button type="button" id="btnConfirmCreateCat" style="background: #10B981; border: none; color: #fff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 3px 9px; cursor: pointer;">
+          ✓ Créer
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Preview Card (Données Fiche Produit Extraites) -->
   <div class="status-card">
     <div id="previewTitle" class="preview-title">Deep Scraping intégral de la page en cours...</div>

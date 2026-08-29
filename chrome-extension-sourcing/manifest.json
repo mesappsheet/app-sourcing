@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "App Sourcing - Importateur 1-Clic & M\u00e9dias",
-  "version": "1.2.1",
+  "name": "App Sourcing - Importateur 1-Clic & Médias",
+  "version": "1.2.5",
   "description": "Importez vos produits Alibaba, 1688, Taobao en 1 clic vers votre application Sourcing.",
   "permissions": [
     "activeTab",

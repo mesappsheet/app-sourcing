@@ -310,7 +310,7 @@ export function CapturedMediaHub({
                   {isVideo ? (
                     (() => {
                       const isPlayableDirect = isDirectPlayableVideo(media.url);
-                      const displayPoster = media.poster || (media.url && !media.url.includes('tiktok.com') && !media.url.includes('instagram.com') && !media.url.includes('facebook.com') ? media.url : 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80');
+                      const displayPoster = media.poster || (media.url && !media.url.includes('tiktok.com') && !media.url.includes('instagram.com') && !media.url.includes('facebook.com') ? media.url : 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg');
 
                       if (isPlayableDirect) {
                         return (
@@ -708,7 +708,7 @@ export function CapturedMediaHub({
                       }}
                     >
                       <img 
-                        src={prod.images?.[0] || 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=100'} 
+                        src={prod.images?.[0] || 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg'} 
                         alt="" 
                         style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }}
                       />

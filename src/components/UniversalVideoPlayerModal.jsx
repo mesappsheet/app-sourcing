@@ -236,7 +236,7 @@ export function UniversalVideoPlayerModal({
           ) : (
             <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <img
-                src={poster || 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800'}
+                src={poster || 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg'}
                 alt={title}
                 style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: 0.6 }}
               />

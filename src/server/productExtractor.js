@@ -1027,8 +1027,8 @@ export async function scrapeProductInfo(targetUrl) {
       ];
     } else {
       result.images = [
-        'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=800&q=80',
-        'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=800&q=80'
+        'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg',
+        'https://sc04.alicdn.com/kf/H75691060938f4d92982d61cb570eb947Y.jpg_960x960q80.jpg'
       ];
     }
   }

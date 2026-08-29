@@ -71,7 +71,7 @@ function scraperApiPlugin() {
 
       server.middlewares.use('/api/import-live', async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
         if (req.method === 'OPTIONS') {
@@ -86,7 +86,7 @@ function scraperApiPlugin() {
           req.on('end', () => {
             try {
               const data = JSON.parse(body || '{}');
-              lastLiveImport = { ...data, timestamp: Date.now() };
+              lastLiveImport = { ...data, timestamp: Date.now(), consumed: false };
               res.statusCode = 200;
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({ success: true, message: 'Données reçues en direct !' }));
@@ -95,10 +95,19 @@ function scraperApiPlugin() {
               res.end(JSON.stringify({ error: err.message }));
             }
           });
-        } else if (req.method === 'GET') {
+        } else if (req.method === 'DELETE') {
+          lastLiveImport = null;
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify(lastLiveImport || {}));
+          res.end(JSON.stringify({ success: true, cleared: true }));
+        } else if (req.method === 'GET') {
+          const toReturn = lastLiveImport ? { ...lastLiveImport } : {};
+          if (req.url && (req.url.includes('consume=true') || req.url.includes('clear=true'))) {
+            lastLiveImport = null;
+          }
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(toReturn));
         }
       });
 

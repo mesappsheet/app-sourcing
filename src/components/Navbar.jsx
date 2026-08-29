@@ -13,7 +13,8 @@ import {
   EyeOff,
   LogOut,
   Smartphone,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from 'lucide-react';
 import { WorkspaceSelector } from './WorkspaceSelector';
 
@@ -26,6 +27,7 @@ export function Navbar({
   setTheme,
   onOpenAddModal, 
   onOpenSettingsModal,
+  onWipeAllProducts,
   articlesCount,
   workspaces = [],
   activeWorkspaceId,
@@ -375,6 +377,34 @@ export function Navbar({
                     >
                       <SlidersHorizontal size={14} color="#F59E0B" />
                       <span>Régler Fret & Marges Cibles</span>
+                    </button>
+                  </div>
+
+                  {/* 4. BOUTON VIDER LA BASE (0 ARTICLE) */}
+                  <div style={{ paddingTop: '0.4rem' }}>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        if (onWipeAllProducts) onWipeAllProducts();
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#F87171',
+                        padding: '0.55rem',
+                        borderRadius: '8px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Trash2 size={14} />
+                      <span>Vider le Catalogue (0 article)</span>
                     </button>
                   </div>
                 </div>

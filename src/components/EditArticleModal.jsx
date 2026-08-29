@@ -15,9 +15,11 @@ import {
   Star,
   ExternalLink,
   Layers,
-  Upload
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { uploadFileToSupabaseStorage, BUCKET_IMAGES, BUCKET_VIDEOS } from '../utils/supabaseStorage';
 
 export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDeleteProduct, categories }) {
   const [formData, setFormData] = useState(null);
@@ -89,21 +91,38 @@ export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDe
 
   if (!isOpen || !formData) return null;
 
-  // --- IMAGE & VIDEO HANDLERS ---
-  const handlePhotoFileUpload = (e) => {
+  // --- IMAGE & VIDEO HANDLERS (SUPABASE CLOUD STORAGE) ---
+  const handlePhotoFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      try {
+        const res = await uploadFileToSupabaseStorage(file, {
+          bucket: BUCKET_IMAGES,
+          folder: 'products/images'
+        });
+        if (res && res.success && res.publicUrl) {
           setFormData(prev => ({
             ...prev,
-            images: [...prev.images, event.target.result]
+            images: [...prev.images, res.publicUrl]
           }));
+        } else {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            if (event.target?.result) {
+              setFormData(prev => ({
+                ...prev,
+                images: [...prev.images, event.target.result]
+              }));
+            }
+          };
+          reader.readAsDataURL(file);
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch (err) {
+        console.error('Erreur upload photo EditModal:', err);
+      }
+    }
   };
 
   const handleAddVideoUrl = () => {
@@ -124,27 +143,51 @@ export function EditArticleModal({ isOpen, onClose, product, onSaveProduct, onDe
     }
   };
 
-  const handleVideoFileUpload = (e) => {
+  const handleVideoFileUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setFormData(prev => {
-            const updated = [...(prev.videos || []), event.target.result];
-            return {
-              ...prev,
-              videos: updated,
-              hasVideoDemo: true,
-              videoDemo: {
-                ...prev.videoDemo,
-                videoUrl: updated[0] || ''
-              }
-            };
-          });
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    try {
+      const res = await uploadFileToSupabaseStorage(file, {
+        bucket: BUCKET_VIDEOS,
+        folder: 'products/videos'
+      });
+
+      if (res && res.success && res.publicUrl) {
+        setFormData(prev => {
+          const updated = [...(prev.videos || []), res.publicUrl];
+          return {
+            ...prev,
+            videos: updated,
+            hasVideoDemo: true,
+            videoDemo: {
+              ...prev.videoDemo,
+              videoUrl: updated[0] || ''
+            }
+          };
+        });
+      } else {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setFormData(prev => {
+              const updated = [...(prev.videos || []), event.target.result];
+              return {
+                ...prev,
+                videos: updated,
+                hasVideoDemo: true,
+                videoDemo: {
+                  ...prev.videoDemo,
+                  videoUrl: updated[0] || ''
+                }
+              };
+            });
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      console.error('Erreur upload vidéo EditModal:', err);
     }
   };
 

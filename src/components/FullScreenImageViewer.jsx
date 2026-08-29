@@ -63,7 +63,7 @@ export function FullScreenImageViewer({
   }, [initialIndex, isOpen]);
 
   const safeImages = images.length > 0 ? images : [
-    'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?w=1600&q=95'
+    'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg'
   ];
 
   // Navigation handlers
@@ -509,7 +509,13 @@ export function FullScreenImageViewer({
                   flexShrink: 0
                 }}
               >
-                <img src={imgUrl} alt={`Vignette ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img 
+                  src={imgUrl} 
+                  alt={`Vignette ${idx + 1}`} 
+                  loading="lazy"
+                  decoding="async"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
               </div>
             ))}
 
@@ -665,6 +671,11 @@ export function FullScreenImageViewer({
                 key={currentIndex}
                 src={safeImages[currentIndex]} 
                 alt={`${productTitle} - Grand Format`}
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://sc04.alicdn.com/kf/Hb16629d89269477080f4f9f78ea4e414n.jpg_960x960q80.jpg';
+                }}
                 style={{
                   width: fitMode === 'cover' ? '100%' : 'auto',
                   height: fitMode === 'cover' ? '100%' : 'auto',
