@@ -95,11 +95,12 @@ export async function saveAllProductsToDb(products, workspaceId = 'ws_quincaille
             suppliers: p.suppliers || [],
             price_cny: parseFloat(p.priceCny) || 0,
             unit: p.unit || 'Pièce (pc)',
-            source_url: p.sourceUrl || ''
+            source_url: p.sourceUrl || '',
+            source: p.source || 'import'
           };
         });
 
-        await supabase.from('products').upsert(rows);
+        await supabase.from('products').upsert(rows, { onConflict: 'workspace_id,sku' });
       }
     } catch (sbErr) {
       console.warn('Erreur synchronisation Supabase:', sbErr);
@@ -306,6 +307,7 @@ export async function deleteProductFromDb(productId, workspaceId = 'ws_quincaill
     try {
       await supabase.from('products').delete().eq('id', productId);
       console.log('✅ Produit supprimé de Supabase Cloud:', productId);
+      logProductEvent('delete', { id: productId, sku: productId, workspaceId }, 'app');
     } catch (e) {
       console.warn('Erreur suppression Supabase:', e);
     }
@@ -399,11 +401,13 @@ export async function saveProductToDb(product, workspaceId = 'ws_quincaillerie')
         suppliers: product.suppliers || [],
         price_cny: parseFloat(product.priceCny) || 0,
         unit: product.unit || 'Pièce (pc)',
-        source_url: product.sourceUrl || ''
+        source_url: product.sourceUrl || '',
+        source: product.source || 'manuel'
       };
 
-      await supabase.from('products').upsert(row);
+      await supabase.from('products').upsert(row, { onConflict: 'workspace_id,sku' });
       console.log('✅ Produit synchronisé avec succès dans Supabase Cloud !');
+      logProductEvent('upsert', product, product.source || 'manuel');
     } catch (sbErr) {
       console.warn('Erreur synchronisation Supabase produit unique:', sbErr);
     }
@@ -417,5 +421,25 @@ export async function saveProductToDb(product, workspaceId = 'ws_quincaillerie')
     store.put(product);
   } catch (err) {
     console.warn('Erreur sauvegarde IndexedDB produit unique:', err);
+  }
+}
+
+// 📜 Journalisation d'audit dans la table product_events
+export async function logProductEvent(action, product, source = 'app') {
+  if (supabase && isSupabaseConfigured && product) {
+    try {
+      await supabase.from('product_events').insert({
+        product_sku: product.sku || product.id,
+        workspace_id: product.workspaceId || 'ws_quincaillerie',
+        action: action,
+        source: source,
+        payload: {
+          id: product.id,
+          titleFr: product.titleFr || product.title,
+          category: product.category,
+          priceCny: product.priceCny
+        }
+      });
+    } catch (e) {}
   }
 }

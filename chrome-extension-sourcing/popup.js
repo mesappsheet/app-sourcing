@@ -1395,38 +1395,48 @@ document.addEventListener('DOMContentLoaded', async () => {
           price_cny: parseFloat(cleanProductPayload.priceCny) || 0,
           unit: cleanProductPayload.unit || 'Pièce (pc)',
           source_url: cleanProductPayload.sourceUrl || '',
+          source: 'extension',
           created_at: cleanProductPayload.createdAt
         };
 
-        await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+        const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
             'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
+            'Prefer': 'resolution=merge-duplicates,return=representation'
           },
           body: JSON.stringify(sbRow)
         });
+
+        if (sbRes.ok) {
+          console.log('[EXT][Canal1-Supabase] Produit injecté/mis à jour avec succès:', cleanProductPayload.sku);
+        }
       } catch (sbErr) {
-        console.warn('Erreur injection Supabase:', sbErr);
+        console.warn('[EXT][Canal1-Supabase] Erreur injection Supabase:', sbErr);
       }
 
-      // 2. Enregistrement dans le stockage local de l'extension
+      // 2. Enregistrement sécurisé dans le stockage local de l'extension avec UUID unique
+      const uniqueImportId = 'imp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      const taggedPayload = {
+        ...importEventPayload,
+        importId: uniqueImportId,
+        timestamp: Date.now()
+      };
+
       try {
-        chrome.storage?.local?.set({ 'quin_source_latest_import': importEventPayload });
+        chrome.storage?.local?.set({ 'quin_source_latest_import': taggedPayload });
+        console.log('[EXT][Canal3-Storage] Tampon local mis à jour avec importId:', uniqueImportId);
       } catch (stErr) {}
 
       // 3. Copie automatique dans le presse-papier
       try {
-        await navigator.clipboard.writeText(JSON.stringify(importEventPayload));
+        await navigator.clipboard.writeText(JSON.stringify(taggedPayload));
       } catch (clipErr) {}
 
       // 4. Synchronisation directe via l'API du serveur local Vite
-      const postPayload = JSON.stringify({
-        ...importEventPayload,
-        timestamp: Date.now()
-      });
+      const postPayload = JSON.stringify(taggedPayload);
 
       try {
         await fetch('http://localhost:5173/api/import-live', {
