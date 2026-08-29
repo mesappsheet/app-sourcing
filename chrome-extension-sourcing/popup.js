@@ -741,6 +741,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const previewMediaBar = document.getElementById('previewMediaBar');
   const previewImagesCount = document.getElementById('previewImagesCount');
   const previewVideoBadge = document.getElementById('previewVideoBadge');
+  const previewImagesGallery = document.getElementById('previewImagesGallery');
 
   const categorySearchInput = document.getElementById('categorySearchInput');
   const categorySelect = document.getElementById('categorySelect');
@@ -1084,6 +1085,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (previewImagesCount) previewImagesCount.innerText = `📷 ${cachedData.images?.length || 0} photo(s) HD`;
         if (previewVideoBadge) previewVideoBadge.style.display = cachedData.videoUrl ? 'inline-block' : 'none';
         previewMediaBar.style.display = 'flex';
+      }
+
+      if (previewImagesGallery) {
+        previewImagesGallery.innerHTML = '';
+        if (cachedData.images && cachedData.images.length > 0) {
+          cachedData.images.slice(0, 8).forEach(imgUrl => {
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.style.cssText = 'width: 52px; height: 52px; border-radius: 6px; object-fit: cover; border: 1px solid #334155; flex-shrink: 0; background: #0F172A; box-shadow: 0 2px 4px rgba(0,0,0,0.3);';
+            previewImagesGallery.appendChild(img);
+          });
+          previewImagesGallery.style.display = 'flex';
+        } else {
+          previewImagesGallery.style.display = 'none';
+        }
       }
 
       if (cachedData.tierPricing && cachedData.tierPricing.length > 0 && previewTiersBox && previewTiersList) {
