@@ -1135,6 +1135,7 @@ export function App() {
             window.postMessage({
               type: 'APP_SOURCING_SESSION_SYNC',
               token: session.access_token,
+              refreshToken: session.refresh_token || null,
               userId: session.user.id
             }, window.location.origin);
           }
@@ -1149,6 +1150,7 @@ export function App() {
             window.postMessage({
               type: 'APP_SOURCING_SESSION_SYNC',
               token: session.access_token,
+              refreshToken: session.refresh_token || null,
               userId: session.user.id
             }, window.location.origin);
           }
@@ -1158,6 +1160,7 @@ export function App() {
           window.postMessage({
             type: 'APP_SOURCING_SESSION_SYNC',
             token: null,
+            refreshToken: null,
             userId: null
           }, window.location.origin);
         }

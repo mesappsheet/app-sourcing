@@ -1,3 +1,5 @@
+import { isJwtExpired, refreshSupabaseSession, normalizeCategorySlug } from './utils/extensionLogic.js';
+
 // ============================================================================
 // ⚡ DEEP SCRAPER E-COMMERCE HAUTE PRÉCISION & ANALYSEUR UNIVERSEL DE DONNÉES
 // Analyse 100% intégrale de la page : Vraies Photos Produit, Vrai Prix, Paliers, Specs
@@ -1309,16 +1311,59 @@ document.addEventListener('DOMContentLoaded', async () => {
           created_at: cleanProductPayload.createdAt
         };
 
-        const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
+        // 🔐 Récupération du JWT authentifié avec rafraîchissement autonome si expiré
+        const dataAuth = await chrome.storage.local.get(['quin_source_auth_jwt', 'quin_source_auth_refresh_token']);
+        let currentToken = dataAuth.quin_source_auth_jwt;
+        const refreshToken = dataAuth.quin_source_auth_refresh_token;
+
+        if ((!currentToken || isJwtExpired(currentToken)) && refreshToken) {
+          const refRes = await refreshSupabaseSession(refreshToken, SUPABASE_URL, SUPABASE_KEY);
+          if (refRes.success && refRes.accessToken) {
+            currentToken = refRes.accessToken;
+            await chrome.storage.local.set({
+              quin_source_auth_jwt: currentToken,
+              quin_source_auth_refresh_token: refRes.refreshToken || refreshToken,
+              quin_source_auth_updated_at: Date.now()
+            });
+          }
+        }
+
+        const activeAuthHeader = currentToken ? `Bearer ${currentToken}` : `Bearer ${SUPABASE_KEY}`;
+
+        let sbRes = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Authorization': activeAuthHeader,
             'Content-Type': 'application/json',
             'Prefer': 'resolution=merge-duplicates,return=representation'
           },
           body: JSON.stringify(sbRow)
         });
+
+        // Si 401 reçu, tenter un refresh immédiat et réessayer une fois
+        if (sbRes.status === 401 && refreshToken) {
+          const retryRef = await refreshSupabaseSession(refreshToken, SUPABASE_URL, SUPABASE_KEY);
+          if (retryRef.success && retryRef.accessToken) {
+            currentToken = retryRef.accessToken;
+            await chrome.storage.local.set({
+              quin_source_auth_jwt: currentToken,
+              quin_source_auth_refresh_token: retryRef.refreshToken || refreshToken,
+              quin_source_auth_updated_at: Date.now()
+            });
+
+            sbRes = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${currentToken}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates,return=representation'
+              },
+              body: JSON.stringify(sbRow)
+            });
+          }
+        }
 
         if (sbRes.ok) {
           isCloudSuccess = true;
@@ -1330,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               method: 'POST',
               headers: {
                 'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Authorization': currentToken ? `Bearer ${currentToken}` : `Bearer ${SUPABASE_KEY}`,
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({

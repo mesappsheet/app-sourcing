@@ -1,3 +1,5 @@
+import { isJwtExpired, refreshSupabaseSession, isPermanentClientError, computeBackoffDelay } from './utils/extensionLogic.js';
+
 // ============================================================================
 // ⚡ BACKGROUND SERVICE WORKER (MANIFEST V3 ROBUSTNESS ARCHITECTURE)
 // Zéro état volatile en mémoire • chrome.storage.local • chrome.alarms • lastError
@@ -5,6 +7,33 @@
 
 const SUPABASE_URL = 'https://xgaehsajhlxkhxzqgfhz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_zVzDkQ2gg7Whjg3sOKviNg_v2CvaQoV';
+
+/**
+ * Récupère un token JWT valide avec rafraîchissement autonome si expiré
+ * Fonctionne même si l'onglet de l'application est fermé
+ */
+async function getValidAuthToken() {
+  const data = await chrome.storage.local.get(['quin_source_auth_jwt', 'quin_source_auth_refresh_token']);
+  let token = data.quin_source_auth_jwt;
+  const refreshToken = data.quin_source_auth_refresh_token;
+
+  if (!token || isJwtExpired(token)) {
+    if (refreshToken) {
+      const refreshRes = await refreshSupabaseSession(refreshToken, SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (refreshRes.success && refreshRes.accessToken) {
+        token = refreshRes.accessToken;
+        await chrome.storage.local.set({
+          quin_source_auth_jwt: token,
+          quin_source_auth_refresh_token: refreshRes.refreshToken || refreshToken,
+          quin_source_auth_updated_at: Date.now()
+        });
+        console.log('[SW] 🔄 Token de session rafraîchi de manière autonome avec succès.');
+      }
+    }
+  }
+
+  return token || SUPABASE_ANON_KEY;
+}
 
 // 1. Initialisation des menus contextuels et des alarmes au démarrage
 chrome.runtime.onInstalled.addListener(() => {
@@ -39,7 +68,7 @@ const BASE_RETRY_DELAY_MS = 60 * 1000; // 1 minute de base
 
 async function processPendingOfflineImports() {
   try {
-    const data = await chrome.storage.local.get(['quin_source_pending_imports', 'quin_source_dead_letter_imports']);
+    const data = await chrome.storage.local.get(['quin_source_pending_imports', 'quin_source_dead_letter_imports', 'quin_source_auth_refresh_token']);
     const pending = data.quin_source_pending_imports;
     if (!pending || !Array.isArray(pending) || pending.length === 0) return;
 
@@ -52,14 +81,13 @@ async function processPendingOfflineImports() {
       const lastRetryAt = item.lastRetryAt || 0;
 
       // ⏱️ Backoff Exponentiel : 1 min, 2 min, 4 min, 8 min, 16 min
-      const requiredDelay = Math.min(16 * BASE_RETRY_DELAY_MS, BASE_RETRY_DELAY_MS * Math.pow(2, currentRetries));
+      const requiredDelay = computeBackoffDelay(currentRetries, BASE_RETRY_DELAY_MS);
       if (now - lastRetryAt < requiredDelay && lastRetryAt > 0) {
-        // Pas encore le moment de rejouer selon le backoff
         remaining.push(item);
         continue;
       }
 
-      // 🛑 Limite de 5 tentatives : déplacement en Dead Letter Queue pour ne pas boucler à l'infini
+      // 🛑 Limite de 5 tentatives : archivage en Dead Letter Queue
       if (currentRetries >= MAX_IMPORT_RETRIES) {
         console.warn(`[SW][DLQ] ⚠️ Import abandonné après ${MAX_IMPORT_RETRIES} échecs (trace_id: ${item.trace_id || item.sku}):`, item);
         deadLetter.push({
@@ -71,22 +99,50 @@ async function processPendingOfflineImports() {
       }
 
       try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
+        let currentAuthToken = await getValidAuthToken();
+        
+        let response = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${currentAuthToken}`,
             'Prefer': 'resolution=merge-duplicates,return=representation'
           },
           body: JSON.stringify(item)
         });
 
+        // 🔄 Si 401 (token expiré entretemps), tenter un refresh immédiat et réessayer
+        if (response.status === 401 && data.quin_source_auth_refresh_token) {
+          console.warn('[SW] 401 reçu : tentative de rafraîchissement immédiat du refresh_token...');
+          const refreshRes = await refreshSupabaseSession(data.quin_source_auth_refresh_token, SUPABASE_URL, SUPABASE_ANON_KEY);
+          if (refreshRes.success && refreshRes.accessToken) {
+            currentAuthToken = refreshRes.accessToken;
+            await chrome.storage.local.set({
+              quin_source_auth_jwt: currentAuthToken,
+              quin_source_auth_refresh_token: refreshRes.refreshToken || data.quin_source_auth_refresh_token,
+              quin_source_auth_updated_at: Date.now()
+            });
+
+            // Re-tentative immédiate avec le nouveau token
+            response = await fetch(`${SUPABASE_URL}/rest/v1/products?on_conflict=workspace_id,sku`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${currentAuthToken}`,
+                'Prefer': 'resolution=merge-duplicates,return=representation'
+              },
+              body: JSON.stringify(item)
+            });
+          }
+        }
+
         if (response.ok) {
           console.log(`[SW][Retry] ✅ Import réussi en tâche de fond (trace_id: ${item.trace_id || item.sku})`);
         } else {
-          // Si erreur 4xx permanente (sauf 429 Too Many Requests), pas de retry infini inutile
-          if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          // 🛑 Si erreur structurelle permanente (400, 403, 404, 422 - hors 401 et 429) -> DLQ
+          if (isPermanentClientError(response.status)) {
             console.error(`[SW][DLQ] ❌ Erreur permanente ${response.status} sur produit ${item.sku}. Déplacé en DLQ.`);
             deadLetter.push({
               ...item,
@@ -94,7 +150,7 @@ async function processPendingOfflineImports() {
               reason: `http_client_error_${response.status}`
             });
           } else {
-            // Erreur serveur 5xx ou réseau temporaire -> Retry avec incrément
+            // Erreur temporaire (5xx, 429, ou 401 persistant en attente de reconnexion) -> Retry avec incrément
             remaining.push({
               ...item,
               retryCount: currentRetries + 1,
@@ -114,7 +170,7 @@ async function processPendingOfflineImports() {
 
     await chrome.storage.local.set({ 
       quin_source_pending_imports: remaining,
-      quin_source_dead_letter_imports: deadLetter.slice(-50) // Garder les 50 derniers échecs max
+      quin_source_dead_letter_imports: deadLetter.slice(-50)
     });
   } catch (e) {
     console.warn('[SW] Erreur vérification imports en attente:', e);

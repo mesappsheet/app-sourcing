@@ -28,13 +28,19 @@
     // 🛡️ Rejeter tout message ne provenant pas exactement de l'origine de l'application
     if (event.origin !== window.location.origin) return;
 
-    if (event.data && event.data.type === 'APP_SOURCING_SESSION_SYNC' && event.data.token) {
-      chrome.storage?.local?.set({
-        quin_source_auth_jwt: event.data.token,
-        quin_source_auth_user_id: event.data.userId || null,
-        quin_source_auth_updated_at: Date.now()
-      });
-      console.log('[ContentScript] 🔐 Session utilisateur synchronisée avec l\'extension.');
+    if (event.data && event.data.type === 'APP_SOURCING_SESSION_SYNC') {
+      if (event.data.token) {
+        chrome.storage?.local?.set({
+          quin_source_auth_jwt: event.data.token,
+          quin_source_auth_refresh_token: event.data.refreshToken || null,
+          quin_source_auth_user_id: event.data.userId || null,
+          quin_source_auth_updated_at: Date.now()
+        });
+        console.log('[ContentScript] 🔐 Session utilisateur & Refresh Token synchronisés.');
+      } else {
+        chrome.storage?.local?.remove(['quin_source_auth_jwt', 'quin_source_auth_refresh_token', 'quin_source_auth_user_id']);
+        console.log('[ContentScript] 🔓 Session utilisateur déconnectée.');
+      }
     }
   });
 

@@ -44,6 +44,62 @@ export function isPermanentClientError(statusCode) {
 }
 
 /**
+ * Vérifie si un token JWT est expiré ou sur le point d'expirer (marge de sécurité de 120s)
+ */
+export function isJwtExpired(jwtToken, bufferSeconds = 120) {
+  if (!jwtToken || typeof jwtToken !== "string") return true;
+  try {
+    const parts = jwtToken.split(".");
+    if (parts.length !== 3) return true;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const payload = JSON.parse(jsonPayload);
+    if (!payload.exp) return false;
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    return payload.exp <= (nowSeconds + bufferSeconds);
+  } catch (e) {
+    return true;
+  }
+}
+
+/**
+ * Rafraîchit de manière autonome le token de session Supabase via l'endpoint auth REST
+ * Fonctionne même si l'application web n'est pas ouverte
+ */
+export async function refreshSupabaseSession(refreshToken, supabaseUrl, supabaseAnonKey) {
+  if (!refreshToken) return { success: false, error: "no_refresh_token" };
+  try {
+    const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: {
+        "apikey": supabaseAnonKey,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.error_description || `http_${res.status}` };
+    }
+    const data = await res.json();
+    return {
+      success: true,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in,
+      userId: data.user?.id
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+/**
  * Génère un SKU et un identifiant produit 100% déterministes à partir de l URL source
  * Scraper la même page 10 fois générera exactement le même SKU
  */
